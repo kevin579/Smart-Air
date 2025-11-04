@@ -4,11 +4,11 @@ plugins {
 }
 
 android {
-    namespace = "com.example.b07demosummer2024"
+    namespace = "com.example.SmartAirGroup2"
     compileSdk = 34
 
     defaultConfig {
-        applicationId = "com.example.b07demosummer2024"
+        applicationId = "com.example.SmartAirGroup2"
         minSdk = 24
         targetSdk = 34
         versionCode = 1
