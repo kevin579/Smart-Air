@@ -13,6 +13,7 @@ import androidx.annotation.NonNull;
 import androidx.annotation.Nullable;
 import androidx.fragment.app.Fragment;
 
+
 import com.google.firebase.database.DatabaseReference;
 import com.google.firebase.database.FirebaseDatabase;
 
@@ -55,22 +56,21 @@ public class AddItemFragment extends Fragment {
     }
 
     private void addItem() {
-        String title = editTextTitle.getText().toString().trim();
-        String author = editTextAuthor.getText().toString().trim();
-        String genre = editTextGenre.getText().toString().trim();
-        String description = editTextDescription.getText().toString().trim();
-        String category = spinnerCategory.getSelectedItem().toString().toLowerCase();
+        String uname = editTextTitle.getText().toString().trim(); // change variable name for clarity
+        String email = editTextAuthor.getText().toString().trim();
+        String password = editTextGenre.getText().toString().trim();
 
-        if (title.isEmpty() || author.isEmpty() || genre.isEmpty() || description.isEmpty()) {
+        if (uname.isEmpty() || email.isEmpty() || password.isEmpty()) {
             Toast.makeText(getContext(), "Please fill out all fields", Toast.LENGTH_SHORT).show();
             return;
         }
 
-        itemsRef = db.getReference("categories/" + category);
+        itemsRef = db.getReference("categories/users");
         String id = itemsRef.push().getKey();
-        Item item = new Item(id, title, author, genre, description);
 
-        itemsRef.child(id).setValue(item).addOnCompleteListener(task -> {
+        User user = new User(uname, email, password);
+
+        itemsRef.child(id).setValue(user).addOnCompleteListener(task -> {
             if (task.isSuccessful()) {
                 Toast.makeText(getContext(), "Item added", Toast.LENGTH_SHORT).show();
             } else {

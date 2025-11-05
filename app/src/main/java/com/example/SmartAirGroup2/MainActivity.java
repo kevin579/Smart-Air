@@ -19,10 +19,10 @@ public class MainActivity extends AppCompatActivity {
         setContentView(R.layout.activity_main);
 
         db = FirebaseDatabase.getInstance("https://smart-air-group2-default-rtdb.firebaseio.com/");
-        DatabaseReference myRef = db.getReference("testDemo");
+        DatabaseReference myRef = db.getReference("users");
 
 //        myRef.setValue("B07 Demo!");
-        myRef.child("movies").setValue("B07 Demo!");
+        myRef.child("movies").setValue("{username:kevin}");
 
         if (savedInstanceState == null) {
             loadFragment(new HomeFragment());
