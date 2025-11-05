@@ -17,6 +17,9 @@ import androidx.fragment.app.Fragment;
 import com.google.firebase.database.DatabaseReference;
 import com.google.firebase.database.FirebaseDatabase;
 
+import com.example.SmartAirGroup2.User;
+
+
 public class AddItemFragment extends Fragment {
     private EditText editTextTitle, editTextAuthor, editTextGenre, editTextDescription;
     private Spinner spinnerCategory;
@@ -55,6 +58,7 @@ public class AddItemFragment extends Fragment {
         return view;
     }
 
+
     private void addItem() {
         String uname = editTextTitle.getText().toString().trim(); // change variable name for clarity
         String email = editTextAuthor.getText().toString().trim();
@@ -68,8 +72,8 @@ public class AddItemFragment extends Fragment {
         itemsRef = db.getReference("categories/users");
         String id = itemsRef.push().getKey();
 
-        User user = new User(uname, email, password);
-
+        User user = new User("a", "a", "a","a","a");
+//
         itemsRef.child(id).setValue(user).addOnCompleteListener(task -> {
             if (task.isSuccessful()) {
                 Toast.makeText(getContext(), "Item added", Toast.LENGTH_SHORT).show();
