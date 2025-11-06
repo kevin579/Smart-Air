@@ -19,6 +19,9 @@ import androidx.appcompat.widget.Toolbar;
 import androidx.fragment.app.Fragment;
 
 
+import com.google.android.gms.tasks.Task;
+import com.google.android.gms.tasks.Tasks;
+import com.google.firebase.database.DataSnapshot;
 import com.google.firebase.database.DatabaseReference;
 import com.google.firebase.database.FirebaseDatabase;
 
@@ -32,6 +35,17 @@ public class AddChildFragment extends Fragment {
 
     private FirebaseDatabase db;
     private DatabaseReference childrenRef, parentRef;
+
+    private String parentUname;
+
+    @Override
+    public void onCreate(Bundle savedInstanceState) {
+        super.onCreate(savedInstanceState);
+        if (getArguments() != null) {
+            parentUname = getArguments().getString("parentUname");
+        }
+    }
+
 
     @Nullable
     @Override
@@ -103,19 +117,32 @@ public class AddChildFragment extends Fragment {
             return;
         }
 
-        childrenRef = db.getReference("categories/users/children");
+        checkIfUsernameExists(uname,
+                () -> {
+                    // Username is available — continue registration
+                    Toast.makeText(getContext(), "Username available", Toast.LENGTH_SHORT).show();
+                    User user = new User(uname, name, email, password,"child");
+                    addUserToDatabase(user);
+                },
+                () -> {
+                    // Username already exists — show message
+                    Toast.makeText(getContext(), "Username already exists", Toast.LENGTH_SHORT).show();
+                }
+        );
 
-        User user = new User(uname, name, email, password,"child");
+    }
+
+    private void addUserToDatabase(User user){
+        childrenRef = db.getReference("categories/users/children");
 
         childrenRef.child(user.getUname()).setValue(user).addOnCompleteListener(task -> {
             if (task.isSuccessful()) {
                 Toast.makeText(getContext(), "Item added", Toast.LENGTH_SHORT).show();
 
-                String parentId = "kevin579";
-                DatabaseReference parentChildrenRef = db.getReference("categories/users/parents/" + parentId + "/children");
+                DatabaseReference parentChildrenRef = db.getReference("categories/users/parents/" + parentUname + "/children");
 
                 // Add child ID under parent's children list
-                parentChildrenRef.child(uname).setValue(user.getUname()).addOnCompleteListener(linkTask -> {
+                parentChildrenRef.child(user.getUname()).setValue(user.getUname()).addOnCompleteListener(linkTask -> {
                     if (linkTask.isSuccessful()) {
                         Toast.makeText(getContext(), "Linked child to parent", Toast.LENGTH_SHORT).show();
                         requireActivity().getSupportFragmentManager().popBackStack();
@@ -128,6 +155,30 @@ public class AddChildFragment extends Fragment {
                 Toast.makeText(getContext(), "Failed to add item", Toast.LENGTH_SHORT).show();
             }
         });
+    }
 
+    private void checkIfUsernameExists(String uname, Runnable onAvailable, Runnable onTaken) {
+        DatabaseReference usersRef = FirebaseDatabase.getInstance().getReference("categories/users");
+
+        // Check in parents, children, and providers
+        Task<DataSnapshot> parentsTask = usersRef.child("parents").child(uname).get();
+        Task<DataSnapshot> childrenTask = usersRef.child("children").child(uname).get();
+        Task<DataSnapshot> providersTask = usersRef.child("providers").child(uname).get();
+
+        Tasks.whenAllComplete(parentsTask, childrenTask, providersTask)
+                .addOnCompleteListener(task -> {
+                    boolean exists =
+                            (parentsTask.getResult() != null && parentsTask.getResult().exists()) ||
+                                    (childrenTask.getResult() != null && childrenTask.getResult().exists()) ||
+                                    (providersTask.getResult() != null && providersTask.getResult().exists());
+
+                    if (exists) {
+                        // username found in at least one node
+                        onTaken.run();
+                    } else {
+                        // username available
+                        onAvailable.run();
+                    }
+                });
     }
 }
