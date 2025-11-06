@@ -67,15 +67,25 @@ public class ParentDashboardFragment extends Fragment {
 
 
         cardAddChild.setOnClickListener(v -> {
-            new AlertDialog.Builder(requireContext()) // or "this" if inside an Activity
+            new AlertDialog.Builder(requireContext())
                     .setTitle("Confirm Action")
-                    .setMessage("Does your child already has an account?")
+                    .setMessage("Does your child already have an account?")
                     .setPositiveButton("Yes", (dialog, which) -> {
-                        loadFragment(new LinkChildFragment());
-//                        Toast.makeText(getContext(), "Confirmed!", Toast.LENGTH_SHORT).show();
+
+                        LinkChildFragment linkFrag = new LinkChildFragment();
+                        Bundle args = new Bundle();
+                        args.putString("parentUname", uname);
+                        linkFrag.setArguments(args);
+
+                        loadFragment(linkFrag);
                     })
                     .setNegativeButton("No", (dialog, which) -> {
-                        loadFragment(new AddChildFragment());
+                        AddChildFragment addFrag = new AddChildFragment();
+                        Bundle args = new Bundle();
+                        args.putString("parentUname", uname);
+                        addFrag.setArguments(args);
+
+                        loadFragment(addFrag);
                         dialog.dismiss();
                     })
                     .show();
@@ -86,21 +96,31 @@ public class ParentDashboardFragment extends Fragment {
     }
 
     private void loadChildrenFromDatabase() {
-        childrenRef.addValueEventListener(new ValueEventListener() {
+        childrenRef.addListenerForSingleValueEvent(new ValueEventListener() {
             @Override
             public void onDataChange(@NonNull DataSnapshot snapshot) {
                 if (contentContainer == null || getContext() == null) return;
 
-                // Clear existing child cards
                 contentContainer.removeAllViews();
+                int totalChildren = (int) snapshot.getChildrenCount();
 
-                int childCount = 0;
+                if (totalChildren == 0) {
+                    // No children at all → just show add button
+                    contentContainer.addView(cardAddChild);
+                    Toast.makeText(getContext(), "No children linked yet", Toast.LENGTH_SHORT).show();
+                    return;
+                }
+
+                // A counter to track when we finish loading all children
+                final int[] loadedChildren = {0};
 
                 for (DataSnapshot childSnapshot : snapshot.getChildren()) {
                     String childUname = childSnapshot.getValue(String.class);
 
                     if (childUname == null || childUname.isEmpty()) {
-                        android.util.Log.e("ParentDashboard", "Null or empty child username found!");
+                        loadedChildren[0]++;
+                        if (loadedChildren[0] == totalChildren)
+                            contentContainer.addView(cardAddChild);
                         continue;
                     }
 
@@ -111,54 +131,41 @@ public class ParentDashboardFragment extends Fragment {
                     childRef.addListenerForSingleValueEvent(new ValueEventListener() {
                         @Override
                         public void onDataChange(@NonNull DataSnapshot childData) {
-                            if (!childData.exists()) {
-                                android.util.Log.w("ParentDashboard", "Child data missing for uname: " + childUname);
-                                return;
+                            if (childData.exists()) {
+                                User child = childData.getValue(User.class);
+                                if (child != null) {
+                                    String displayName = (child.getName() != null && !child.getName().isEmpty())
+                                            ? child.getName()
+                                            : child.getUname();
+                                    addChildCard(displayName, child.getUname());
+                                }
                             }
 
-                            User child = childData.getValue(User.class);
-                            if (child == null) {
-                                android.util.Log.e("ParentDashboard", "Failed to parse User for uname: " + childUname);
-                                return;
-                            }
-
-                            String displayName = (child.getName() != null && !child.getName().isEmpty())
-                                    ? child.getName()
-                                    : child.getUname();
-
-                            try {
-                                addChildCard(displayName, child.getUname());
-                            } catch (Exception e) {
-                                android.util.Log.e("ParentDashboard", "Error adding child card: " + e.getMessage(), e);
+                            loadedChildren[0]++;
+                            if (loadedChildren[0] == totalChildren) {
+                                // Now all children are loaded — add the Add Child card last
+                                contentContainer.addView(cardAddChild);
                             }
                         }
 
                         @Override
                         public void onCancelled(@NonNull DatabaseError error) {
-                            android.util.Log.e("ParentDashboard", "Error loading child: " + error.getMessage());
+                            loadedChildren[0]++;
+                            if (loadedChildren[0] == totalChildren)
+                                contentContainer.addView(cardAddChild);
                         }
                     });
-
-                    childCount++;
-                }
-
-                try {
-                    contentContainer.addView(cardAddChild);
-                } catch (Exception e) {
-                    android.util.Log.e("ParentDashboard", "Error adding Add Child card: " + e.getMessage(), e);
-                }
-
-                if (childCount == 0) {
-                    Toast.makeText(getContext(), "No children linked yet", Toast.LENGTH_SHORT).show();
                 }
             }
 
             @Override
             public void onCancelled(@NonNull DatabaseError error) {
-                Toast.makeText(getContext(), "Failed to load children: " + error.getMessage(), Toast.LENGTH_SHORT).show();
+                Toast.makeText(getContext(), "Failed to load children: " + error.getMessage(),
+                        Toast.LENGTH_SHORT).show();
             }
         });
     }
+
 
 
 
