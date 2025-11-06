@@ -18,8 +18,11 @@ import androidx.appcompat.app.AppCompatActivity;
 import androidx.appcompat.widget.Toolbar;
 import androidx.fragment.app.Fragment;
 
+import com.google.firebase.database.DataSnapshot;
+import com.google.firebase.database.DatabaseError;
 import com.google.firebase.database.DatabaseReference;
 import com.google.firebase.database.FirebaseDatabase;
+import com.google.firebase.database.ValueEventListener;
 
 
 public class LinkChildFragment extends Fragment {
@@ -31,6 +34,17 @@ public class LinkChildFragment extends Fragment {
 
     private FirebaseDatabase db;
     private DatabaseReference childrenRef, parentRef;
+
+    private String parentUname;
+
+
+    @Override
+    public void onCreate(Bundle savedInstanceState) {
+        super.onCreate(savedInstanceState);
+        if (getArguments() != null) {
+            parentUname = getArguments().getString("parentUname");
+        }
+    }
 
     @Nullable
     @Override
@@ -83,5 +97,52 @@ public class LinkChildFragment extends Fragment {
         String uname = editTextUname.getText().toString().trim();
         String password = editTextPassword.getText().toString().trim();
 
+        if (uname.isEmpty() || password.isEmpty()) {
+            Toast.makeText(getContext(), "Please enter both username and password", Toast.LENGTH_SHORT).show();
+            return;
+        }
+
+        DatabaseReference childrenRef = FirebaseDatabase.getInstance()
+                .getReference("categories/users/children");
+
+        childrenRef.child(uname).addListenerForSingleValueEvent(new ValueEventListener() {
+            @Override
+            public void onDataChange(@NonNull DataSnapshot snapshot) {
+                if (!snapshot.exists()) {
+                    Toast.makeText(getContext(), "Child account not found", Toast.LENGTH_SHORT).show();
+                    return;
+                }
+
+                User child = snapshot.getValue(User.class);
+                if (child == null) {
+                    Toast.makeText(getContext(), "Invalid data for this user", Toast.LENGTH_SHORT).show();
+                    return;
+                }
+
+                if (!child.getPassword().equals(password)) {
+                    Toast.makeText(getContext(), "Username and password does not match", Toast.LENGTH_SHORT).show();
+                    return;
+                }
+
+                DatabaseReference parentChildrenRef = FirebaseDatabase.getInstance()
+                        .getReference("categories/users/parents/" + parentUname + "/children");
+
+                parentChildrenRef.child(uname).setValue(uname)
+                        .addOnCompleteListener(linkTask -> {
+                            if (linkTask.isSuccessful()) {
+                                Toast.makeText(getContext(), "Child linked successfully", Toast.LENGTH_SHORT).show();
+                                requireActivity().getSupportFragmentManager().popBackStack();
+                            } else {
+                                Toast.makeText(getContext(), "Failed to link child", Toast.LENGTH_SHORT).show();
+                            }
+                        });
+            }
+
+            @Override
+            public void onCancelled(@NonNull DatabaseError error) {
+                Toast.makeText(getContext(), "Database error: " + error.getMessage(), Toast.LENGTH_SHORT).show();
+            }
+        });
     }
+
 }
