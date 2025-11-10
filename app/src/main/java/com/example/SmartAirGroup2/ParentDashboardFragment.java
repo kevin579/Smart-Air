@@ -5,6 +5,7 @@ import android.content.Context;
 import android.graphics.drawable.Drawable;
 import android.os.Bundle;
 import android.util.TypedValue;
+import android.view.Gravity;
 import android.view.LayoutInflater;
 import android.view.Menu;
 import android.view.MenuInflater;
@@ -33,68 +34,114 @@ import com.google.firebase.database.DatabaseReference;
 import com.google.firebase.database.FirebaseDatabase;
 import com.google.firebase.database.ValueEventListener;
 
+/**
+ * ParentDashboardFragment
+ * -----------------------
+ * This fragment serves as the main dashboard for parent users.
+ * It allows parents to:
+ *   • View their linked child accounts.
+ *   • Add or link new child accounts.
+ *   • Remove linked children.
+ *
+ * The fragment dynamically builds its UI using CardViews that represent each child.
+ * It connects to Firebase Realtime Database to fetch and manage child relationships.
+ *
+ * Firebase Structure (relevant paths):
+ * └── categories/
+ *     └── users/
+ *         ├── parents/{parentUname}/children/{childUname: String}
+ *         └── children/{childUname}/... (child details)
+ *
+ * Core Features:
+ *   - Loads all children linked to the current parent.
+ *   - Dynamically generates a CardView for each child.
+ *   - Provides delete functionality to unlink a child.
+ *   - Supports navigation to AddChildFragment and LinkChildFragment.
+ *   - Uses a toolbar with notification and settings menu options.
+ *
+ * Author: [Your Name]
+ * Date: [Date]
+ */
+
 public class ParentDashboardFragment extends Fragment {
 
+    // ───────────────────────────────
+    // UI COMPONENTS
+    // ───────────────────────────────
     private Toolbar toolbar;
-    private CardView  cardAddChild;
+    private CardView cardAddChild;
     private LinearLayout contentContainer;
 
+    // ───────────────────────────────
+    // FIREBASE REFERENCES
+    // ───────────────────────────────
     private FirebaseDatabase db;
     private DatabaseReference childrenRef;
 
+    // Hardcoded parent username for demonstration
+    // (should later be replaced by logged-in parent’s username)
     private String uname = "kevin579";
 
+    // ───────────────────────────────
+    // LIFECYCLE METHODS
+    // ───────────────────────────────
     @Nullable
     @Override
     public View onCreateView(@NonNull LayoutInflater inflater, @Nullable ViewGroup container, @Nullable Bundle savedInstanceState) {
         View view = inflater.inflate(R.layout.activity_parent_dashboard, container, false);
 
-        // Setup toolbar
+        // Toolbar setup
         toolbar = view.findViewById(R.id.toolbar);
         ((AppCompatActivity) getActivity()).setSupportActionBar(toolbar);
-
-        // Tell Android this fragment has its own menu
         setHasOptionsMenu(true);
 
-        // Initialize cards
+        // UI references
         contentContainer = view.findViewById(R.id.contentContainer);
         cardAddChild = view.findViewById(R.id.cardAddChild);
 
-
+        // Initialize Firebase references
         db = FirebaseDatabase.getInstance("https://smart-air-group2-default-rtdb.firebaseio.com/");
         childrenRef = db.getReference("categories/users/parents/" + uname + "/children");
+
+        // Load all children into the dashboard
         loadChildrenFromDatabase();
 
-
+        // Handle "Add Child" button logic
         cardAddChild.setOnClickListener(v -> {
             new AlertDialog.Builder(requireContext())
                     .setTitle("Confirm Action")
                     .setMessage("Does your child already have an account?")
                     .setPositiveButton("Yes", (dialog, which) -> {
-
+                        // Navigate to link-existing-child fragment
                         LinkChildFragment linkFrag = new LinkChildFragment();
                         Bundle args = new Bundle();
                         args.putString("parentUname", uname);
                         linkFrag.setArguments(args);
-
                         loadFragment(linkFrag);
                     })
                     .setNegativeButton("No", (dialog, which) -> {
+                        // Navigate to create-new-child fragment
                         AddChildFragment addFrag = new AddChildFragment();
                         Bundle args = new Bundle();
                         args.putString("parentUname", uname);
                         addFrag.setArguments(args);
-
                         loadFragment(addFrag);
                         dialog.dismiss();
                     })
                     .show();
-//
         });
 
         return view;
     }
 
+    // ───────────────────────────────
+    // FIREBASE DATA LOADING
+    // ───────────────────────────────
+    /**
+     * Loads the list of children linked to the current parent.
+     * Each child entry creates a CardView dynamically inside `contentContainer`.
+     * If no children exist, only the "Add Child" card is displayed.
+     */
     private void loadChildrenFromDatabase() {
         childrenRef.addListenerForSingleValueEvent(new ValueEventListener() {
             @Override
@@ -105,18 +152,15 @@ public class ParentDashboardFragment extends Fragment {
                 int totalChildren = (int) snapshot.getChildrenCount();
 
                 if (totalChildren == 0) {
-                    // No children at all → just show add button
                     contentContainer.addView(cardAddChild);
                     Toast.makeText(getContext(), "No children linked yet", Toast.LENGTH_SHORT).show();
                     return;
                 }
 
-                // A counter to track when we finish loading all children
                 final int[] loadedChildren = {0};
 
                 for (DataSnapshot childSnapshot : snapshot.getChildren()) {
                     String childUname = childSnapshot.getValue(String.class);
-
                     if (childUname == null || childUname.isEmpty()) {
                         loadedChildren[0]++;
                         if (loadedChildren[0] == totalChildren)
@@ -128,6 +172,7 @@ public class ParentDashboardFragment extends Fragment {
                             .getReference("categories/users/children")
                             .child(childUname);
 
+                    // Retrieve child details
                     childRef.addListenerForSingleValueEvent(new ValueEventListener() {
                         @Override
                         public void onDataChange(@NonNull DataSnapshot childData) {
@@ -142,10 +187,8 @@ public class ParentDashboardFragment extends Fragment {
                             }
 
                             loadedChildren[0]++;
-                            if (loadedChildren[0] == totalChildren) {
-                                // Now all children are loaded — add the Add Child card last
+                            if (loadedChildren[0] == totalChildren)
                                 contentContainer.addView(cardAddChild);
-                            }
                         }
 
                         @Override
@@ -160,159 +203,126 @@ public class ParentDashboardFragment extends Fragment {
 
             @Override
             public void onCancelled(@NonNull DatabaseError error) {
-                Toast.makeText(getContext(), "Failed to load children: " + error.getMessage(),
-                        Toast.LENGTH_SHORT).show();
+                Toast.makeText(getContext(), "Failed to load children: " + error.getMessage(), Toast.LENGTH_SHORT).show();
             }
         });
     }
 
-
-
-
+    // ───────────────────────────────
+    // UI CONSTRUCTION HELPERS
+    // ───────────────────────────────
+    /**
+     * Dynamically creates a card for each linked child.
+     * Displays child name and includes a delete icon to unlink the child.
+     */
     @SuppressLint("ResourceType")
     private void addChildCard(String childName, String childKey) {
-        // defensive: make sure fragment currently attached
         if (!isAdded() || getContext() == null) return;
-
         Context ctx = requireContext();
 
-        // Create CardView programmatically
+        // Create the outer CardView
         CardView cardView = new CardView(ctx);
         LinearLayout.LayoutParams cardParams = new LinearLayout.LayoutParams(
                 LinearLayout.LayoutParams.MATCH_PARENT,
                 LinearLayout.LayoutParams.WRAP_CONTENT
         );
-        cardParams.setMargins(0, 0, 0, dpToPx(16)); // 16dp bottom margin
+        cardParams.setMargins(0, 0, 0, dpToPx(16));
         cardView.setLayoutParams(cardParams);
-
-        // background color — use Color int or ContextCompat
-        cardView.setCardBackgroundColor(0xFFC8E6C9); // Light green
+        cardView.setCardBackgroundColor(0xFFC8E6C9);
         cardView.setRadius(dpToPx(8));
         cardView.setCardElevation(0);
-
         cardView.setClickable(true);
         cardView.setFocusable(true);
 
-        // Resolve selectableItemBackground attribute properly and set as foreground if available
+        // Add ripple effect for touch feedback
         TypedValue outValue = new TypedValue();
-        boolean resolved = ctx.getTheme().resolveAttribute(android.R.attr.selectableItemBackground, outValue, true);
-        if (resolved) {
+        if (ctx.getTheme().resolveAttribute(android.R.attr.selectableItemBackground, outValue, true)) {
             Drawable selectable = ContextCompat.getDrawable(ctx, outValue.resourceId);
-            // setForeground is available on FrameLayout (CardView extends FrameLayout)
             if (selectable != null) cardView.setForeground(selectable);
         }
 
-        // Create inner LinearLayout
+        // Inner layout for content
         LinearLayout innerLayout = new LinearLayout(ctx);
         innerLayout.setOrientation(LinearLayout.HORIZONTAL);
-        // Use FrameLayout.LayoutParams or LinearLayout.LayoutParams when adding innerLayout to CardView?
-        // We'll set innerLayout's own LayoutParams after creation:
-        FrameLayout.LayoutParams innerParams = new FrameLayout.LayoutParams(
+        innerLayout.setLayoutParams(new FrameLayout.LayoutParams(
                 FrameLayout.LayoutParams.MATCH_PARENT,
                 FrameLayout.LayoutParams.WRAP_CONTENT
-        );
-        innerLayout.setLayoutParams(innerParams);
+        ));
         innerLayout.setPadding(dpToPx(16), dpToPx(16), dpToPx(16), dpToPx(16));
-        innerLayout.setGravity(android.view.Gravity.CENTER_VERTICAL);
+        innerLayout.setGravity(Gravity.CENTER_VERTICAL);
 
-        // Create TextView for child name
+        // Child name text
         TextView textView = new TextView(ctx);
-        LinearLayout.LayoutParams textParams = new LinearLayout.LayoutParams(
-                0,
-                LinearLayout.LayoutParams.WRAP_CONTENT,
-                1.0f
-        );
-        textView.setLayoutParams(textParams);
+        textView.setLayoutParams(new LinearLayout.LayoutParams(0, LinearLayout.LayoutParams.WRAP_CONTENT, 1f));
         textView.setText(childName);
         textView.setTextSize(18);
 
-        // Create ImageView for delete icon
+        // Delete icon
         ImageView imageView = new ImageView(ctx);
-        LinearLayout.LayoutParams imgParams = new LinearLayout.LayoutParams(
-                dpToPx(24),
-                dpToPx(24)
-        );
+        LinearLayout.LayoutParams imgParams = new LinearLayout.LayoutParams(dpToPx(24), dpToPx(24));
         imgParams.setMarginEnd(dpToPx(12));
         imageView.setLayoutParams(imgParams);
         imageView.setImageResource(android.R.drawable.ic_delete);
 
-        // Add views to layout
         innerLayout.addView(textView);
         innerLayout.addView(imageView);
-
-        // Add inner layout to card view
         cardView.addView(innerLayout);
 
-        // Set click listener for the card
-        cardView.setOnClickListener(v -> {
-            if (!isAdded()) return;
-            Toast.makeText(ctx, "Clicked: " + childName, Toast.LENGTH_SHORT).show();
-        });
+        // Card click (show child details, future use)
+        cardView.setOnClickListener(v ->
+                Toast.makeText(ctx, "Clicked: " + childName, Toast.LENGTH_SHORT).show()
+        );
 
-        // Set click listener for delete icon
+        // Delete logic
         imageView.setOnClickListener(v -> {
             if (!isAdded()) return;
-            // Simple confirmation dialog before deleting
             new AlertDialog.Builder(requireContext())
                     .setTitle("Remove Child")
                     .setMessage("Are you sure you want to unlink " + childName + "?")
                     .setPositiveButton("Yes", (d, w) -> {
-                        // Remove the child from parent's children list
                         if (childrenRef != null) {
                             childrenRef.child(childKey).removeValue();
                             Toast.makeText(ctx, "Child removed", Toast.LENGTH_SHORT).show();
+                            loadChildrenFromDatabase(); // Refresh view
                         }
                     })
                     .setNegativeButton("No", null)
                     .show();
         });
 
-        // Add card to container
-        // Make sure we don't add the same view twice:
-        if (cardView.getParent() == null) {
+        if (cardView.getParent() == null)
             contentContainer.addView(cardView);
-        }
     }
 
-
+    /** Converts dp to pixels for consistent UI spacing. */
     private int dpToPx(int dp) {
         float density = getResources().getDisplayMetrics().density;
         return Math.round(dp * density);
     }
 
-
+    // ───────────────────────────────
+    // MENU HANDLING
+    // ───────────────────────────────
     @Override
     public void onCreateOptionsMenu(@NonNull Menu menu, @NonNull MenuInflater inflater) {
-        menu.clear();
-        inflater.inflate(R.menu.menu, menu);
-
-        // Tint icons white
-        for (int i = 0; i < menu.size(); i++) {
-            MenuItem item = menu.getItem(i);
-            if (item.getIcon() != null) {
-                item.getIcon().setTint(getResources().getColor(android.R.color.white));
-            }
-        }
-
+        MenuHelper.setupMenu(menu, inflater, requireContext());
         super.onCreateOptionsMenu(menu, inflater);
     }
 
     @Override
     public boolean onOptionsItemSelected(@NonNull MenuItem item) {
-        int id = item.getItemId();
-
-        if (id == R.id.action_notifications) {
-            // Navigate to notifications fragment
-            loadFragment(new HomeFragment());
-            return true;
-        } else if (id == R.id.action_settings) {
-            // Handle settings click
+        if (MenuHelper.handleMenuSelection(item, this)) {
             return true;
         }
-
         return super.onOptionsItemSelected(item);
     }
 
+    // ───────────────────────────────
+    // FRAGMENT NAVIGATION
+    // ───────────────────────────────
+    /**
+     * Utility method for fragment navigation inside the same activity.
+     */
     private void loadFragment(Fragment fragment) {
         FragmentTransaction transaction = getParentFragmentManager().beginTransaction();
         transaction.replace(R.id.fragment_container, fragment);
