@@ -12,16 +12,26 @@
         android:supportsRtl="true"
         android:theme="@style/Theme.SmartAir"
         tools:targetApi="31">
-
+        <activity
+            android:name=".password_recover"
+            android:exported="false" />
+        <activity
+            android:name=".create_account"
+            android:exported="false" />
         <activity
             android:name=".MainActivity"
-            android:exported="true">
+            android:exported="true"
+            android:theme="@style/Theme.SmartAir">
             <intent-filter>
                 <action android:name="android.intent.action.MAIN" />
 
                 <category android:name="android.intent.category.LAUNCHER" />
             </intent-filter>
         </activity>
+        <activity
+            android:name=".LoginPage"
+            android:exported="false"
+            android:theme="@style/Theme.SmartAir" />
     </application>
 
 </manifest>

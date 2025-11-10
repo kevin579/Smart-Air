@@ -1,8 +1,8 @@
 <?xml version="1.0" encoding="utf-8"?>
 <RelativeLayout xmlns:android="http://schemas.android.com/apk/res/android"
-    android:id="@+id/main"
     android:layout_width="match_parent"
     android:layout_height="match_parent"
+    android:id="@+id/main"
     xmlns:app="http://schemas.android.com/apk/res-auto"
     android:background="@drawable/login_background"
     android:gravity="center"
@@ -14,31 +14,21 @@
         android:gravity="center"
         android:orientation="vertical">
 
-        <com.google.android.material.imageview.ShapeableImageView
-            android:layout_width="140dp"
-            android:layout_height="140dp"
-            android:src="@drawable/app_icon"
-            android:scaleType="centerCrop"
-            app:shapeAppearanceOverlay="@style/CircleImageStyle"
-            android:elevation="20dp"
-            />
-
         <TextView
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
             android:textSize="30sp"
             android:layout_marginTop="12dp"
             android:textColor="@color/white"
-            android:text="welcome to Smart Air!"
+            android:text="welcome new user!"
             android:textStyle="bold"
             android:gravity="center"/>
-
 
         <EditText
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
             android:layout_marginTop="32dp"
-            android:hint="Username"
+            android:hint="Email"
             android:textColor="@color/white"
             android:textColorHint="@color/white"
             android:textSize="20sp"
@@ -60,16 +50,6 @@
             android:inputType="textPassword"
             android:id="@+id/password_input"/>
 
-        <androidx.appcompat.widget.AppCompatButton
-            android:id="@+id/login_button"
-            android:layout_width="match_parent"
-            android:layout_height="wrap_content"
-            android:layout_marginTop="16dp"
-            android:background="@drawable/white_button_effect"
-            android:padding="18dp"
-            android:text="Login"
-            android:textColor="#2196F3"
-            android:textSize="20sp" />
 
         <androidx.appcompat.widget.AppCompatButton
             android:id="@+id/new_account_button"
@@ -78,22 +58,9 @@
             android:layout_marginTop="32dp"
             android:background="@drawable/grey_button_effect"
             android:padding="18dp"
-            android:text="Create an Account"
+            android:text="Confirm information"
             android:textColor="#000000"
             android:textSize="20sp" />
-
-        <TextView
-            android:id="@+id/forgot_password"
-            android:layout_width="match_parent"
-            android:layout_height="wrap_content"
-            android:gravity="center"
-            android:layout_marginTop="10dp"
-            android:textSize="16sp"
-            android:text="forgot password? click here"
-            android:textColor="@color/white"
-            />
-
-
     </LinearLayout>
 
 </RelativeLayout>
