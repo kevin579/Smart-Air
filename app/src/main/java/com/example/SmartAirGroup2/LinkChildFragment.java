@@ -127,15 +127,30 @@ public class LinkChildFragment extends Fragment {
                 DatabaseReference parentChildrenRef = FirebaseDatabase.getInstance()
                         .getReference("categories/users/parents/" + parentUname + "/children");
 
-                parentChildrenRef.child(uname).setValue(uname)
-                        .addOnCompleteListener(linkTask -> {
-                            if (linkTask.isSuccessful()) {
-                                Toast.makeText(getContext(), "Child linked successfully", Toast.LENGTH_SHORT).show();
-                                requireActivity().getSupportFragmentManager().popBackStack();
-                            } else {
-                                Toast.makeText(getContext(), "Failed to link child", Toast.LENGTH_SHORT).show();
-                            }
-                        });
+                parentChildrenRef.child(uname).addListenerForSingleValueEvent(new ValueEventListener() {
+                    @Override
+                    public void onDataChange(@NonNull DataSnapshot existingChildSnapshot) {
+                        if (existingChildSnapshot.exists()) {
+                            Toast.makeText(getContext(), "This child is already linked", Toast.LENGTH_SHORT).show();
+                        } else {
+                            // 👇 Only link if not already linked
+                            parentChildrenRef.child(uname).setValue(uname)
+                                    .addOnCompleteListener(linkTask -> {
+                                        if (linkTask.isSuccessful()) {
+                                            Toast.makeText(getContext(), "Child linked successfully", Toast.LENGTH_SHORT).show();
+                                            requireActivity().getSupportFragmentManager().popBackStack();
+                                        } else {
+                                            Toast.makeText(getContext(), "Failed to link child", Toast.LENGTH_SHORT).show();
+                                        }
+                                    });
+                        }
+                    }
+
+                    @Override
+                    public void onCancelled(@NonNull DatabaseError error) {
+                        Toast.makeText(getContext(), "Database error: " + error.getMessage(), Toast.LENGTH_SHORT).show();
+                    }
+                });
             }
 
             @Override
