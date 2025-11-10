@@ -1,60 +1,47 @@
 package com.example.SmartAirGroup2;
 
-import android.content.Intent;
 import android.os.Bundle;
-import android.view.View;
-import android.widget.Button;
-import android.widget.EditText;
-import android.widget.Toast;
 
 import androidx.appcompat.app.AppCompatActivity;
+import androidx.fragment.app.Fragment;
+import androidx.fragment.app.FragmentTransaction;
 
+import com.google.firebase.database.DatabaseReference;
 import com.google.firebase.database.FirebaseDatabase;
 
 public class MainActivity extends AppCompatActivity {
 
-    private EditText username;
-    private EditText password;
-    private Button loginButton;
-
-    private Button createButton;
-
-    private FirebaseDatabase db;
+    FirebaseDatabase db;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_main);
 
-        username = findViewById(R.id.username_input);
-        password = findViewById(R.id.password_input);
-        loginButton = findViewById(R.id.login_button);
-        createButton = findViewById(R.id.new_account_button);
         db = FirebaseDatabase.getInstance("https://smart-air-group2-default-rtdb.firebaseio.com/");
+        DatabaseReference myRef = db.getReference("testDemo");
 
-        loginButton.setOnClickListener(new View.OnClickListener() {
-            @Override
-            public void onClick(View view) {
-                String userInput = username.getText().toString().trim();
-                String passInput = password.getText().toString().trim();
+//        myRef.setValue("B07 Demo!");
+        myRef.child("movies").setValue("B07 Demo!");
 
-                if (userInput.equals("user") && passInput.equals("1234")) {
-                    Toast.makeText(MainActivity.this, "Login Successful!", Toast.LENGTH_SHORT).show();
-                    Intent intent = new Intent(MainActivity.this, create_account.class);
-                    startActivity(intent);
-                }
-                else {
-                    Toast.makeText(MainActivity.this, "Login Failed!", Toast.LENGTH_SHORT).show();
-                }
-            }
-        });
+        if (savedInstanceState == null) {
+            loadFragment(new HomeFragment());
+        }
+    }
 
-        createButton.setOnClickListener(new View.OnClickListener() {
-            @Override
-            public void onClick(View view) {
-                Intent intent = new Intent(MainActivity.this, create_account.class);
-                startActivity(intent);
-            }
-        });
+    private void loadFragment(Fragment fragment) {
+        FragmentTransaction transaction = getSupportFragmentManager().beginTransaction();
+        transaction.replace(R.id.fragment_container, fragment);
+        transaction.addToBackStack(null);
+        transaction.commit();
+    }
+
+    @Override
+    public void onBackPressed() {
+        if (getSupportFragmentManager().getBackStackEntryCount() > 1) {
+            getSupportFragmentManager().popBackStack();
+        } else {
+            super.onBackPressed();
+        }
     }
 }
