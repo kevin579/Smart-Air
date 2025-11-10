@@ -17,7 +17,7 @@ import com.example.SmartAirGroup2.auth.data.repo.FirebaseRtdbAuthRepository;
 
 public class LoginFragment extends Fragment implements LoginContract.View {
     private LoginPresenter presenter;
-    private EditText  emailLayout, passwordLayout;
+//    private EditText  emailLayout, passwordLayout;
     private EditText  emailInput, passwordInput;
     private View btnCheck;
 
@@ -29,44 +29,28 @@ public class LoginFragment extends Fragment implements LoginContract.View {
                              @Nullable Bundle savedInstanceState) {
         View v = inflater.inflate(R.layout.activity_login_page, container, false);
 
-        EditText emailInput   = v.findViewById(R.id.username_input);
-        EditText pwdInput     = v.findViewById(R.id.password_input);
-        View btnLogin         = v.findViewById(R.id.login_button);
-        View btnCreate = v.findViewById(R.id.new_account_button);
+        emailInput       = v.findViewById(R.id.username_input);
+        passwordInput    = v.findViewById(R.id.password_input);
+        View btnLogin    = v.findViewById(R.id.login_button);
+        View btnCreate   = v.findViewById(R.id.new_account_button);
 
-        // 绑定到你的 Presenter
+        AuthRepository repo = new FirebaseRtdbAuthRepository();
+        presenter = new LoginPresenter(repo);
+        presenter.attach(this);
+
         btnLogin.setOnClickListener(view -> {
             String email = emailInput.getText() == null ? "" : emailInput.getText().toString();
-            String pwd   = pwdInput.getText()   == null ? "" : pwdInput.getText().toString();
+            String pwd   = passwordInput.getText()== null ? "" : passwordInput.getText().toString();
             presenter.onLoginClicked(email, pwd);
+        });
+
+        btnCreate.setOnClickListener(view -> {
+            // TODO: switch to register page
         });
 
         return v;
     }
 
-
-    @Override public void onViewCreated(@NonNull View v, @Nullable Bundle s) {
-        super.onViewCreated(v, s);
-        emailLayout= v.findViewById(R.id.auth_email_layout);
-        emailInput  =v.findViewById(R.id.auth_email_input);
-        passwordLayout =v.findViewById(R.id.auth_pwd_layout);
-        passwordInput= v.findViewById(R.id.auth_pwd_input);
-        btnCheck = v.findViewById(R.id.auth_btn_check);
-
-        // 2) prepare Presenter
-        AuthRepository repo = new FirebaseRtdbAuthRepository();
-        presenter = new LoginPresenter(repo);
-        presenter.attach(this);
-
-        // 3) click the button → using Presenter
-        btnCheck.setOnClickListener(x -> {
-            emailLayout.setError(null);
-            String email = emailInput.getText() == null ? "" : emailInput.getText().toString();
-            String password= passwordInput.getText()  == null ? "" : passwordInput.getText().toString();
-
-            presenter.onLoginClicked(email,password);
-        });
-    }
 
     @Override
     public void onDestroyView() {
@@ -77,14 +61,14 @@ public class LoginFragment extends Fragment implements LoginContract.View {
 
     @Override
     public void showLoginFailed() {
-        emailLayout.setError("User not found or invalid password");
-        passwordLayout.setError(null);
+        if (emailInput != null)    emailInput.setError("User not found or invalid password");
+        if (passwordInput != null) passwordInput.setError("User not found or invalid password");
     }
 
     @Override
     public void showLoginSuccess() {
-        emailLayout.setError(null);
-        passwordLayout.setError(null);
+        if (emailInput != null)    emailInput.setError(null);
+        if (passwordInput != null) passwordInput.setError(null);
         Toast.makeText(getContext(), "Login success", Toast.LENGTH_SHORT).show();
     }
 }

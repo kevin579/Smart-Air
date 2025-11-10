@@ -18,14 +18,12 @@ public class MainActivity extends AppCompatActivity {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_main);
 
-        db = FirebaseDatabase.getInstance("https://smart-air-group2-default-rtdb.firebaseio.com/");
-        DatabaseReference myRef = db.getReference("testDemo");
-
-//        myRef.setValue("B07 Demo!");
-        myRef.child("movies").setValue("B07 Demo!");
-
         if (savedInstanceState == null) {
-            loadFragment(new HomeFragment());
+            getSupportFragmentManager()
+                    .beginTransaction()
+                    .replace(R.id.container,
+                            new com.example.SmartAirGroup2.auth.login.LoginFragment())
+                    .commit();
         }
     }
 
