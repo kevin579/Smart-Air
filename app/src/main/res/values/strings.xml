@@ -20,6 +20,22 @@
     <string name="next">Next</string>
     <string name="previous">Previous</string>
 
+    <!--strings used for activity_create -->
+    <string name="greetings">Welcome, new user!</string>
+    <string name="enterEmail">Email</string>
+    <string name="enterPassword">Enter Password</string>
+    <string name="enterUsername">Enter Username</string>
+    <string name="confirmInfo">Confirm</string>
+    <!--used for drop down menu for role selection-->
+    <string-array name="roles_array">
+        <item>Select a role</item>
+        <item>Parent</item>
+        <item>Provider</item>
+        <item>Child</item>
+    </string-array>
+
+
+
     <string name="lorem_ipsum">
         Lorem ipsum dolor sit amet, consectetur adipiscing elit. Nam in scelerisque sem. Mauris
         volutpat, dolor id interdum ullamcorper, risus dolor egestas lectus, sit amet mattis purus

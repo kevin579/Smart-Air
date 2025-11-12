@@ -68,9 +68,6 @@ public class FirebaseRtdbAuthRepository implements AuthRepository {
     }
 
 
-
-
-
     private static String getString(DataSnapshot node, String path) {
         DataSnapshot s = node;
         for (String p : path.split("/")) s = s.child(p);

@@ -32,11 +32,17 @@
             android:textStyle="bold"
             android:gravity="center"/>
 
+        <Spinner
+            android:id="@+id/role_spinner"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:layout_marginTop="32dp"
+            android:background="@drawable/rounded_corners" />
 
         <EditText
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
-            android:layout_marginTop="32dp"
+            android:layout_marginTop="16dp"
             android:hint="Username"
             android:textColor="@color/white"
             android:textColorHint="@color/white"
@@ -80,6 +86,16 @@
             android:text="Create an Account"
             android:textColor="#000000"
             android:textSize="20sp" />
+
+        <Button
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:backgroundTint="#00000000"
+            android:text="recover your password"
+            android:textSize="16sp"
+            android:id="@+id/password_recover"
+            />
+
     </LinearLayout>
 
 </RelativeLayout>
