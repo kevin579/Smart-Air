@@ -2,6 +2,7 @@ package com.example.SmartAirGroup2;
 
 import android.os.Bundle;
 import android.view.WindowManager;
+import android.widget.Toast;
 
 import androidx.appcompat.app.AppCompatActivity;
 import androidx.fragment.app.Fragment;
@@ -23,13 +24,23 @@ public class MainActivity extends AppCompatActivity {
         setContentView(R.layout.activity_main);
 
         db = FirebaseDatabase.getInstance("https://smart-air-group2-default-rtdb.firebaseio.com/");
-        DatabaseReference myRef = db.getReference("testDemo");
+        DatabaseReference myRef = db.getReference("categories/users/parents");
 
 //        myRef.setValue("B07 Demo!");
-        myRef.child("movies").setValue("B07 Demo!");
+//        Parent p = new Parent("kevin579","kevin","likevi579@gmail.com","12345678","parent");
+//        p.addChild("Randy");
+//        p.addChild("Andy");
+//        myRef.child(p.getUname()).setValue(p).addOnCompleteListener(task -> {
+//            if (task.isSuccessful()) {
+//                Toast.makeText(this, "Item added", Toast.LENGTH_SHORT).show();
+//
+//            } else {
+//                Toast.makeText(this, "Failed to add item", Toast.LENGTH_SHORT).show();
+//            }
+//        });
 
         if (savedInstanceState == null) {
-            loadFragment(new HomeFragment());
+            loadFragment(new ParentDashboardFragment());
         }
     }
 
