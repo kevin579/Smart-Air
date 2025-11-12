@@ -2,6 +2,9 @@ package com.example.SmartAirGroup2;
 
 import android.annotation.SuppressLint;
 import android.content.Context;
+import android.graphics.Color;
+import android.graphics.PorterDuff;
+import android.graphics.Typeface;
 import android.graphics.drawable.Drawable;
 import android.os.Bundle;
 import android.util.TypedValue;
@@ -63,72 +66,75 @@ import com.google.firebase.database.ValueEventListener;
  * Date: [Date]
  */
 
-public class ParentDashboardFragment extends Fragment {
+public class InventoryFragment extends Fragment {
 
     // ───────────────────────────────
     // UI COMPONENTS
     // ───────────────────────────────
     private Toolbar toolbar;
-    private CardView cardAddChild;
+    private CardView cardAddMediine;
     private LinearLayout contentContainer;
 
     // ───────────────────────────────
     // FIREBASE REFERENCES
     // ───────────────────────────────
     private FirebaseDatabase db;
-    private DatabaseReference childrenRef;
+    private DatabaseReference medicineRef;
 
     // Hardcoded parent username for demonstration
     // (should later be replaced by logged-in parent’s username)
-    private String uname = "kevin579";
+    private String name, uname, medicineName;
 
     // ───────────────────────────────
     // LIFECYCLE METHODS
     // ───────────────────────────────
+
+    @Override
+    public void onCreate(Bundle savedInstanceState) {
+        super.onCreate(savedInstanceState);
+
+        // Retrieve parent username passed as argument
+        if (getArguments() != null) {
+            name = getArguments().getString("childName");
+            uname = getArguments().getString("childUname");
+            medicineName = getArguments().getString("medicineName");
+        }
+    }
+
     @Nullable
     @Override
     public View onCreateView(@NonNull LayoutInflater inflater, @Nullable ViewGroup container, @Nullable Bundle savedInstanceState) {
-        View view = inflater.inflate(R.layout.activity_parent_dashboard, container, false);
+        View view = inflater.inflate(R.layout.activity_child_medicine, container, false);
 
         // Toolbar setup
         toolbar = view.findViewById(R.id.toolbar);
         ((AppCompatActivity) getActivity()).setSupportActionBar(toolbar);
         setHasOptionsMenu(true);
+        toolbar.setTitle(name + "'s Medicine Inventory");
+        // Handle back navigation (up button)
+        ((AppCompatActivity) getActivity()).getSupportActionBar().setDisplayHomeAsUpEnabled(true);
+        toolbar.setNavigationOnClickListener(v -> getParentFragmentManager().popBackStack());
 
         // UI references
         contentContainer = view.findViewById(R.id.contentContainer);
-        cardAddChild = view.findViewById(R.id.cardAddChild);
+        cardAddMediine = view.findViewById(R.id.cardAddMediine);
 
         // Initialize Firebase references
         db = FirebaseDatabase.getInstance("https://smart-air-group2-default-rtdb.firebaseio.com/");
-        childrenRef = db.getReference("categories/users/parents/" + uname + "/children");
+        medicineRef = db.getReference("categories/users/children/" + uname + "/inventory");
 
         // Load all children into the dashboard
-        loadChildrenFromDatabase();
+        loadMedicineFromDatabase();
 
         // Handle "Add Child" button logic
-        cardAddChild.setOnClickListener(v -> {
-            new AlertDialog.Builder(requireContext())
-                    .setTitle("Confirm Action")
-                    .setMessage("Does your child already have an account?")
-                    .setPositiveButton("Yes", (dialog, which) -> {
-                        // Navigate to link-existing-child fragment
-                        LinkChildFragment linkFrag = new LinkChildFragment();
-                        Bundle args = new Bundle();
-                        args.putString("parentUname", uname);
-                        linkFrag.setArguments(args);
-                        loadFragment(linkFrag);
-                    })
-                    .setNegativeButton("No", (dialog, which) -> {
-                        // Navigate to create-new-child fragment
-                        AddChildFragment addFrag = new AddChildFragment();
-                        Bundle args = new Bundle();
-                        args.putString("parentUname", uname);
-                        addFrag.setArguments(args);
-                        loadFragment(addFrag);
-                        dialog.dismiss();
-                    })
-                    .show();
+        cardAddMediine.setOnClickListener(v -> {
+
+            AddInventoryFragment addFrag = new AddInventoryFragment();
+            Bundle args = new Bundle();
+            args.putString("childUname", uname);
+            addFrag.setArguments(args);
+            loadFragment(addFrag);
+
         });
 
         return view;
@@ -142,68 +148,37 @@ public class ParentDashboardFragment extends Fragment {
      * Each child entry creates a CardView dynamically inside `contentContainer`.
      * If no children exist, only the "Add Child" card is displayed.
      */
-    private void loadChildrenFromDatabase() {
-        childrenRef.addListenerForSingleValueEvent(new ValueEventListener() {
+    private void loadMedicineFromDatabase() {
+        medicineRef.addListenerForSingleValueEvent(new ValueEventListener() {
             @Override
             public void onDataChange(@NonNull DataSnapshot snapshot) {
                 if (contentContainer == null || getContext() == null) return;
 
                 contentContainer.removeAllViews();
-                int totalChildren = (int) snapshot.getChildrenCount();
 
-                if (totalChildren == 0) {
-                    contentContainer.addView(cardAddChild);
-                    Toast.makeText(getContext(), "No children linked yet", Toast.LENGTH_SHORT).show();
+                if (!snapshot.exists()) {
+                    Toast.makeText(getContext(), "No medicine found", Toast.LENGTH_SHORT).show();
+                    contentContainer.addView(cardAddMediine);
                     return;
                 }
 
-                final int[] loadedChildren = {0};
+                for (DataSnapshot medSnapshot : snapshot.getChildren()) {
+                    String medicineName = medSnapshot.getKey();
 
-                for (DataSnapshot childSnapshot : snapshot.getChildren()) {
-                    String childUname = childSnapshot.getValue(String.class);
-                    if (childUname == null || childUname.isEmpty()) {
-                        loadedChildren[0]++;
-                        if (loadedChildren[0] == totalChildren)
-                            contentContainer.addView(cardAddChild);
-                        continue;
-                    }
+                    int currentAmount = medSnapshot.child("currentAmount").getValue(int.class);
+                    int prescriptionAmount = medSnapshot.child("prescriptionAmount").getValue(int.class);
+                    String purchaseDate = medSnapshot.child("purchaseDate").getValue(String.class);
+                    String expireDate = medSnapshot.child("expireDate").getValue(String.class);
 
-                    DatabaseReference childRef = FirebaseDatabase.getInstance()
-                            .getReference("categories/users/children")
-                            .child(childUname);
-
-                    // Retrieve child details
-                    childRef.addListenerForSingleValueEvent(new ValueEventListener() {
-                        @Override
-                        public void onDataChange(@NonNull DataSnapshot childData) {
-                            if (childData.exists()) {
-                                User child = childData.getValue(User.class);
-                                if (child != null) {
-                                    String displayName = (child.getName() != null && !child.getName().isEmpty())
-                                            ? child.getName()
-                                            : child.getUname();
-                                    addChildCard(displayName, child.getUname());
-                                }
-                            }
-
-                            loadedChildren[0]++;
-                            if (loadedChildren[0] == totalChildren)
-                                contentContainer.addView(cardAddChild);
-                        }
-
-                        @Override
-                        public void onCancelled(@NonNull DatabaseError error) {
-                            loadedChildren[0]++;
-                            if (loadedChildren[0] == totalChildren)
-                                contentContainer.addView(cardAddChild);
-                        }
-                    });
+                    // You can use this info to dynamically create and display a card
+                    addMedicineCard(medicineName, currentAmount, prescriptionAmount, purchaseDate, expireDate);
                 }
+                contentContainer.addView(cardAddMediine);
             }
 
             @Override
             public void onCancelled(@NonNull DatabaseError error) {
-                Toast.makeText(getContext(), "Failed to load children: " + error.getMessage(), Toast.LENGTH_SHORT).show();
+                Toast.makeText(getContext(), "Failed to load medicines: " + error.getMessage(), Toast.LENGTH_SHORT).show();
             }
         });
     }
@@ -216,7 +191,7 @@ public class ParentDashboardFragment extends Fragment {
      * Displays child name and includes a delete icon to unlink the child.
      */
     @SuppressLint("ResourceType")
-    private void addChildCard(String childName, String childKey) {
+    private void addMedicineCard(String name, int current, int total, String purchaseDate, String expireDate) {
         if (!isAdded() || getContext() == null) return;
         Context ctx = requireContext();
 
@@ -242,61 +217,90 @@ public class ParentDashboardFragment extends Fragment {
         }
 
         // Inner layout for content
-        LinearLayout innerLayout = new LinearLayout(ctx);
-        innerLayout.setOrientation(LinearLayout.HORIZONTAL);
-        innerLayout.setLayoutParams(new FrameLayout.LayoutParams(
+        LinearLayout outerLayout = new LinearLayout(ctx);
+        outerLayout.setOrientation(LinearLayout.VERTICAL);
+        outerLayout.setLayoutParams(new FrameLayout.LayoutParams(
                 FrameLayout.LayoutParams.MATCH_PARENT,
                 FrameLayout.LayoutParams.WRAP_CONTENT
         ));
-        innerLayout.setPadding(dpToPx(16), dpToPx(16), dpToPx(16), dpToPx(16));
-        innerLayout.setGravity(Gravity.CENTER_VERTICAL);
+        outerLayout.setPadding(dpToPx(16), dpToPx(16), dpToPx(16), dpToPx(16));
 
-        // Child name text
-        TextView textView = new TextView(ctx);
-        textView.setLayoutParams(new LinearLayout.LayoutParams(0, LinearLayout.LayoutParams.WRAP_CONTENT, 1f));
-        textView.setText(childName);
-        textView.setTextSize(18);
+// ─────────────── Top row: Name + arrow ───────────────
+        LinearLayout topRow = new LinearLayout(ctx);
+        topRow.setOrientation(LinearLayout.HORIZONTAL);
+        topRow.setLayoutParams(new LinearLayout.LayoutParams(
+                LinearLayout.LayoutParams.MATCH_PARENT,
+                LinearLayout.LayoutParams.WRAP_CONTENT
+        ));
+        topRow.setGravity(Gravity.CENTER_VERTICAL);
 
-        // Delete icon
-        ImageView imageView = new ImageView(ctx);
-        LinearLayout.LayoutParams imgParams = new LinearLayout.LayoutParams(dpToPx(24), dpToPx(24));
-        imgParams.setMarginEnd(dpToPx(12));
-        imageView.setLayoutParams(imgParams);
-        imageView.setImageResource(android.R.drawable.ic_delete);
+// Child name (large)
+        TextView nameView = new TextView(ctx);
+        nameView.setLayoutParams(new LinearLayout.LayoutParams(0, LinearLayout.LayoutParams.WRAP_CONTENT, 1f));
+        nameView.setText(name);
+        nameView.setTextSize(20);
+        nameView.setTypeface(null, Typeface.BOLD);
+        nameView.setTextColor(Color.BLACK);
 
-        innerLayout.addView(textView);
-        innerLayout.addView(imageView);
-        cardView.addView(innerLayout);
+// Arrow icon
+        ImageView arrowView = new ImageView(ctx);
+        LinearLayout.LayoutParams arrowParams = new LinearLayout.LayoutParams(dpToPx(24), dpToPx(24));
+        arrowView.setLayoutParams(arrowParams);
+        arrowView.setImageResource(R.drawable.ic_arrow_right);
+        arrowView.setColorFilter(ContextCompat.getColor(ctx, R.color.gray), PorterDuff.Mode.SRC_IN);
 
-        // Card click (show child details, future use)
+        topRow.addView(nameView);
+        topRow.addView(arrowView);
+
+        String text;
+
+// ─────────────── Second row: Dates ───────────────
+        TextView buyDateView = new TextView(ctx);
+        text = "Purchased: " + purchaseDate;
+        buyDateView.setText(text);
+        buyDateView.setTextSize(14);
+        buyDateView.setTextColor(Color.DKGRAY);
+        buyDateView.setPadding(0, dpToPx(4), 0, 0);
+
+
+// ─────────────── Third row: Dates ───────────────
+        TextView expDateView = new TextView(ctx);
+        text = "Expire: " + expireDate;
+        expDateView.setText(text);
+        expDateView.setTextSize(14);
+        expDateView.setTextColor(Color.DKGRAY);
+        expDateView.setPadding(0, dpToPx(4), 0, 0);
+
+// ─────────────── Fourth row: Amounts ───────────────
+        TextView amountView = new TextView(ctx);
+        text = "Amount: " + current + " / " + total;
+        amountView.setText(text);
+        amountView.setTextSize(14);
+        amountView.setTextColor(Color.DKGRAY);
+        amountView.setPadding(0, dpToPx(2), 0, 0);
+
+// ─────────────── Combine all ───────────────
+        outerLayout.addView(topRow);
+        outerLayout.addView(buyDateView);
+        outerLayout.addView(expDateView);
+        outerLayout.addView(amountView);
+
+        cardView.addView(outerLayout);
+
+
+//         Card click (show child details, future use)
         cardView.setOnClickListener(v ->{
                     Bundle args = new Bundle();
-                    args.putString("childUname", childKey);
-                    args.putString("childName", childName);
-//                    Toast.makeText(ctx, "Clicked: " + childName, Toast.LENGTH_SHORT).show();
-                    ChildDashboardFragment childFrag = new ChildDashboardFragment();
-                    childFrag.setArguments(args);
-                    loadFragment(childFrag);
+                    args.putString("childUname", uname);
+                    args.putString("medicineName", name);
+                    AddInventoryFragment addInvFrag = new AddInventoryFragment();
+                    addInvFrag.setArguments(args);
+                    loadFragment(addInvFrag);
                 }
 
         );
 
-        // Delete logic
-        imageView.setOnClickListener(v -> {
-            if (!isAdded()) return;
-            new AlertDialog.Builder(requireContext())
-                    .setTitle("Remove Child")
-                    .setMessage("Are you sure you want to unlink " + childName + "?")
-                    .setPositiveButton("Yes", (d, w) -> {
-                        if (childrenRef != null) {
-                            childrenRef.child(childKey).removeValue();
-                            Toast.makeText(ctx, "Child removed", Toast.LENGTH_SHORT).show();
-                            loadChildrenFromDatabase(); // Refresh view
-                        }
-                    })
-                    .setNegativeButton("No", null)
-                    .show();
-        });
+
 
         if (cardView.getParent() == null)
             contentContainer.addView(cardView);
