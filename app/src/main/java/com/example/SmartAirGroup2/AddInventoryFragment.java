@@ -97,15 +97,19 @@ public class AddInventoryFragment extends Fragment {
         View view;
         if (medicine!=null){
             view = inflater.inflate(R.layout.activity_update_medicine_fragment, container, false);
+            toolbar = view.findViewById(R.id.toolbar);
+            ((AppCompatActivity) requireActivity()).setSupportActionBar(toolbar);
+            toolbar.setTitle("Update Medicine");
         } else{
             view = inflater.inflate(R.layout.activity_add_medicine_fragment, container, false);
+            toolbar = view.findViewById(R.id.toolbar);
+            ((AppCompatActivity) requireActivity()).setSupportActionBar(toolbar);
+            toolbar.setTitle("Add Medicine");
         }
 
 
         // Initialize toolbar
-        toolbar = view.findViewById(R.id.toolbar);
-        ((AppCompatActivity) requireActivity()).setSupportActionBar(toolbar);
-        toolbar.setTitle("Add Medicine");
+
 
         // Handle back navigation (up button)
         ((AppCompatActivity) getActivity()).getSupportActionBar().setDisplayHomeAsUpEnabled(true);

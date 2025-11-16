@@ -34,6 +34,9 @@ import com.google.firebase.database.DatabaseReference;
 import com.google.firebase.database.FirebaseDatabase;
 import com.google.firebase.database.ValueEventListener;
 
+import java.util.ArrayList;
+import java.util.List;
+
 /**
  * ParentDashboardFragment
  * -----------------------
@@ -158,12 +161,14 @@ public class ParentDashboardFragment extends Fragment {
                 }
 
                 final int[] loadedChildren = {0};
+                final int[] completedStatusLoads = {0}; // Track status loads completion
 
                 for (DataSnapshot childSnapshot : snapshot.getChildren()) {
                     String childUname = childSnapshot.getValue(String.class);
                     if (childUname == null || childUname.isEmpty()) {
                         loadedChildren[0]++;
-                        if (loadedChildren[0] == totalChildren)
+                        completedStatusLoads[0]++;
+                        if (completedStatusLoads[0] == totalChildren)
                             contentContainer.addView(cardAddChild);
                         continue;
                     }
@@ -179,22 +184,70 @@ public class ParentDashboardFragment extends Fragment {
                             if (childData.exists()) {
                                 User child = childData.getValue(User.class);
                                 if (child != null) {
+
                                     String displayName = (child.getName() != null && !child.getName().isEmpty())
                                             ? child.getName()
                                             : child.getUname();
-                                    addChildCard(displayName, child.getUname());
+
+                                    DatabaseReference statusRef = FirebaseDatabase.getInstance()
+                                            .getReference("categories/users/children")
+                                            .child(child.getUname())
+                                            .child("status");
+
+                                    statusRef.addListenerForSingleValueEvent(new ValueEventListener() {
+                                        @Override
+                                        public void onDataChange(@NonNull DataSnapshot statusSnap) {
+                                            List<Integer> statusList = new ArrayList<>();
+
+                                            if (statusSnap.exists()) {
+                                                for (DataSnapshot s : statusSnap.getChildren()) {
+                                                    try {
+                                                        Integer val = s.getValue(Integer.class);
+                                                        if (val != null) statusList.add(val);
+                                                    } catch (Exception ignored) {}
+                                                }
+                                            }
+
+                                            addChildCard(displayName, child.getUname(), statusList);
+
+                                            // Add button after all status loads complete
+                                            completedStatusLoads[0]++;
+                                            if (completedStatusLoads[0] == totalChildren)
+                                                contentContainer.addView(cardAddChild);
+                                        }
+
+                                        @Override
+                                        public void onCancelled(@NonNull DatabaseError error) {
+                                            // Still show card with default color
+                                            addChildCard(displayName, child.getUname(), new ArrayList<>());
+
+                                            // Add button after all status loads complete
+                                            completedStatusLoads[0]++;
+                                            if (completedStatusLoads[0] == totalChildren)
+                                                contentContainer.addView(cardAddChild);
+                                        }
+                                    });
+                                } else {
+                                    // Child data null
+                                    completedStatusLoads[0]++;
+                                    if (completedStatusLoads[0] == totalChildren)
+                                        contentContainer.addView(cardAddChild);
                                 }
+                            } else {
+                                // Child doesn't exist
+                                completedStatusLoads[0]++;
+                                if (completedStatusLoads[0] == totalChildren)
+                                    contentContainer.addView(cardAddChild);
                             }
 
                             loadedChildren[0]++;
-                            if (loadedChildren[0] == totalChildren)
-                                contentContainer.addView(cardAddChild);
                         }
 
                         @Override
                         public void onCancelled(@NonNull DatabaseError error) {
                             loadedChildren[0]++;
-                            if (loadedChildren[0] == totalChildren)
+                            completedStatusLoads[0]++;
+                            if (completedStatusLoads[0] == totalChildren)
                                 contentContainer.addView(cardAddChild);
                         }
                     });
@@ -208,6 +261,8 @@ public class ParentDashboardFragment extends Fragment {
         });
     }
 
+
+
     // ───────────────────────────────
     // UI CONSTRUCTION HELPERS
     // ───────────────────────────────
@@ -216,7 +271,7 @@ public class ParentDashboardFragment extends Fragment {
      * Displays child name and includes a delete icon to unlink the child.
      */
     @SuppressLint("ResourceType")
-    private void addChildCard(String childName, String childKey) {
+    private void addChildCard(String childName, String childKey, List<Integer> statusList) {
         if (!isAdded() || getContext() == null) return;
         Context ctx = requireContext();
 
@@ -228,7 +283,14 @@ public class ParentDashboardFragment extends Fragment {
         );
         cardParams.setMargins(0, 0, 0, dpToPx(16));
         cardView.setLayoutParams(cardParams);
-        cardView.setCardBackgroundColor(0xFFC8E6C9);
+//        cardView.setCardBackgroundColor(0xFFC8E6C9);
+        if (statusList.contains(2)) {
+            cardView.setCardBackgroundColor(ContextCompat.getColor(getContext(), R.color.alert));
+        } else if (statusList.contains(1)) {
+            cardView.setCardBackgroundColor(ContextCompat.getColor(getContext(), R.color.alert));
+        } else {
+            cardView.setCardBackgroundColor(ContextCompat.getColor(getContext(), R.color.good));
+        }
         cardView.setRadius(dpToPx(8));
         cardView.setCardElevation(0);
         cardView.setClickable(true);

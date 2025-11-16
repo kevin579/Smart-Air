@@ -29,7 +29,7 @@
             android:orientation="vertical">
 
             <androidx.cardview.widget.CardView
-                android:id="@+id/cardAddMedicine"
+                android:id="@+id/cardPB"
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"
                 android:layout_marginBottom="16dp"
@@ -45,21 +45,61 @@
                     android:padding="16dp">
 
 
-                    <ImageView
-                        android:layout_width="24dp"
-                        android:layout_height="24dp"
-                        android:layout_marginEnd="8dp"
-                        android:src="@android:drawable/ic_input_add" />
-
                     <TextView
+                        android:id="@+id/textPB"
                         android:layout_width="wrap_content"
                         android:layout_height="wrap_content"
-                        android:text="Add a Medicine"
+                        android:text="Personal Best"
                         android:textSize="18sp" />
 
                 </LinearLayout>
-
             </androidx.cardview.widget.CardView>
+
+            <androidx.cardview.widget.CardView
+                android:id="@+id/cardAveragePEF"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:layout_marginBottom="16dp"
+                app:cardBackgroundColor="#91dbed"
+                app:cardCornerRadius="8dp"
+                app:cardElevation="0dp">
+
+                <LinearLayout
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:gravity="center"
+                    android:orientation="horizontal"
+                    android:padding="16dp">
+
+
+                    <TextView
+                        android:id="@+id/textAveragePEF"
+                        android:layout_width="wrap_content"
+                        android:layout_height="wrap_content"
+                        android:text="Average Daily PEF"
+                        android:textSize="18sp" />
+
+                </LinearLayout>
+            </androidx.cardview.widget.CardView>
+
+            <EditText
+                android:id="@+id/editTextPB"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:hint="Personal Best"
+                app:layout_constraintEnd_toEndOf="parent"
+                app:layout_constraintStart_toStartOf="parent"
+                app:layout_constraintTop_toTopOf="parent" />
+
+            <Button
+                android:id="@+id/buttonUpdate"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:backgroundTint="#1565C0"
+                android:text="Update"
+                app:layout_constraintEnd_toEndOf="parent"
+                app:layout_constraintStart_toStartOf="parent"
+                app:layout_constraintTop_toBottomOf="@+id/spinnerCategory" />
 
 
 

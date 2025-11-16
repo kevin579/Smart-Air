@@ -7,6 +7,7 @@ import android.graphics.PorterDuff;
 import android.graphics.Typeface;
 import android.graphics.drawable.Drawable;
 import android.os.Bundle;
+import android.util.Log;
 import android.util.TypedValue;
 import android.view.Gravity;
 import android.view.LayoutInflater;
@@ -36,6 +37,13 @@ import com.google.firebase.database.DatabaseError;
 import com.google.firebase.database.DatabaseReference;
 import com.google.firebase.database.FirebaseDatabase;
 import com.google.firebase.database.ValueEventListener;
+
+import java.text.SimpleDateFormat;
+import java.util.ArrayList;
+import java.util.Calendar;
+import java.util.Date;
+import java.util.List;
+import java.util.Locale;
 
 /**
  * ParentDashboardFragment
@@ -72,7 +80,7 @@ public class InventoryFragment extends Fragment {
     // UI COMPONENTS
     // ───────────────────────────────
     private Toolbar toolbar;
-    private CardView cardAddMediine;
+    private CardView cardAddMedicine;
     private LinearLayout contentContainer;
 
     // ───────────────────────────────
@@ -117,7 +125,7 @@ public class InventoryFragment extends Fragment {
 
         // UI references
         contentContainer = view.findViewById(R.id.contentContainer);
-        cardAddMediine = view.findViewById(R.id.cardAddMediine);
+        cardAddMedicine = view.findViewById(R.id.cardAddMedicine);
 
         // Initialize Firebase references
         db = FirebaseDatabase.getInstance("https://smart-air-group2-default-rtdb.firebaseio.com/");
@@ -127,7 +135,7 @@ public class InventoryFragment extends Fragment {
         loadMedicineFromDatabase();
 
         // Handle "Add Child" button logic
-        cardAddMediine.setOnClickListener(v -> {
+        cardAddMedicine.setOnClickListener(v -> {
 
             AddInventoryFragment addFrag = new AddInventoryFragment();
             Bundle args = new Bundle();
@@ -158,7 +166,7 @@ public class InventoryFragment extends Fragment {
 
                 if (!snapshot.exists()) {
                     Toast.makeText(getContext(), "No medicine found", Toast.LENGTH_SHORT).show();
-                    contentContainer.addView(cardAddMediine);
+                    contentContainer.addView(cardAddMedicine);
                     return;
                 }
 
@@ -170,10 +178,14 @@ public class InventoryFragment extends Fragment {
                     String purchaseDate = medSnapshot.child("purchaseDate").getValue(String.class);
                     String expireDate = medSnapshot.child("expireDate").getValue(String.class);
 
-                    // You can use this info to dynamically create and display a card
-                    addMedicineCard(medicineName, currentAmount, prescriptionAmount, purchaseDate, expireDate);
+                    updateStatus(medicineName, currentAmount, prescriptionAmount, expireDate);
+
+
+//                    addMedicineCard(medicineName, currentAmount, prescriptionAmount, purchaseDate, expireDate);
+                    CardView card = addMedicineCard(medicineName, currentAmount, prescriptionAmount, purchaseDate, expireDate);
+                    applyMedicineStatusColor(medicineName, card);
                 }
-                contentContainer.addView(cardAddMediine);
+                contentContainer.addView(cardAddMedicine);
             }
 
             @Override
@@ -183,6 +195,94 @@ public class InventoryFragment extends Fragment {
         });
     }
 
+
+    private void updateStatus(String medicineName, int currentAmount, int prescriptionAmount, String expireDate) {
+        if (medicineName == null) return;
+        DatabaseReference statusRef = FirebaseDatabase.getInstance()
+                .getReference("categories/users/children")
+                .child(uname)
+                .child("status")
+                .child("inventory")
+                .child(medicineName);
+
+        List<Integer> statusList = new ArrayList<>();
+
+        // 1. Check low supply (below 20%)
+        if (prescriptionAmount > 0) {
+            double ratio = (double) currentAmount / prescriptionAmount;
+            if (ratio < 0.2) {
+                statusList.add(1); // Low Supply
+            }
+        }
+
+        // 2. Check expiration
+        try {
+            SimpleDateFormat sdf = new SimpleDateFormat("yyyy/MM/dd", Locale.getDefault());
+
+            Date expDate = sdf.parse(expireDate);
+            Date today = Calendar.getInstance().getTime();
+
+            if (expDate != null && expDate.before(today)) {
+                statusList.add(2); // Expired
+            }
+        } catch (Exception e) {
+            Log.e("updateStatus", "⚠️ Date parse error for: " + expireDate);
+        }
+
+        // 3. Upload updated status list (empty means no issues)
+        statusRef.setValue(statusList)
+                .addOnSuccessListener(unused -> Log.d("updateStatus", "Status updated: " + medicineName))
+                .addOnFailureListener(e -> Log.e("updateStatus", "Failed update: " + e.getMessage()));
+    }
+
+
+    private void applyMedicineStatusColor(String medName, CardView card) {
+        DatabaseReference statusRef = FirebaseDatabase.getInstance()
+                .getReference("categories/users/children")
+                .child(uname)
+                .child("status")
+                .child("inventory")
+                .child(medName);
+
+        statusRef.addListenerForSingleValueEvent(new ValueEventListener() {
+            @Override
+            public void onDataChange(@NonNull DataSnapshot snapshot) {
+
+                int status = 0; // default: good
+
+                for (DataSnapshot s : snapshot.getChildren()) {
+                    Integer v = s.getValue(Integer.class);
+
+                    if (v != null) {
+                        if (v == 2) {
+                            status = 2; // alert override
+                            break;
+                        } else if (v == 1 && status != 2) {
+                            status = 1; // warning unless overridden
+                        }
+                    }
+                }
+
+                int good = getResources().getColor(R.color.good);
+//                int warning = getResources().getColor(R.color.warning);
+                int alert = getResources().getColor(R.color.alert);
+
+                if (status == 2) {
+                    card.setCardBackgroundColor(alert);
+                } else if (status == 1) {
+                    card.setCardBackgroundColor(alert);
+                } else {
+                    card.setCardBackgroundColor(good);
+                }
+            }
+
+            @Override
+            public void onCancelled(@NonNull DatabaseError error) { }
+        });
+    }
+
+
+
     // ───────────────────────────────
     // UI CONSTRUCTION HELPERS
     // ───────────────────────────────
@@ -191,8 +291,8 @@ public class InventoryFragment extends Fragment {
      * Displays child name and includes a delete icon to unlink the child.
      */
     @SuppressLint("ResourceType")
-    private void addMedicineCard(String name, int current, int total, String purchaseDate, String expireDate) {
-        if (!isAdded() || getContext() == null) return;
+    private CardView  addMedicineCard(String name, int current, int total, String purchaseDate, String expireDate) {
+        if (!isAdded() || getContext() == null) return null;
         Context ctx = requireContext();
 
         // Create the outer CardView
@@ -302,8 +402,11 @@ public class InventoryFragment extends Fragment {
 
 
 
-        if (cardView.getParent() == null)
+        if (cardView.getParent() == null){
             contentContainer.addView(cardView);
+            return cardView;
+        }
+        return null;
     }
 
     /** Converts dp to pixels for consistent UI spacing. */

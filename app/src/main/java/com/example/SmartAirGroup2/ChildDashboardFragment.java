@@ -4,6 +4,7 @@ import android.annotation.SuppressLint;
 import android.content.Context;
 import android.graphics.drawable.Drawable;
 import android.os.Bundle;
+import android.util.Log;
 import android.util.TypedValue;
 import android.view.Gravity;
 import android.view.LayoutInflater;
@@ -116,32 +117,19 @@ public class ChildDashboardFragment extends Fragment {
         cardPEF = view.findViewById(R.id.cardPEF);
         cardInventory = view.findViewById(R.id.cardInventory);
 
+        loadChildStatus();
+
 
 
 //
-//        cardPEF.setOnClickListener(v -> {
-//            new AlertDialog.Builder(requireContext())
-//                    .setTitle("Confirm Action")
-//                    .setMessage("Does your child already have an account?")
-//                    .setPositiveButton("Yes", (dialog, which) -> {
-//                        // Navigate to link-existing-child fragment
-//                        LinkChildFragment linkFrag = new LinkChildFragment();
-//                        Bundle args = new Bundle();
-//                        args.putString("parentUname", uname);
-//                        linkFrag.setArguments(args);
-//                        loadFragment(linkFrag);
-//                    })
-//                    .setNegativeButton("No", (dialog, which) -> {
-//                        // Navigate to create-new-child fragment
-//                        AddChildFragment addFrag = new AddChildFragment();
-//                        Bundle args = new Bundle();
-//                        args.putString("parentUname", uname);
-//                        addFrag.setArguments(args);
-//                        loadFragment(addFrag);
-//                        dialog.dismiss();
-//                    })
-//                    .show();
-//        });
+        cardPEF.setOnClickListener(v -> {
+            ParentPEF pefFrag = new ParentPEF();
+            Bundle args = new Bundle();
+            args.putString("childUname", uname);
+            args.putString("childName", name);
+            pefFrag.setArguments(args);
+            loadFragment(pefFrag);
+        });
 
         cardInventory.setOnClickListener(v -> {
             InventoryFragment invFrag = new InventoryFragment();
@@ -153,6 +141,75 @@ public class ChildDashboardFragment extends Fragment {
         });
 
         return view;
+    }
+
+    private void loadChildStatus() {
+
+        DatabaseReference statusRef = FirebaseDatabase.getInstance()
+                .getReference("categories/users/children")
+                .child(uname)
+                .child("status");
+
+        statusRef.addListenerForSingleValueEvent(new ValueEventListener() {
+            @Override
+            public void onDataChange(@NonNull DataSnapshot snapshot) {
+
+                if (!snapshot.exists()) return;
+
+                // ---- Read PEF status ----
+                Long pefZoneVal = snapshot.child("pefZone").getValue(Long.class);
+                int pefZone = pefZoneVal != null ? pefZoneVal.intValue() : 0;
+
+                // ---- Read Inventory array ----
+                int inventoryStatus = 0; // default = good
+
+                if (snapshot.child("inventory").exists()) {
+
+                    for (DataSnapshot medSnapshot : snapshot.child("inventory").getChildren()) {
+
+                        // medSnapshot = one medicine
+                        for (DataSnapshot statusNode : medSnapshot.getChildren()) {
+
+                            Integer val = statusNode.getValue(Integer.class);
+
+                            if (val != null) {
+                                if (val == 2) {
+                                    inventoryStatus = 2; // ALERT overrides everything
+                                    break;
+                                } else if (val == 1 && inventoryStatus != 2) {
+                                    inventoryStatus = 1; // WARNING unless later overridden
+                                }
+                            }
+                        }
+
+                        if (inventoryStatus == 2) break; // no need to continue scanning
+                    }
+                }
+
+                // ---- Apply Card Colors ----
+
+                // Inventory Card
+                if (inventoryStatus > 0) {
+                    cardInventory.setCardBackgroundColor(getResources().getColor(R.color.alert));
+                }else {
+                    cardInventory.setCardBackgroundColor(getResources().getColor(R.color.good));
+                }
+
+                // PEF Card
+                if (pefZone == 2) {
+                    cardPEF.setCardBackgroundColor(getResources().getColor(R.color.alert));
+                } else if (pefZone == 1) {
+                    cardPEF.setCardBackgroundColor(getResources().getColor(R.color.warning));
+                } else {
+                    cardPEF.setCardBackgroundColor(getResources().getColor(R.color.good));
+                }
+            }
+
+            @Override
+            public void onCancelled(@NonNull DatabaseError error) {
+                Log.e("STATUS", "Failed to read status: " + error.getMessage());
+            }
+        });
     }
 
     // ───────────────────────────────
