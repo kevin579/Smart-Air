@@ -25,6 +25,7 @@ public class create_account extends AppCompatActivity {
     private EditText username;
     private EditText email;
     private EditText password;
+    private EditText confirmPassword;
     private Button createButton;
     private FirebaseDatabase db;
     private Spinner roleSpinner;
@@ -48,6 +49,7 @@ public class create_account extends AppCompatActivity {
 
         username = findViewById(R.id.username_input);
         password = findViewById(R.id.password_input);
+        confirmPassword = findViewById(R.id.confirmPassword_input);
         email = findViewById(R.id.email_input);
         createButton = findViewById(R.id.new_account_button);
         goBack = findViewById(R.id.back_button);
@@ -99,12 +101,18 @@ public class create_account extends AppCompatActivity {
                 String userInput = username.getText().toString().trim();
                 String emailInput = email.getText().toString().trim();
                 String passInput = password.getText().toString().trim();
+                String confirmPassInput = confirmPassword.getText().toString().trim();
                 String Role;
                 if (selectedRole == null || selectedRole.equals("Select a role")) {
                     Toast.makeText(create_account.this, "Please select a role", Toast.LENGTH_SHORT).show();
+                    //todo: show error message "Please select a role"
 
                 }
-                //replace notInDatabase with accountExist(email, username)
+                else if(!passInput.equals(confirmPassInput)){
+                    Toast.makeText(create_account.this, "passwords do not match!", Toast.LENGTH_SHORT).show();
+                    //todo: show error message "passwords do not match"
+                }
+                //todo: replace notInDatabase with accountExist(email, username, role)
                 else if (notInDatabase(userInput) && newUserAuth.CheckPassword(passInput) ) {
                     Toast.makeText(create_account.this, "account registered!", Toast.LENGTH_SHORT).show();
                     Role = selectedRole.trim();
@@ -115,9 +123,11 @@ public class create_account extends AppCompatActivity {
                 }
                 else if (!notInDatabase(userInput)){
                     Toast.makeText(create_account.this, "account already exist", Toast.LENGTH_SHORT).show();
+                    //todo: show error message "account already exist"
                 }
                 else{
                     Toast.makeText(create_account.this, "Password must be at least 8 characters with uppercase, lowercase, number, and special character", Toast.LENGTH_LONG).show();
+                    //todo: Password must be at least 8 characters with uppercase, lowercase, number, and special character"
                 }
             }
         });
