@@ -15,6 +15,8 @@ import androidx.annotation.NonNull;
 import androidx.annotation.Nullable;
 import androidx.fragment.app.Fragment;
 
+import com.example.SmartAirGroup2.ChildDashboard;
+import com.example.SmartAirGroup2.Parent_Provider_Dahsboard;
 import com.example.SmartAirGroup2.R;
 import com.example.SmartAirGroup2.auth.data.repo.AuthRepository;
 import com.example.SmartAirGroup2.auth.data.repo.FirebaseRtdbAuthRepository;
@@ -23,9 +25,7 @@ import com.example.SmartAirGroup2.password_recover;
 
 public class LoginFragment extends Fragment implements LoginContract.View {
     private LoginPresenter presenter;
-//    private EditText  emailLayout, passwordLayout;
-    private EditText  emailInput, passwordInput;
-    private View btnCheck;
+    private EditText  emailInput, passwordInput,usernameInput ;
     private Spinner roleSpinner;
     private String selectedRole;
 
@@ -37,7 +37,8 @@ public class LoginFragment extends Fragment implements LoginContract.View {
                              @Nullable Bundle savedInstanceState) {
         View v = inflater.inflate(R.layout.activity_login_page, container, false);
 
-        emailInput       = v.findViewById(R.id.username_input);
+        usernameInput         = v.findViewById(R.id.username_input);
+        emailInput       = v.findViewById(R.id.email_input);
         passwordInput    = v.findViewById(R.id.password_input);
         View btnLogin    = v.findViewById(R.id.login_button);
         View btnCreate   = v.findViewById(R.id.new_account_button);
@@ -51,9 +52,12 @@ public class LoginFragment extends Fragment implements LoginContract.View {
         setupRoleSpinner();
 
         btnLogin.setOnClickListener(view -> {
+            String role     = selectedRole;
+            String username = usernameInput.getText()  == null ? "" : usernameInput.getText().toString();
             String email = emailInput.getText() == null ? "" : emailInput.getText().toString();
-            String pwd   = passwordInput.getText()== null ? "" : passwordInput.getText().toString();
-            presenter.onLoginClicked(email, pwd);
+            String password   = passwordInput.getText()== null ? "" : passwordInput.getText().toString();
+            presenter.onLoginClicked(role, username, email, password);
+
         });
 
         btnCreate.setOnClickListener(view -> {
@@ -79,17 +83,31 @@ public class LoginFragment extends Fragment implements LoginContract.View {
 
     @Override
     public void showLoginFailed() {
+        if (usernameInput != null) usernameInput.setError("User not found or invalid password");
         if (emailInput != null)    emailInput.setError("User not found or invalid password");
         if (passwordInput != null) passwordInput.setError("User not found or invalid password");
     }
 
     @Override
-    public void showLoginSuccess() {
+    public void showLoginSuccess(String role) {
         if (emailInput != null)    emailInput.setError(null);
         if (passwordInput != null) passwordInput.setError(null);
         Toast.makeText(getContext(), "Login success", Toast.LENGTH_SHORT).show();
+        if(role.equals("Child")){
+            Intent intent = new Intent(getActivity(), ChildDashboard.class);
+            startActivity(intent);
+        }
+        else{
+            Intent intent = new Intent(getActivity(), Parent_Provider_Dahsboard.class);
+            startActivity(intent);
+        }
+
     }
 
+    @Override
+    public void showInputError(String message) {
+        Toast.makeText(getContext(), message, Toast.LENGTH_SHORT).show();
+    }
     //for the drop down menu
 
     // Separate method for spinner setup
