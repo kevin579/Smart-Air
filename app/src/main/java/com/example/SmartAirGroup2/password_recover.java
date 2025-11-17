@@ -12,11 +12,13 @@ import android.widget.Spinner;
 import android.widget.Toast;
 
 import androidx.activity.EdgeToEdge;
+import androidx.appcompat.app.AlertDialog;
 import androidx.appcompat.app.AppCompatActivity;
 import androidx.core.graphics.Insets;
 import androidx.core.view.ViewCompat;
 import androidx.core.view.WindowInsetsCompat;
 
+import com.example.SmartAirGroup2.auth.data.repo.PasswordRecovery;
 import com.example.SmartAirGroup2.auth.data.repo.newUserAuth;
 import com.google.firebase.database.FirebaseDatabase;
 
@@ -39,6 +41,37 @@ public class password_recover extends AppCompatActivity {
         recoverButton = findViewById(R.id.Recover_button);
         goBack = findViewById(R.id.back_button);
         db = FirebaseDatabase.getInstance("https://smart-air-group2-default-rtdb.firebaseio.com/");
+        roleSpinner = findViewById(R.id.role_spinner);
+
+        ArrayAdapter<CharSequence> adapter = ArrayAdapter.createFromResource(
+                this,
+                R.array.roles_array,
+                R.layout.spinner_item        );
+
+        // Specify the layout to use when the list of choices appears
+        adapter.setDropDownViewResource(android.R.layout.simple_spinner_dropdown_item);
+
+        // Apply the adapter to the spinner
+        roleSpinner.setAdapter(adapter);
+
+        // Set up listener to get selected value
+        roleSpinner.setOnItemSelectedListener(new AdapterView.OnItemSelectedListener(){
+            @Override
+            public void onItemSelected(AdapterView<?> parent, View view, int position, long id) {
+                selectedRole = parent.getItemAtPosition(position).toString();
+
+                // Don't process if "Select a role" is chosen
+                if (position != 0) {
+                    Toast.makeText(password_recover.this,
+                            "Selected: " + selectedRole,
+                            Toast.LENGTH_SHORT).show();
+                }
+            }
+            @Override
+            public void onNothingSelected(AdapterView<?> parent) {
+                // Do nothing
+            }
+        });
 
         goBack.setOnClickListener(new View.OnClickListener() {
             @Override
@@ -49,13 +82,36 @@ public class password_recover extends AppCompatActivity {
         });
 
         recoverButton.setOnClickListener(new View.OnClickListener() {
+            private void showPasswordDialog(String password) {
+                AlertDialog.Builder builder = new AlertDialog.Builder(password_recover.this);
+                builder.setTitle("Password Recovery");
+                builder.setMessage("Your password is:\n\n" + password);
+                builder.setPositiveButton("OK", null);
+                builder.show();
+            }
+
             @Override
             public void onClick(View view) {
                 String userInput = username.getText().toString().trim();
                 String emailInput = email.getText().toString().trim();
-                //todo: check if user exist, if not, show invalid user
-                //todo: send user their password to their email address
-                Toast.makeText(password_recover.this, "Email sent!", Toast.LENGTH_SHORT).show();
+                String role = selectedRole;
+
+                PasswordRecovery.accountExists(userInput, emailInput, role, new PasswordRecovery.AccountCheckCallback() {
+                    @Override
+                    public void onResult(String password) {
+                        if (!password.equals("null")) {
+                            Toast.makeText(password_recover.this, "Email sent!", Toast.LENGTH_SHORT).show();
+                            showPasswordDialog(password);
+                        } else {
+                            Toast.makeText(password_recover.this, "Account does not exist", Toast.LENGTH_SHORT).show();
+                        }
+                    }
+
+                    @Override
+                    public void onError(String errorMessage) {
+                        Toast.makeText(password_recover.this, "Error: " + errorMessage, Toast.LENGTH_SHORT).show();
+                    }
+                });
             }
         });
     }
