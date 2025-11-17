@@ -31,6 +31,29 @@ public class password_recover extends AppCompatActivity {
     private String selectedRole;
     private ImageButton goBack;
 
+    private void showPasswordDialog(String password) {
+        AlertDialog.Builder builder = new AlertDialog.Builder(password_recover.this);
+        builder.setTitle("Password Recovery");
+        builder.setMessage("Your password is:\n\n" + password);
+
+        // OK button
+        builder.setPositiveButton("OK", null);
+
+        // Copy button
+        builder.setNeutralButton("Copy", (dialog, which) -> {
+            // Get clipboard service
+            android.content.ClipboardManager clipboard =
+                    (android.content.ClipboardManager) getSystemService(CLIPBOARD_SERVICE);
+            android.content.ClipData clip = android.content.ClipData.newPlainText("Password", password);
+            clipboard.setPrimaryClip(clip);
+
+            // Optional: show a toast
+            Toast.makeText(password_recover.this, "Password copied to clipboard", Toast.LENGTH_SHORT).show();
+        });
+
+        builder.show();
+    }
+
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
@@ -82,13 +105,6 @@ public class password_recover extends AppCompatActivity {
         });
 
         recoverButton.setOnClickListener(new View.OnClickListener() {
-            private void showPasswordDialog(String password) {
-                AlertDialog.Builder builder = new AlertDialog.Builder(password_recover.this);
-                builder.setTitle("Password Recovery");
-                builder.setMessage("Your password is:\n\n" + password);
-                builder.setPositiveButton("OK", null);
-                builder.show();
-            }
 
             @Override
             public void onClick(View view) {
