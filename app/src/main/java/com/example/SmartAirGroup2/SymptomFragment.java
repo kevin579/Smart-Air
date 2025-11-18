@@ -2,6 +2,9 @@ package com.example.SmartAirGroup2;
 
 import android.annotation.SuppressLint;
 import android.content.Context;
+import android.graphics.Color;
+import android.graphics.PorterDuff;
+import android.graphics.Typeface;
 import android.graphics.drawable.Drawable;
 import android.os.Bundle;
 import android.util.Log;
@@ -21,7 +24,6 @@ import android.widget.Toast;
 
 import androidx.annotation.NonNull;
 import androidx.annotation.Nullable;
-import androidx.appcompat.app.AlertDialog;
 import androidx.appcompat.app.AppCompatActivity;
 import androidx.appcompat.widget.Toolbar;
 import androidx.cardview.widget.CardView;
@@ -34,6 +36,13 @@ import com.google.firebase.database.DatabaseError;
 import com.google.firebase.database.DatabaseReference;
 import com.google.firebase.database.FirebaseDatabase;
 import com.google.firebase.database.ValueEventListener;
+
+import java.text.SimpleDateFormat;
+import java.util.ArrayList;
+import java.util.Calendar;
+import java.util.Date;
+import java.util.List;
+import java.util.Locale;
 
 /**
  * ParentDashboardFragment
@@ -64,23 +73,24 @@ import com.google.firebase.database.ValueEventListener;
  * Date: [Date]
  */
 
-public class ChildDashboardFragment extends Fragment {
+public class SymptomFragment extends Fragment {
 
     // ───────────────────────────────
     // UI COMPONENTS
     // ───────────────────────────────
     private Toolbar toolbar;
-    private CardView cardInventory, cardPEF, cardSymptom;
+    private CardView cardAddSymptom, cardExport, cardViewHistory;
+    private LinearLayout contentContainer;
 
     // ───────────────────────────────
     // FIREBASE REFERENCES
     // ───────────────────────────────
     private FirebaseDatabase db;
-    private DatabaseReference childrenRef;
+    private DatabaseReference symptomRef;
 
     // Hardcoded parent username for demonstration
     // (should later be replaced by logged-in parent’s username)
-    private String name, uname;
+    private String name, uname, author;
 
     // ───────────────────────────────
     // LIFECYCLE METHODS
@@ -94,132 +104,57 @@ public class ChildDashboardFragment extends Fragment {
         if (getArguments() != null) {
             name = getArguments().getString("childName");
             uname = getArguments().getString("childUname");
+            author = getArguments().getString("author");
         }
     }
 
     @Nullable
     @Override
     public View onCreateView(@NonNull LayoutInflater inflater, @Nullable ViewGroup container, @Nullable Bundle savedInstanceState) {
-        View view = inflater.inflate(R.layout.activity_child_dashboard, container, false);
+        View view = inflater.inflate(R.layout.activity_child_symptom, container, false);
 
         // Toolbar setup
         toolbar = view.findViewById(R.id.toolbar);
         ((AppCompatActivity) getActivity()).setSupportActionBar(toolbar);
         setHasOptionsMenu(true);
-
-        toolbar.setTitle(name +"'s Dashboard");
-
+        toolbar.setTitle(name + "'s Symptoms");
         // Handle back navigation (up button)
         ((AppCompatActivity) getActivity()).getSupportActionBar().setDisplayHomeAsUpEnabled(true);
         toolbar.setNavigationOnClickListener(v -> getParentFragmentManager().popBackStack());
 
         // UI references
-        cardInventory = view.findViewById(R.id.cardInventory);
-        cardPEF = view.findViewById(R.id.cardPEF);
-        cardSymptom = view.findViewById(R.id.cardSymptom);
+        contentContainer = view.findViewById(R.id.contentContainer);
+        cardAddSymptom = view.findViewById(R.id.cardAddSymptom);
+        cardExport = view.findViewById(R.id.cardExport);
+        cardViewHistory = view.findViewById(R.id.cardViewHistory);
 
-        loadChildStatus();
+        // Initialize Firebase references
+        db = FirebaseDatabase.getInstance("https://smart-air-group2-default-rtdb.firebaseio.com/");
+        symptomRef = db.getReference("categories/users/children/" + uname + "/data/symptoms");
 
-        cardInventory.setOnClickListener(v -> {
-            InventoryFragment invFrag = new InventoryFragment();
+        // Handle button logic
+        cardAddSymptom.setOnClickListener(v -> {
+            AddSymptomFragment addFrag = new AddSymptomFragment();
             Bundle args = new Bundle();
             args.putString("childUname", uname);
             args.putString("childName", name);
-            invFrag.setArguments(args);
-            loadFragment(invFrag);
+            addFrag.setArguments(args);
+            loadFragment(addFrag);
+
         });
 
-        cardPEF.setOnClickListener(v -> {
-            ParentPEF pefFrag = new ParentPEF();
-            Bundle args = new Bundle();
-            args.putString("childUname", uname);
-            args.putString("childName", name);
-            pefFrag.setArguments(args);
-            loadFragment(pefFrag);
+        cardExport.setOnClickListener(v -> {
+            Toast.makeText(getContext(), "Export Data", Toast.LENGTH_SHORT).show();
         });
 
-        cardSymptom.setOnClickListener(v -> {
-            SymptomFragment sympFrag = new SymptomFragment();
-            Bundle args = new Bundle();
-            args.putString("childUname", uname);
-            args.putString("childName", name);
-            sympFrag.setArguments(args);
-            loadFragment(sympFrag);
+        cardViewHistory.setOnClickListener(v -> {
+            Toast.makeText(getContext(), "View History", Toast.LENGTH_SHORT).show();
         });
-
-
 
         return view;
     }
 
-    private void loadChildStatus() {
 
-        DatabaseReference statusRef = FirebaseDatabase.getInstance()
-                .getReference("categories/users/children")
-                .child(uname)
-                .child("status");
-
-        statusRef.addListenerForSingleValueEvent(new ValueEventListener() {
-            @Override
-            public void onDataChange(@NonNull DataSnapshot snapshot) {
-
-                if (!snapshot.exists()) return;
-
-                // ---- Read PEF status ----
-                Long pefZoneVal = snapshot.child("pefZone").getValue(Long.class);
-                int pefZone = pefZoneVal != null ? pefZoneVal.intValue() : 0;
-
-                // ---- Read Inventory array ----
-                int inventoryStatus = 0; // default = good
-
-                if (snapshot.child("inventory").exists()) {
-
-                    for (DataSnapshot medSnapshot : snapshot.child("inventory").getChildren()) {
-
-                        // medSnapshot = one medicine
-                        for (DataSnapshot statusNode : medSnapshot.getChildren()) {
-
-                            Integer val = statusNode.getValue(Integer.class);
-
-                            if (val != null) {
-                                if (val == 2) {
-                                    inventoryStatus = 2; // ALERT overrides everything
-                                    break;
-                                } else if (val == 1 && inventoryStatus != 2) {
-                                    inventoryStatus = 1; // WARNING unless later overridden
-                                }
-                            }
-                        }
-
-                        if (inventoryStatus == 2) break; // no need to continue scanning
-                    }
-                }
-
-                // ---- Apply Card Colors ----
-
-                // Inventory Card
-                if (inventoryStatus > 0) {
-                    cardInventory.setCardBackgroundColor(getResources().getColor(R.color.alert));
-                }else {
-                    cardInventory.setCardBackgroundColor(getResources().getColor(R.color.good));
-                }
-
-                // PEF Card
-                if (pefZone == 2) {
-                    cardPEF.setCardBackgroundColor(getResources().getColor(R.color.alert));
-                } else if (pefZone == 1) {
-                    cardPEF.setCardBackgroundColor(getResources().getColor(R.color.warning));
-                } else {
-                    cardPEF.setCardBackgroundColor(getResources().getColor(R.color.good));
-                }
-            }
-
-            @Override
-            public void onCancelled(@NonNull DatabaseError error) {
-                Log.e("STATUS", "Failed to read status: " + error.getMessage());
-            }
-        });
-    }
 
     // ───────────────────────────────
     // MENU HANDLING

@@ -101,7 +101,7 @@ public class ParentPEF extends Fragment {
         ((AppCompatActivity) getActivity()).setSupportActionBar(toolbar);
         setHasOptionsMenu(true);
 
-        toolbar.setTitle(name +"'s Dashboard");
+        toolbar.setTitle(name +"'s PEF");
 
         // Handle back navigation (up button)
         ((AppCompatActivity) getActivity()).getSupportActionBar().setDisplayHomeAsUpEnabled(true);

@@ -2,6 +2,7 @@ package com.example.SmartAirGroup2;
 
 import android.annotation.SuppressLint;
 import android.content.Context;
+import android.content.SharedPreferences;
 import android.graphics.drawable.Drawable;
 import android.os.Bundle;
 import android.util.TypedValue;
@@ -84,6 +85,7 @@ public class ParentDashboardFragment extends Fragment {
     // Hardcoded parent username for demonstration
     // (should later be replaced by logged-in parent’s username)
     private String uname = "kevin579";
+    private String type = "parent";
 
     // ───────────────────────────────
     // LIFECYCLE METHODS
@@ -108,6 +110,10 @@ public class ParentDashboardFragment extends Fragment {
 
         // Load all children into the dashboard
         loadChildrenFromDatabase();
+
+        SharedPreferences prefs = requireContext().getSharedPreferences("APP_DATA", Context.MODE_PRIVATE);
+        prefs.edit().putString("parentUname", uname).apply();
+        prefs.edit().putString("type", type).apply();
 
         // Handle "Add Child" button logic
         cardAddChild.setOnClickListener(v -> {
