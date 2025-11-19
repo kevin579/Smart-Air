@@ -46,32 +46,48 @@ import java.util.List;
 import java.util.Locale;
 
 /**
- * ParentDashboardFragment
- * -----------------------
- * This fragment serves as the main dashboard for parent users.
- * It allows parents to:
- *   • View their linked child accounts.
- *   • Add or link new child accounts.
- *   • Remove linked children.
+ * InventoryFragment
+ * ------------------
+ * This fragment displays and manages a child's medicine inventory.
+ * It allows users (parents or guardians) to:
+ *   • View all medicine entries associated with the selected child.
+ *   • Add new medication records.
+ *   • Open and modify existing medication details.
+ *   • Automatically determine medication status based on expiry date and dosage level.
  *
- * The fragment dynamically builds its UI using CardViews that represent each child.
- * It connects to Firebase Realtime Database to fetch and manage child relationships.
+ * Data is loaded from Firebase Realtime Database and displayed dynamically using CardViews.
+ * Each medication card includes:
+ *   - Name
+ *   - Current remaining amount
+ *   - Original prescribed amount
+ *   - Purchase date
+ *   - Expiry date
+ *   - Automatic warning/alert coloring based on rules
  *
- * Firebase Structure (relevant paths):
+ * Firebase Database Structure (relevant path):
  * └── categories/
  *     └── users/
- *         ├── parents/{parentUname}/children/{childUname: String}
- *         └── children/{childUname}/... (child details)
+ *         └── children/{childUsername}/
+ *               ├── inventory/{medicineName}/
+ *               │     ├── currentAmount: Number
+ *               │     ├── prescriptionAmount: Number
+ *               │     ├── purchaseDate: String "yyyy/MM/dd"
+ *               │     └── expireDate: String "yyyy/MM/dd"
+ *               └── status/inventory/{medicineName}/[0|1|2]
+ *
+ * Status Codes:
+ *   0 = Normal (Good)
+ *   1 = Warning (Low Supply)
+ *   2 = Alert (Expired)
  *
  * Core Features:
- *   - Loads all children linked to the current parent.
- *   - Dynamically generates a CardView for each child.
- *   - Provides delete functionality to unlink a child.
- *   - Supports navigation to AddChildFragment and LinkChildFragment.
- *   - Uses a toolbar with notification and settings menu options.
+ *   - Retrieves all medicine records belonging to the selected child.
+ *   - Automatically assigns status based on supply and expiration date.
+ *   - Color-codes cards visually based on status severity.
+ *   - Provides navigation to AddInventoryFragment for editing/adding medicine.
  *
- * Author: [Your Name]
- * Date: [Date]
+ * Author: Kevin Li
+ * Last Updated: November 18 2025
  */
 
 public class InventoryFragment extends Fragment {
@@ -91,12 +107,19 @@ public class InventoryFragment extends Fragment {
 
     // Hardcoded parent username for demonstration
     // (should later be replaced by logged-in parent’s username)
-    private String name, uname, medicineName;
+    private String name, uname;
 
     // ───────────────────────────────
     // LIFECYCLE METHODS
     // ───────────────────────────────
 
+    /**
+     * Called when the fragment is created.
+     * Retrieves required arguments such as the child's username and name
+     * from the passed navigation Bundle.
+     *
+     * @param savedInstanceState Previously saved instance state, if any.
+     */
     @Override
     public void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
@@ -105,10 +128,18 @@ public class InventoryFragment extends Fragment {
         if (getArguments() != null) {
             name = getArguments().getString("childName");
             uname = getArguments().getString("childUname");
-            medicineName = getArguments().getString("medicineName");
         }
     }
 
+    /**
+     * Inflates the fragment UI, initializes Firebase references,
+     * configures the toolbar, and triggers the loading of medicine entries.
+     *
+     * @param inflater  LayoutInflater used to inflate XML UI.
+     * @param container Optional parent view.
+     * @param savedInstanceState Instance state if restored.
+     * @return The fully constructed fragment view.
+     */
     @Nullable
     @Override
     public View onCreateView(@NonNull LayoutInflater inflater, @Nullable ViewGroup container, @Nullable Bundle savedInstanceState) {
@@ -131,18 +162,16 @@ public class InventoryFragment extends Fragment {
         db = FirebaseDatabase.getInstance("https://smart-air-group2-default-rtdb.firebaseio.com/");
         medicineRef = db.getReference("categories/users/children/" + uname + "/inventory");
 
-        // Load all children into the dashboard
+        // Load all medicine into the dashboard
         loadMedicineFromDatabase();
 
-        // Handle "Add Child" button logic
+        // Handle "Add Medicine" button logic
         cardAddMedicine.setOnClickListener(v -> {
-
             AddInventoryFragment addFrag = new AddInventoryFragment();
             Bundle args = new Bundle();
             args.putString("childUname", uname);
             addFrag.setArguments(args);
             loadFragment(addFrag);
-
         });
 
         return view;
@@ -152,9 +181,9 @@ public class InventoryFragment extends Fragment {
     // FIREBASE DATA LOADING
     // ───────────────────────────────
     /**
-     * Loads the list of children linked to the current parent.
-     * Each child entry creates a CardView dynamically inside `contentContainer`.
-     * If no children exist, only the "Add Child" card is displayed.
+     * Loads all medicine records from Firebase and dynamically populates
+     * the inventory list as UI CardViews. If no records exist, the user
+     * is notified and only the "Add Medicine" button is shown.
      */
     private void loadMedicineFromDatabase() {
         medicineRef.addListenerForSingleValueEvent(new ValueEventListener() {
@@ -180,8 +209,6 @@ public class InventoryFragment extends Fragment {
 
                     updateStatus(medicineName, currentAmount, prescriptionAmount, expireDate);
 
-
-//                    addMedicineCard(medicineName, currentAmount, prescriptionAmount, purchaseDate, expireDate);
                     CardView card = addMedicineCard(medicineName, currentAmount, prescriptionAmount, purchaseDate, expireDate);
                     applyMedicineStatusColor(medicineName, card);
                 }
@@ -196,6 +223,18 @@ public class InventoryFragment extends Fragment {
     }
 
 
+    /**
+     * Computes and updates the status for a specific medicine based on:
+     *   1) Remaining supply amount (below 20% triggers warning)
+     *   2) Expiration date (past date triggers alert)
+     *
+     * The computed status is written to Firebase under "status/inventory".
+     *
+     * @param medicineName Name of the medicine record.
+     * @param currentAmount Current supply remaining.
+     * @param prescriptionAmount Total prescribed supply amount.
+     * @param expireDate Expiration date formatted as yyyy/MM/dd.
+     */
     private void updateStatus(String medicineName, int currentAmount, int prescriptionAmount, String expireDate) {
         if (medicineName == null) return;
         DatabaseReference statusRef = FirebaseDatabase.getInstance()
@@ -236,6 +275,16 @@ public class InventoryFragment extends Fragment {
     }
 
 
+    /**
+     * Applies UI color changes to a medicine card based on its computed status.
+     * The card color changes based on:
+     *   • Good (no issues)
+     *   • Warning (low supply)
+     *   • Alert (expired)
+     *
+     * @param medName Name of the medicine entry.
+     * @param card The UI CardView representing the medicine.
+     */
     private void applyMedicineStatusColor(String medName, CardView card) {
         DatabaseReference statusRef = FirebaseDatabase.getInstance()
                 .getReference("categories/users/children")
@@ -287,8 +336,16 @@ public class InventoryFragment extends Fragment {
     // UI CONSTRUCTION HELPERS
     // ───────────────────────────────
     /**
-     * Dynamically creates a card for each linked child.
-     * Displays child name and includes a delete icon to unlink the child.
+     * Dynamically builds a CardView object containing medicine details.
+     * The generated card includes clickable interaction to edit or update
+     * the selected medicine entry.
+     *
+     * @param name Medicine name.
+     * @param current Current remaining amount.
+     * @param total Total prescribed amount.
+     * @param purchaseDate Date purchased (yyyy/MM/dd).
+     * @param expireDate Expiration date (yyyy/MM/dd).
+     * @return The generated CardView representing a medication item.
      */
     @SuppressLint("ResourceType")
     private CardView  addMedicineCard(String name, int current, int total, String purchaseDate, String expireDate) {
@@ -325,7 +382,7 @@ public class InventoryFragment extends Fragment {
         ));
         outerLayout.setPadding(dpToPx(16), dpToPx(16), dpToPx(16), dpToPx(16));
 
-// ─────────────── Top row: Name + arrow ───────────────
+        // ─────────────── Top row: Name + arrow ───────────────
         LinearLayout topRow = new LinearLayout(ctx);
         topRow.setOrientation(LinearLayout.HORIZONTAL);
         topRow.setLayoutParams(new LinearLayout.LayoutParams(
@@ -334,7 +391,7 @@ public class InventoryFragment extends Fragment {
         ));
         topRow.setGravity(Gravity.CENTER_VERTICAL);
 
-// Child name (large)
+        // Medicine name (large)
         TextView nameView = new TextView(ctx);
         nameView.setLayoutParams(new LinearLayout.LayoutParams(0, LinearLayout.LayoutParams.WRAP_CONTENT, 1f));
         nameView.setText(name);
@@ -342,19 +399,46 @@ public class InventoryFragment extends Fragment {
         nameView.setTypeface(null, Typeface.BOLD);
         nameView.setTextColor(Color.BLACK);
 
-// Arrow icon
+        // Arrow icon
         ImageView arrowView = new ImageView(ctx);
         LinearLayout.LayoutParams arrowParams = new LinearLayout.LayoutParams(dpToPx(24), dpToPx(24));
         arrowView.setLayoutParams(arrowParams);
         arrowView.setImageResource(R.drawable.ic_arrow_right);
         arrowView.setColorFilter(ContextCompat.getColor(ctx, R.color.gray), PorterDuff.Mode.SRC_IN);
 
+        //Delete Icon
+        ImageView deleteView = new ImageView(ctx);
+        LinearLayout.LayoutParams deleteParams = new LinearLayout.LayoutParams(dpToPx(24), dpToPx(24));
+        deleteView.setLayoutParams(deleteParams);
+        deleteView.setImageResource(android.R.drawable.ic_delete);
+        deleteView.setColorFilter(ContextCompat.getColor(ctx, R.color.gray), PorterDuff.Mode.SRC_IN);
+
+        //handle delete logic
+        deleteView.setOnClickListener(v -> {
+            new AlertDialog.Builder(ctx)
+                    .setTitle("Delete Medicine")
+                    .setMessage("Are you sure you want to delete \"" + name + "\" from the inventory?")
+                    .setPositiveButton("Delete", (dialog, which) -> {
+                        medicineRef.child(name).removeValue()
+                                .addOnSuccessListener(aVoid -> {
+                                    Toast.makeText(ctx, "Medicine removed", Toast.LENGTH_SHORT).show();
+                                    loadMedicineFromDatabase(); // Refresh UI
+                                })
+                                .addOnFailureListener(e ->
+                                        Toast.makeText(ctx, "Error: " + e.getMessage(), Toast.LENGTH_LONG).show()
+                                );
+                    })
+                    .setNegativeButton("Cancel", null)
+                    .show();
+        });
+
         topRow.addView(nameView);
+        topRow.addView(deleteView);
         topRow.addView(arrowView);
 
         String text;
 
-// ─────────────── Second row: Dates ───────────────
+        // ─────────────── Second row: Purchase Dates ───────────────
         TextView buyDateView = new TextView(ctx);
         text = "Purchased: " + purchaseDate;
         buyDateView.setText(text);
@@ -363,7 +447,7 @@ public class InventoryFragment extends Fragment {
         buyDateView.setPadding(0, dpToPx(4), 0, 0);
 
 
-// ─────────────── Third row: Dates ───────────────
+        // ─────────────── Third row: Expire Dates ───────────────
         TextView expDateView = new TextView(ctx);
         text = "Expire: " + expireDate;
         expDateView.setText(text);
@@ -371,7 +455,7 @@ public class InventoryFragment extends Fragment {
         expDateView.setTextColor(Color.DKGRAY);
         expDateView.setPadding(0, dpToPx(4), 0, 0);
 
-// ─────────────── Fourth row: Amounts ───────────────
+        // ─────────────── Fourth row: Amounts ───────────────
         TextView amountView = new TextView(ctx);
         text = "Amount: " + current + " / " + total;
         amountView.setText(text);
@@ -379,7 +463,7 @@ public class InventoryFragment extends Fragment {
         amountView.setTextColor(Color.DKGRAY);
         amountView.setPadding(0, dpToPx(2), 0, 0);
 
-// ─────────────── Combine all ───────────────
+        // ─────────────── Combine all ───────────────
         outerLayout.addView(topRow);
         outerLayout.addView(buyDateView);
         outerLayout.addView(expDateView);
@@ -388,7 +472,7 @@ public class InventoryFragment extends Fragment {
         cardView.addView(outerLayout);
 
 
-//         Card click (show child details, future use)
+        // Card click (show child details, future use)
         cardView.setOnClickListener(v ->{
                     Bundle args = new Bundle();
                     args.putString("childUname", uname);
@@ -401,7 +485,6 @@ public class InventoryFragment extends Fragment {
         );
 
 
-
         if (cardView.getParent() == null){
             contentContainer.addView(cardView);
             return cardView;
@@ -409,7 +492,12 @@ public class InventoryFragment extends Fragment {
         return null;
     }
 
-    /** Converts dp to pixels for consistent UI spacing. */
+    /**
+     * Converts a value in device-independent pixels (dp) to raw pixel units.
+     *
+     * @param dp Value in density-independent pixels.
+     * @return Integer representing the pixel conversion result.
+     */
     private int dpToPx(int dp) {
         float density = getResources().getDisplayMetrics().density;
         return Math.round(dp * density);
