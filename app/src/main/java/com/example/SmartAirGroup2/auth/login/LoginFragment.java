@@ -14,10 +14,16 @@ import android.widget.Toast;
 import androidx.annotation.NonNull;
 import androidx.annotation.Nullable;
 import androidx.fragment.app.Fragment;
+import androidx.fragment.app.FragmentTransaction;
 
 import com.example.SmartAirGroup2.ChildDashboard;
-import com.example.SmartAirGroup2.Parent_Provider_Dahsboard;
+import com.example.SmartAirGroup2.CurrentUser;
+import com.example.SmartAirGroup2.MainActivity;
+import com.example.SmartAirGroup2.OnboardingActivity;
+import com.example.SmartAirGroup2.ParentDashboardFragment;
+import com.example.SmartAirGroup2.Parent_Provider_Dashboard;
 import com.example.SmartAirGroup2.R;
+import com.example.SmartAirGroup2.User;
 import com.example.SmartAirGroup2.auth.data.repo.AuthRepository;
 import com.example.SmartAirGroup2.auth.data.repo.FirebaseRtdbAuthRepository;
 import com.example.SmartAirGroup2.create_account;
@@ -92,16 +98,24 @@ public class LoginFragment extends Fragment implements LoginContract.View {
     public void showLoginSuccess(String role) {
         if (emailInput != null)    emailInput.setError(null);
         if (passwordInput != null) passwordInput.setError(null);
+        String username = usernameInput.getText().toString();
+        String email = emailInput.getText().toString();
+        String password = passwordInput.getText().toString();
+        User user = new User(username, username, email, password, role);
+        CurrentUser.set(user);
         Toast.makeText(getContext(), "Login success", Toast.LENGTH_SHORT).show();
         if(role.equals("Child")){
             Intent intent = new Intent(getActivity(), ChildDashboard.class);
             startActivity(intent);
         }
-        else{
-            Intent intent = new Intent(getActivity(), Parent_Provider_Dahsboard.class);
+        else if (role.equals("Provider")){
+            Intent intent = new Intent(getActivity(), Parent_Provider_Dashboard.class);
             startActivity(intent);
         }
-
+        else{
+            Intent intent = new Intent(getActivity(), Parent_Provider_Dashboard.class);
+            startActivity(intent);
+        }
     }
 
     @Override

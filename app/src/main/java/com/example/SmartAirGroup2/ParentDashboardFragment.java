@@ -2,6 +2,7 @@ package com.example.SmartAirGroup2;
 
 import android.annotation.SuppressLint;
 import android.content.Context;
+import android.content.SharedPreferences;
 import android.graphics.drawable.Drawable;
 import android.os.Bundle;
 import android.util.TypedValue;
@@ -89,6 +90,24 @@ public class ParentDashboardFragment extends Fragment {
     @Override
     public View onCreateView(@NonNull LayoutInflater inflater, @Nullable ViewGroup container, @Nullable Bundle savedInstanceState) {
         View view = inflater.inflate(R.layout.activity_parent_dashboard, container, false);
+
+        // Get SharedPreferences
+        SharedPreferences prefs = requireActivity().getSharedPreferences("user_prefs", Context.MODE_PRIVATE);
+
+        // Get the current logged-in user's unique identifier
+        String userId = CurrentUser.get().getUname();  // or email, or a unique ID
+        String userEmail = CurrentUser.get().getEmail();
+        String userType = CurrentUser.get().getType();
+
+        // Check if this user has accepted terms
+        boolean hasAcceptedTerms = prefs.getBoolean("accepted_terms_" + userType + userId + userEmail, false);
+
+        if (!hasAcceptedTerms) {
+            // Show the TermsDialogFragment
+            TermsDialogFragment dialog = new TermsDialogFragment();
+            dialog.show(getParentFragmentManager(), "terms_dialog");
+        }
+
 
         // Toolbar setup
         toolbar = view.findViewById(R.id.toolbar);
