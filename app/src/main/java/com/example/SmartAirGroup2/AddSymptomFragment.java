@@ -1,5 +1,6 @@
 package com.example.SmartAirGroup2;
 
+import android.app.DatePickerDialog;
 import android.app.TimePickerDialog;
 import android.content.Context;
 import android.content.SharedPreferences;
@@ -39,20 +40,52 @@ import java.util.Map;
 
 
 /**
- * AddChildFragment
- * ---------------------
- * This fragment allows a parent user to create a new child account in Firebase Realtime Database,
- * and automatically links that child account to the parent’s account.
+ * AddSymptomFragment
+ * ------------------------------------------------
+ * This fragment allows a user (parent or child, depending on account type)
+ * to record a new symptom entry associated with a child profile in the
+ * Firebase Realtime Database.
  *
- * Workflow:
- *  1. Parent enters the child’s username, name, email, and password (twice).
- *  2. The app validates inputs (non-empty, password match, min length).
- *  3. It checks if the username already exists across all user categories.
- *  4. If available, the child is added to the "children" node.
- *  5. The child’s username is then linked under the parent’s "children" list.
+ * Functionality:
+ * --------------
+ * • User enters a symptom description.
+ * • User selects one or more triggers from predefined checkboxes.
+ * • User selects a timestamp using a combined DatePicker and TimePicker.
+ * • Input validation ensures all required information is provided.
+ * • Upon successful submission, the symptom is stored under:
+ *      categories/users/children/{username}/data/symptoms
  *
- * Author: [Your Name]
- * Last Updated: [Date]
+ * Timestamp Format:
+ * -----------------
+ * yyyy/MM/dd HH:mm
+ * (Example: 2025/11/17 13:42)
+ *
+ * Validation Rules:
+ * -----------------
+ * - Symptom text cannot be empty.
+ * - Timestamp must be selected.
+ * - At least one trigger must be selected.
+ *
+ * UI Behavior:
+ * ------------
+ * - The toolbar supports back navigation.
+ * - After successful submission, the fragment navigates back automatically.
+ *
+ * Firebase Storage Example:
+ * -------------------------
+ * {
+ *   "symptom": "Coughing",
+ *   "time": "2025/11/17 14:05",
+ *   "triggers": "Exercise, Cold Air",
+ *   "type": "parent"
+ * }
+ *
+ * Arguments Required:
+ * -------------------
+ * - "childUname" (String): The username of the child profile the symptom belongs to.
+ *
+ * Author: Your Name
+ * Last Modified: Nov 17, 2025
  */
 
 public class AddSymptomFragment extends Fragment {
@@ -65,16 +98,12 @@ public class AddSymptomFragment extends Fragment {
     private Button buttonAdd;
     private Toolbar toolbar;
 
-    // ───────────────────────────────
-    // Firebase References
-    // ───────────────────────────────
-    private FirebaseDatabase db;
-    private DatabaseReference childrenRef;
+
 
     // ───────────────────────────────
     // Data
     // ───────────────────────────────
-    private String uname, name, author;
+    private String uname, author;
 
     // ───────────────────────────────
     // Lifecycle: Fragment Creation
@@ -86,7 +115,6 @@ public class AddSymptomFragment extends Fragment {
         // Retrieve parent username passed as argument
         if (getArguments() != null) {
             uname = getArguments().getString("childUname");
-            name = getArguments().getString("childName");
         }
     }
 
@@ -118,31 +146,47 @@ public class AddSymptomFragment extends Fragment {
         setupCheckboxes(view);
 
         editTime.setOnClickListener(v -> {
-            Calendar calendar = Calendar.getInstance();
-            int hour = calendar.get(Calendar.HOUR_OF_DAY);
-            int minute = calendar.get(Calendar.MINUTE);
 
-            TimePickerDialog dialog = new TimePickerDialog(
+            Calendar calendar = Calendar.getInstance();
+
+            DatePickerDialog datePicker = new DatePickerDialog(
                     getContext(),
-                    (timePicker, h, m) -> {
-                        String formatted = String.format(Locale.getDefault(), "%02d:%02d", h, m);
-                        editTime.setText(formatted);
+                    (datePickerView, year, month, dayOfMonth) -> {  // <-- changed here
+
+                        calendar.set(Calendar.YEAR, year);
+                        calendar.set(Calendar.MONTH, month);
+                        calendar.set(Calendar.DAY_OF_MONTH, dayOfMonth);
+
+                        TimePickerDialog timePicker = new TimePickerDialog(
+                                getContext(),
+                                (timePickerView, hourOfDay, minute) -> {
+                                    calendar.set(Calendar.HOUR_OF_DAY, hourOfDay);
+                                    calendar.set(Calendar.MINUTE, minute);
+
+                                    SimpleDateFormat sdf =
+                                            new SimpleDateFormat("yyyy/MM/dd HH:mm", Locale.getDefault());
+                                    editTime.setText(sdf.format(calendar.getTime()));
+                                },
+                                calendar.get(Calendar.HOUR_OF_DAY),
+                                calendar.get(Calendar.MINUTE),
+                                true
+                        );
+
+                        timePicker.show();
                     },
-                    hour,
-                    minute,
-                    true
+                    calendar.get(Calendar.YEAR),
+                    calendar.get(Calendar.MONTH),
+                    calendar.get(Calendar.DAY_OF_MONTH)
             );
-            dialog.show();
+
+            datePicker.show();
         });
 
+
+
         buttonAdd = view.findViewById(R.id.buttonAdd);
-
-        // Initialize Firebase instance
-        db = FirebaseDatabase.getInstance("https://smart-air-group2-default-rtdb.firebaseio.com/");
-
         // Add button listener
         buttonAdd.setOnClickListener(v -> addSymptom(view));
-        Toast.makeText(getContext(), author, Toast.LENGTH_SHORT).show();
 
         return view;
     }
@@ -151,6 +195,19 @@ public class AddSymptomFragment extends Fragment {
     // ───────────────────────────────
     // Main Logic: Add Symptom
     // ───────────────────────────────
+    /**
+     * Extracts the values input by the user (symptom, time, and triggers),
+     * validates the fields, and uploads the new symptom record to Firebase.
+     *
+     * Required fields:
+     *  - Symptom name
+     *  - Date and time
+     *  - At least one selected trigger
+     *
+     * On successful write, the fragment closes and returns to the previous screen.
+     *
+     * @param view The root view of the fragment, used for reference if needed.
+     */
     private void addSymptom(View view) {
         // Collect input values
         String symptom = editTextSymptom.getText().toString().trim();
@@ -174,15 +231,10 @@ public class AddSymptomFragment extends Fragment {
             return;
         }
 
-        String date = new SimpleDateFormat("yyyy/MM/dd", Locale.getDefault())
-                .format(Calendar.getInstance().getTime());
-
-        String finalTimestamp = date + "/" + time;
-
 
         Map<String, Object> symptomData = new HashMap<>();
         symptomData.put("symptom", symptom);
-        symptomData.put("time", finalTimestamp);
+        symptomData.put("time", time);
         symptomData.put("triggers", triggers);
         symptomData.put("type", author);
 
@@ -203,6 +255,13 @@ public class AddSymptomFragment extends Fragment {
                         Toast.makeText(getContext(), "Error saving data", Toast.LENGTH_SHORT).show()
                 );
     }
+
+    /**
+     * Sets up all predefined trigger checkbox UI references from the layout.
+     * This method simplifies initialization and keeps onCreateView cleaner.
+     *
+     * @param view The root inflated layout containing the checkbox views.
+     */
     private void setupCheckboxes(View view) {
         checkExercise = view.findViewById(R.id.checkExercise);
         checkColdAir = view.findViewById(R.id.checkColdAir);
@@ -214,7 +273,17 @@ public class AddSymptomFragment extends Fragment {
         checkStress = view.findViewById(R.id.checkStress);
     }
 
-    // Get selected triggers
+    /**
+     * Collects all user-selected trigger checkboxes and returns them as a
+     * comma-separated string.
+     *
+     * Example output:
+     *     "Exercise, Smoke, Illness"
+     *
+     * If no triggers are selected, returns an empty string.
+     *
+     * @return A formatted trigger list to store in Firebase.
+     */
     private String getSelectedTriggers() {
         List<String> selected = new ArrayList<>();
 
@@ -224,7 +293,7 @@ public class AddSymptomFragment extends Fragment {
         if (checkAllergy.isChecked()) selected.add("Allergy");
         if (checkSmoke.isChecked()) selected.add("Smoke");
         if (checkIllness.isChecked()) selected.add("Illness");
-        if (checkPerfume.isChecked()) selected.add("Perfume / Strong Odor");
+        if (checkPerfume.isChecked()) selected.add("Perfume");
         if (checkStress.isChecked()) selected.add("Stress");
 
         // Convert list -> comma separated string (e.g., "Exercise, Smoke, Stress")
@@ -244,13 +313,5 @@ public class AddSymptomFragment extends Fragment {
         }
         return super.onOptionsItemSelected(item);
     }
-
-    // ───────────────────────────────
-    // FRAGMENT NAVIGATION
-    // ───────────────────────────────
-    /**
-     * Utility method for fragment navigation inside the same activity.
-     */
-
 
 }
