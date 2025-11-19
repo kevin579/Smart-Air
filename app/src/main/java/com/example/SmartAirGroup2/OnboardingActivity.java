@@ -3,6 +3,7 @@ package com.example.SmartAirGroup2;
 import android.content.Intent;
 import android.os.Bundle;
 import android.text.Html;
+import android.widget.Button;
 import android.widget.LinearLayout;
 import android.widget.TextView;
 
@@ -26,6 +27,8 @@ public class OnboardingActivity extends AppCompatActivity {
     int currentPosition;
     SaveState saveState;
 
+    Button skipButton; // Add a Skip/Close button variable
+
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
@@ -40,16 +43,41 @@ public class OnboardingActivity extends AppCompatActivity {
         dotsLayout = findViewById(R.id.dotsLayout);
         viewPager = findViewById(R.id.slider);
 
+        skipButton = findViewById(R.id.skip_button);
+
         // Initialize SaveState helper
         saveState = new SaveState(this, "0B");
 
+        boolean isRepeatable = getIntent().getBooleanExtra("isRepeatable", false);
+
+        if (isRepeatable) {
+            // This is a tutorial launched from the dashboard.
+            // Change the button text to "Close" and make it close the activity.
+            skipButton.setText("Close");
+            skipButton.setOnClickListener(v -> finish()); // Closes the activity and returns to the dashboard
+        } else {
+            // This is the first-time onboarding.
+            // "Skip" should save the state and go to MainActivity.
+            skipButton.setText("Skip");
+            skipButton.setOnClickListener(v -> {
+                saveState.setState(1); // Mark as completed
+                startMainActivity();
+            });
+        }
+
         // Setup dots and ViewPager
         dotsFunction(0);
-        OnBoardingAdapter adapter = new OnBoardingAdapter(this);
+        OnBoardingAdapter adapter = new OnBoardingAdapter(this, isRepeatable);
         viewPager.setAdapter(adapter);
 
         nextCard.setOnClickListener(view -> viewPager.setCurrentItem(currentPosition + 1, true));
         viewPager.addOnPageChangeListener(onPageChangeListener);
+    }
+
+    private void startMainActivity() {
+        Intent i = new Intent(OnboardingActivity.this, MainActivity.class);
+        startActivity(i);
+        finish();
     }
 
     private void dotsFunction(int pos){
@@ -79,15 +107,19 @@ public class OnboardingActivity extends AppCompatActivity {
         public void onPageSelected(int position) {
             dotsFunction(position);
             currentPosition = position;
+
+            boolean isRepeatable = getIntent().getBooleanExtra("isRepeatable", false);
+
             if (currentPosition < 3) { // Use < 3 for 4 pages (0, 1, 2)
                 nextCard.setOnClickListener(view -> viewPager.setCurrentItem(currentPosition + 1));
             } else {
                 // This is the final screen
                 nextCard.setOnClickListener(view -> {
-                    saveState.setState(1); // Mark onboarding as complete
-                    Intent i = new Intent(OnboardingActivity.this, MainActivity.class);
-                    startActivity(i);
-                    finish(); // Finish OnboardingActivity so user can't go back
+                    if (!isRepeatable) {
+                        saveState.setState(1); // Mark onboarding as complete
+                        startMainActivity();
+                    }
+                    finish();
                 });
             }
         }

@@ -1,6 +1,7 @@
 package com.example.SmartAirGroup2;
 
 import android.content.Context;
+import android.content.Intent;
 import android.view.Menu;
 import android.view.MenuInflater;
 import android.view.MenuItem;
@@ -36,6 +37,22 @@ public class MenuHelper {
             return true;
         } else if (id == R.id.action_settings) {
             // TODO: Implement settings later
+            return true;
+        }
+        else if (id == R.id.action_show_tutorial) {
+
+            // Get the context from the fragment to create an Intent
+            Context context = fragment.requireContext();
+
+            // Create an Intent to launch OnboardingActivity
+            Intent intent = new Intent(context, OnboardingActivity.class);
+
+            // Add the "isRepeatable" flag to signal that this is a tutorial
+            intent.putExtra("isRepeatable", true);
+
+            // Start the activity
+            context.startActivity(intent);
+
             return true;
         }
         return false;

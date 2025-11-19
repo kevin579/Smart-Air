@@ -10,5 +10,7 @@
     <color name="pink_dark">#EB5595</color>
     <color name="blue_light">#90C2F8</color>
     <color name="blue_dark">#5591EB</color>
+    <color name="red_light">#FD5E63</color>
+    <color name="red_dark">#F24646</color>
     <color name="teal">#FF018786</color>
 </resources>
