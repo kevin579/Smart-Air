@@ -10,6 +10,8 @@ import androidx.fragment.app.FragmentTransaction;
 
 import com.google.firebase.database.DatabaseReference;
 import com.google.firebase.database.FirebaseDatabase;
+import com.example.SmartAirGroup2.AlertCenterFragment;
+
 
 public class MainActivity extends AppCompatActivity {
 
@@ -23,13 +25,20 @@ public class MainActivity extends AppCompatActivity {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_main);
 
+//        if (savedInstanceState == null) {
+//            getSupportFragmentManager()
+//                    .beginTransaction()
+//                    .replace(R.id.container,
+//                            new com.example.SmartAirGroup2.auth.login.LoginFragment())
+//                    .commit();
+//        }
         if (savedInstanceState == null) {
             getSupportFragmentManager()
                     .beginTransaction()
-                    .replace(R.id.container,
-                            new com.example.SmartAirGroup2.auth.login.LoginFragment())
+                    .replace(R.id.container, new AlertCenterFragment())
                     .commit();
         }
+
     }
 
     private void loadFragment(Fragment fragment) {
