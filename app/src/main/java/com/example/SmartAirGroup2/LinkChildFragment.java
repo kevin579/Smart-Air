@@ -38,8 +38,8 @@ import com.google.firebase.database.ValueEventListener;
  *  4. If validation passes and the child isn’t already linked,
  *     the app adds the child’s username to the parent’s “children” list.
  *
- * Author: [Your Name]
- * Last Updated: [Date]
+ * Author: Kevin Li
+ * Last Updated: Nov 14, 2025
  */
 
 public class LinkChildFragment extends Fragment {
@@ -51,11 +51,6 @@ public class LinkChildFragment extends Fragment {
     private Button buttonAdd;
     private Toolbar toolbar;
 
-    // ───────────────────────────────
-    // Firebase References
-    // ───────────────────────────────
-    private FirebaseDatabase db;
-    private DatabaseReference childrenRef, parentRef;
 
     // ───────────────────────────────
     // Data
@@ -98,9 +93,6 @@ public class LinkChildFragment extends Fragment {
         editTextUname = view.findViewById(R.id.editTextUname);
         editTextPassword = view.findViewById(R.id.editTextPassword);
         buttonAdd = view.findViewById(R.id.buttonAdd);
-
-        // Initialize Firebase
-        db = FirebaseDatabase.getInstance("https://smart-air-group2-default-rtdb.firebaseio.com/");
 
         // Add click listener for linking operation
         buttonAdd.setOnClickListener(v -> link());
