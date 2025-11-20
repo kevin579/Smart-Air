@@ -29,14 +29,11 @@
             android:orientation="vertical">
 
             <androidx.cardview.widget.CardView
-                android:id="@+id/cardInventory"
+                android:id="@+id/cardPB"
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"
                 android:layout_marginBottom="16dp"
-                android:clickable="true"
-                android:focusable="true"
-                android:foreground="?android:attr/selectableItemBackground"
-                app:cardBackgroundColor="@color/good"
+                app:cardBackgroundColor="#91dbed"
                 app:cardCornerRadius="8dp"
                 app:cardElevation="0dp">
 
@@ -48,32 +45,22 @@
                     android:padding="16dp">
 
 
-                    <ImageView
-                        android:layout_width="24dp"
-                        android:layout_height="24dp"
-                        android:layout_marginEnd="8dp"
-                        android:src="@drawable/ic_medicines"
-                        app:tint="@color/white" />
-
                     <TextView
+                        android:id="@+id/textPB"
                         android:layout_width="wrap_content"
                         android:layout_height="wrap_content"
-                        android:text="Medicine Inventory"
+                        android:text="Personal Best"
                         android:textSize="18sp" />
 
                 </LinearLayout>
-
             </androidx.cardview.widget.CardView>
 
             <androidx.cardview.widget.CardView
-                android:id="@+id/cardPEF"
+                android:id="@+id/cardAveragePEF"
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"
                 android:layout_marginBottom="16dp"
-                android:clickable="true"
-                android:focusable="true"
-                android:foreground="?android:attr/selectableItemBackground"
-                app:cardBackgroundColor="@color/good"
+                app:cardBackgroundColor="#91dbed"
                 app:cardCornerRadius="8dp"
                 app:cardElevation="0dp">
 
@@ -85,59 +72,36 @@
                     android:padding="16dp">
 
 
-                    <ImageView
-                        android:layout_width="24dp"
-                        android:layout_height="24dp"
-                        android:layout_marginEnd="8dp"
-                        android:src="@drawable/ic_air"
-                        app:tint="@color/white" />
-
                     <TextView
+                        android:id="@+id/textAveragePEF"
                         android:layout_width="wrap_content"
                         android:layout_height="wrap_content"
-                        android:text="PEF Management"
+                        android:text="Average Daily PEF"
                         android:textSize="18sp" />
 
                 </LinearLayout>
-
             </androidx.cardview.widget.CardView>
 
-            <androidx.cardview.widget.CardView
-                android:id="@+id/cardSymptom"
+            <EditText
+                android:id="@+id/editTextPB"
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"
-                android:layout_marginBottom="16dp"
-                android:clickable="true"
-                android:focusable="true"
-                android:foreground="?android:attr/selectableItemBackground"
-                app:cardBackgroundColor="@color/good"
-                app:cardCornerRadius="8dp"
-                app:cardElevation="0dp">
+                android:hint="Personal Best"
+                app:layout_constraintEnd_toEndOf="parent"
+                app:layout_constraintStart_toStartOf="parent"
+                app:layout_constraintTop_toTopOf="parent" />
 
-                <LinearLayout
-                    android:layout_width="match_parent"
-                    android:layout_height="wrap_content"
-                    android:gravity="center"
-                    android:orientation="horizontal"
-                    android:padding="16dp">
+            <Button
+                android:id="@+id/buttonUpdate"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:backgroundTint="#1565C0"
+                android:text="Update"
+                app:layout_constraintEnd_toEndOf="parent"
+                app:layout_constraintStart_toStartOf="parent"
+                app:layout_constraintTop_toBottomOf="@+id/spinnerCategory" />
 
 
-                    <ImageView
-                        android:layout_width="24dp"
-                        android:layout_height="24dp"
-                        android:layout_marginEnd="8dp"
-                        android:src="@drawable/ic_symptoms"
-                        app:tint="@color/white" />
-
-                    <TextView
-                        android:layout_width="wrap_content"
-                        android:layout_height="wrap_content"
-                        android:text="Symptoms"
-                        android:textSize="18sp" />
-
-                </LinearLayout>
-
-            </androidx.cardview.widget.CardView>
 
         </LinearLayout>
     </ScrollView>
