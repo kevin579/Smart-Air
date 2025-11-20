@@ -3,6 +3,8 @@ package com.example.SmartAirGroup2;
 import android.annotation.SuppressLint;
 import android.content.Context;
 import android.content.SharedPreferences;
+import android.graphics.Color;
+import android.graphics.PorterDuff;
 import android.graphics.drawable.Drawable;
 import android.os.Bundle;
 import android.util.Log;
@@ -497,17 +499,20 @@ public class ParentDashboardFragment extends Fragment {
         // ─────────────────────────────────────────────────────────────────
         // Delete Icon
         // ─────────────────────────────────────────────────────────────────
-        ImageView imageView = new ImageView(ctx);
+        ImageView deleteView = new ImageView(ctx);
         LinearLayout.LayoutParams imgParams = new LinearLayout.LayoutParams(dpToPx(24), dpToPx(24));
         imgParams.setMarginEnd(dpToPx(12));
-        imageView.setLayoutParams(imgParams);
-        imageView.setImageResource(android.R.drawable.ic_delete);
+        deleteView.setLayoutParams(imgParams);
+        deleteView.setImageResource(android.R.drawable.ic_delete);
+        deleteView.setColorFilter(ContextCompat.getColor(ctx, R.color.delete), PorterDuff.Mode.SRC_IN);
+
+
 
         // ─────────────────────────────────────────────────────────────────
         // Assemble Card
         // ─────────────────────────────────────────────────────────────────
         innerLayout.addView(textView);
-        innerLayout.addView(imageView);
+        innerLayout.addView(deleteView);
         cardView.addView(innerLayout);
 
         // ─────────────────────────────────────────────────────────────────
@@ -526,7 +531,7 @@ public class ParentDashboardFragment extends Fragment {
         // ─────────────────────────────────────────────────────────────────
         // Delete Icon Click Handler - Unlink Child
         // ─────────────────────────────────────────────────────────────────
-        imageView.setOnClickListener(v -> {
+        deleteView.setOnClickListener(v -> {
             if (!isAdded()) return;
 
             new AlertDialog.Builder(requireContext())

@@ -411,7 +411,7 @@ public class InventoryFragment extends Fragment {
         LinearLayout.LayoutParams deleteParams = new LinearLayout.LayoutParams(dpToPx(24), dpToPx(24));
         deleteView.setLayoutParams(deleteParams);
         deleteView.setImageResource(android.R.drawable.ic_delete);
-        deleteView.setColorFilter(ContextCompat.getColor(ctx, R.color.gray), PorterDuff.Mode.SRC_IN);
+        deleteView.setColorFilter(ContextCompat.getColor(ctx, R.color.delete), PorterDuff.Mode.SRC_IN);
 
         //handle delete logic
         deleteView.setOnClickListener(v -> {

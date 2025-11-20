@@ -358,11 +358,12 @@ public class SymptomHistoryFragment extends Fragment {
             return;
         }
 
-        ImageView deleteIcon = new ImageView(ctx);
-        deleteIcon.setLayoutParams(new LinearLayout.LayoutParams(dpToPx(24), dpToPx(24)));
-        deleteIcon.setImageResource(android.R.drawable.ic_delete);
+        ImageView deleteView = new ImageView(ctx);
+        deleteView.setLayoutParams(new LinearLayout.LayoutParams(dpToPx(24), dpToPx(24)));
+        deleteView.setImageResource(android.R.drawable.ic_delete);
+        deleteView.setColorFilter(ContextCompat.getColor(ctx, R.color.delete), PorterDuff.Mode.SRC_IN);
 
-        deleteIcon.setOnClickListener(v -> {
+        deleteView.setOnClickListener(v -> {
             new AlertDialog.Builder(requireContext())
                     .setTitle("Delete Symptom")
                     .setMessage("Are you sure you want to delete this symptom entry?")
@@ -390,7 +391,7 @@ public class SymptomHistoryFragment extends Fragment {
         });
 
         topRow.addView(titleView);
-        topRow.addView(deleteIcon);
+        topRow.addView(deleteView);
 
         // ======= Info Labels =======
         TextView timeView = buildInfoText("Time: " + time);
