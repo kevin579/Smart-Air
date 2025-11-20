@@ -153,8 +153,8 @@ public class SymptomHistoryFragment extends Fragment {
         // Check if ANY filter is active
         boolean hasFilters =
                 (filterSymptom != null && !filterSymptom.isEmpty()) ||
-                        (filterStartDate != null && !filterStartDate.equals("Any")) ||
-                        (filterEndDate != null && !filterEndDate.equals("Any")) ||
+                        (filterStartDate != null && !filterStartDate.isEmpty()) ||
+                        (filterEndDate != null && !filterEndDate.isEmpty()) ||
                         (filterTriggers != null && !filterTriggers.isEmpty());
 
         if (!hasFilters) return; // no filters → no button shown
@@ -261,17 +261,14 @@ public class SymptomHistoryFragment extends Fragment {
             Date endDate = null;
 
             // If start date is valid, parse it; otherwise leave null (means no restriction)
-            if (filterStartDate != null && !filterStartDate.equals("Any") && !filterStartDate.isEmpty()) {
+            if (filterStartDate != null  && !filterStartDate.isEmpty()) {
                 startDate = sdf.parse(filterStartDate);
             }
 
             // If end date is valid parse it; otherwise assume today
-            if (filterEndDate != null && !filterEndDate.equals("Any") && !filterEndDate.isEmpty()) {
+            if (filterEndDate != null && !filterEndDate.isEmpty()) {
                 endDate = sdf.parse(filterEndDate);
-            } else {
-                endDate = new Date(); // default = today
             }
-
 
             // If startDate exists and entryDate is BEFORE it → exclude
             if (startDate != null && entryDate.before(startDate)) {
