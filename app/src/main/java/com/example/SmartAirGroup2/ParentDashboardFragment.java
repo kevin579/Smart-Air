@@ -5,6 +5,7 @@ import android.content.Context;
 import android.content.SharedPreferences;
 import android.graphics.drawable.Drawable;
 import android.os.Bundle;
+import android.util.Log;
 import android.util.TypedValue;
 import android.view.Gravity;
 import android.view.LayoutInflater;
@@ -199,6 +200,7 @@ public class ParentDashboardFragment extends Fragment {
         db = FirebaseDatabase.getInstance("https://smart-air-group2-default-rtdb.firebaseio.com/");
         childrenRef = db.getReference("categories/users/parents/" + uname + "/children");
 
+
         // ─────────────────────────────────────────────────────────────────
         // Load Children Data
         // ─────────────────────────────────────────────────────────────────
@@ -244,6 +246,7 @@ public class ParentDashboardFragment extends Fragment {
         return view;
     }
 
+
     // ═══════════════════════════════════════════════════════════════════════
     // FIREBASE DATA LOADING
     // ═══════════════════════════════════════════════════════════════════════
@@ -269,6 +272,7 @@ public class ParentDashboardFragment extends Fragment {
      *   - Tracks completion count to ensure "Add Child" appears last
      */
     private void loadChildrenFromDatabase() {
+
         childrenRef.addListenerForSingleValueEvent(new ValueEventListener() {
             @Override
             public void onDataChange(@NonNull DataSnapshot snapshot) {
@@ -333,12 +337,7 @@ public class ParentDashboardFragment extends Fragment {
                                             List<Integer> statusList = new ArrayList<>();
 
                                             if (statusSnap.exists()) {
-                                                for (DataSnapshot s : statusSnap.getChildren()) {
-                                                    try {
-                                                        Integer val = s.getValue(Integer.class);
-                                                        if (val != null) statusList.add(val);
-                                                    } catch (Exception ignored) {}
-                                                }
+                                                extractStatusValues(statusSnap, statusList);
                                             }
 
                                             // Create child card with status-based color
@@ -389,9 +388,28 @@ public class ParentDashboardFragment extends Fragment {
 
             @Override
             public void onCancelled(@NonNull DatabaseError error) {
-                Toast.makeText(getContext(), "Failed to load children: " + error.getMessage(), Toast.LENGTH_SHORT).show();
+                Log.e("FIREBASE", "Error: " + error.getMessage());
             }
         });
+    }
+
+    /*
+    This helper method is used the get all the status code
+     */
+    private void extractStatusValues(DataSnapshot snap, List<Integer> result) {
+        for (DataSnapshot child : snap.getChildren()) {
+            Object val = child.getValue();
+
+            // Case 1: It's a direct integer
+            if (val instanceof Long || val instanceof Integer) {
+                result.add(((Number) val).intValue());
+            }
+
+            // Case 2: Nested object → go deeper
+            else if (child.hasChildren()) {
+                extractStatusValues(child, result);
+            }
+        }
     }
 
     // ═══════════════════════════════════════════════════════════════════════
