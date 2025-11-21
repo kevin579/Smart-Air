@@ -16,6 +16,8 @@ import androidx.annotation.Nullable;
 import androidx.fragment.app.Fragment;
 
 import com.example.SmartAirGroup2.ChildDashboard;
+import com.example.SmartAirGroup2.ParentDashboardActivity;
+import com.example.SmartAirGroup2.ParentDashboardFragment;
 import com.example.SmartAirGroup2.Parent_Provider_Dahsboard;
 import com.example.SmartAirGroup2.R;
 import com.example.SmartAirGroup2.auth.data.repo.AuthRepository;
@@ -96,7 +98,12 @@ public class LoginFragment extends Fragment implements LoginContract.View {
         if(role.equals("Child")){
             Intent intent = new Intent(getActivity(), ChildDashboard.class);
             startActivity(intent);
+        }else if(role.equals("Parent")){
+            Intent intent = new Intent(getActivity(), ParentDashboardActivity.class);
+            intent.putExtra("username", usernameInput.getText().toString().trim());
+            startActivity(intent);
         }
+
         else{
             Intent intent = new Intent(getActivity(), Parent_Provider_Dahsboard.class);
             startActivity(intent);
