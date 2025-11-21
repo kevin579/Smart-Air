@@ -3,7 +3,6 @@ package com.example.SmartAirGroup2;
 import android.annotation.SuppressLint;
 import android.content.Context;
 import android.content.SharedPreferences;
-import android.graphics.Color;
 import android.graphics.PorterDuff;
 import android.graphics.drawable.Drawable;
 import android.os.Bundle;
@@ -101,6 +100,7 @@ import java.util.List;
  * Author: Kevin Li
  * Last Updated: November 18 2025
  */
+
 public class ParentDashboardFragment extends Fragment {
 
     // ═══════════════════════════════════════════════════════════════════════
@@ -150,7 +150,7 @@ public class ParentDashboardFragment extends Fragment {
      * Username of the currently logged-in parent.
      * TODO: Replace hardcoded value with dynamic authentication.
      */
-    private String uname = "kevin579";
+    private String uname;
 
     /**
      * User type identifier for the current user.
@@ -158,10 +158,27 @@ public class ParentDashboardFragment extends Fragment {
      */
     private String type = "parent";
 
+    public static ParentDashboardFragment newInstance(String username) {
+        ParentDashboardFragment fragment = new ParentDashboardFragment();
+        Bundle args = new Bundle();
+        args.putString("username", username);
+        fragment.setArguments(args);
+        return fragment;
+    }
+
     // ═══════════════════════════════════════════════════════════════════════
     // LIFECYCLE METHODS
     // ═══════════════════════════════════════════════════════════════════════
 
+
+    @Override
+    public void onCreate(Bundle savedInstanceState) {
+        super.onCreate(savedInstanceState);
+
+        if (getArguments() != null) {
+            uname = getArguments().getString("username");
+        }
+    }
     /**
      * Creates and initializes the view hierarchy for this fragment.
      *
@@ -178,10 +195,11 @@ public class ParentDashboardFragment extends Fragment {
      * @param savedInstanceState Previously saved state, if any
      * @return                   The root view for this fragment
      */
+
     @Nullable
     @Override
     public View onCreateView(@NonNull LayoutInflater inflater, @Nullable ViewGroup container, @Nullable Bundle savedInstanceState) {
-        View view = inflater.inflate(R.layout.activity_parent_dashboard, container, false);
+        View view = inflater.inflate(R.layout.fragment_parent_dashboard, container, false);
 
         // ─────────────────────────────────────────────────────────────────
         // Toolbar Configuration

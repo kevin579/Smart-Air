@@ -282,6 +282,9 @@ public class AddInventoryFragment extends Fragment {
             return;
         }
 
+        long lastUpdated = System.currentTimeMillis();
+
+
         // Firebase write operation
         DatabaseReference medicineRef = FirebaseDatabase.getInstance()
                 .getReference("categories/users/children")
@@ -294,6 +297,7 @@ public class AddInventoryFragment extends Fragment {
         medicineData.put("expireDate", expireDateStr);
         medicineData.put("prescriptionAmount", prescriptionAmount);
         medicineData.put("currentAmount", currentAmount);
+        medicineData.put("lastUpdated", lastUpdated);
 
         medicineRef.setValue(medicineData)
                 .addOnCompleteListener(task -> {

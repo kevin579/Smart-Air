@@ -108,27 +108,12 @@ public class ChildDashboardFragment extends Fragment {
     private Toolbar toolbar;
 
     /**
-     * CardView for accessing the child's medication inventory.
+     * CardView for accessing the child's status .
      * Color-coded based on medicine stock levels:
-     *   - Red (alert): Critical low stock
-     *   - Green (good): Adequate stock
+     *   - Red (alert)
+     *   - Green (good)
      */
-    private CardView cardInventory;
-
-    /**
-     * CardView for accessing Peak Expiratory Flow (PEF) measurements.
-     * Color-coded based on breathing zones:
-     *   - Red (zone 2): Severe difficulty
-     *   - Yellow (zone 1): Caution
-     *   - Green (zone 0): Normal
-     */
-    private CardView cardPEF;
-
-    /**
-     * CardView for accessing symptom tracking and history.
-     * Allows parents to view logged symptoms and patterns.
-     */
-    private CardView cardSymptom;
+    private CardView cardInventory, cardPEF, cardSymptom, cardIncident;
 
 
     // ═══════════════════════════════════════════════════════════════════════
@@ -213,6 +198,7 @@ public class ChildDashboardFragment extends Fragment {
         cardInventory = view.findViewById(R.id.cardInventory);
         cardPEF = view.findViewById(R.id.cardPEF);
         cardSymptom = view.findViewById(R.id.cardSymptom);
+        cardIncident = view.findViewById(R.id.cardIncident);
 
         // ─────────────────────────────────────────────────────────────────
         // Load and Apply Status Colors
@@ -256,6 +242,10 @@ public class ChildDashboardFragment extends Fragment {
             args.putString("childName", name);
             sympFrag.setArguments(args);
             loadFragment(sympFrag);
+        });
+
+        cardIncident.setOnClickListener(v -> {
+            //todo link
         });
 
         return view;
