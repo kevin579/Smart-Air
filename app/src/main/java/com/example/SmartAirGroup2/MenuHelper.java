@@ -7,6 +7,7 @@ import android.view.MenuItem;
 
 import androidx.annotation.NonNull;
 import androidx.fragment.app.Fragment;
+import com.example.SmartAirGroup2.AlertCenterFragment;
 
 public class MenuHelper {
     public static void setupMenu(@NonNull Menu menu, @NonNull MenuInflater inflater, @NonNull Context context) {
@@ -26,11 +27,11 @@ public class MenuHelper {
     public static boolean handleMenuSelection(@NonNull MenuItem item, @NonNull Fragment fragment) {
         int id = item.getItemId();
         if (id == R.id.action_notifications) {
-            // Navigate to HomeFragment
+            // Navigate to AlertCenterFragment
             fragment.requireActivity()
                     .getSupportFragmentManager()
                     .beginTransaction()
-                    .replace(R.id.fragment_container, new HomeFragment())
+                    .replace(R.id.fragment_container, new AlertCenterFragment())
                     .addToBackStack(null)
                     .commit();
             return true;

@@ -38,7 +38,7 @@ public class AlertAdapter extends RecyclerView.Adapter<AlertAdapter.AlertViewHol
 
         holder.textView_Title.setText(alert.title);
         holder.textView_Message.setText(alert.message);
-        holder.textView_Time.setText(refactor(alert.timestamp));
+        holder.textView_Time.setText(alert.getFormattedTime());
 
         int defaultBorder = ContextCompat.getColor(ctx, android.R.color.darker_gray);
         int defaultTitle = ContextCompat.getColor(ctx, android.R.color.black);
@@ -80,14 +80,5 @@ public class AlertAdapter extends RecyclerView.Adapter<AlertAdapter.AlertViewHol
         }
     }
 
-    // format timestamp: "yyyy-MM-dd HH:mm"
-    private String refactor(long timestamp){
-        if(timestamp == 0){
-            return "";
-        }
-        Date date = new Date(timestamp);
-        SimpleDateFormat sdf = new SimpleDateFormat("yyyy-MM-dd HH:mm", Locale.getDefault());
-        return sdf.format(date);
-    }
 
 }

@@ -295,6 +295,10 @@ public class AddInventoryFragment extends Fragment {
         medicineData.put("prescriptionAmount", prescriptionAmount);
         medicineData.put("currentAmount", currentAmount);
 
+        // Record the time of this update (millisecond timestamp)
+        long now = System.currentTimeMillis();
+        medicineData.put("lastUpdated", now);
+
         medicineRef.setValue(medicineData)
                 .addOnCompleteListener(task -> {
                     if (task.isSuccessful()) {

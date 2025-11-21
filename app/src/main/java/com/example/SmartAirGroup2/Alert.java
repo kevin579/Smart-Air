@@ -16,5 +16,17 @@ public class Alert {
         this.message = message;
         this.timestamp = timestamp;
     }
+    public long getTimestamp() {
+        return timestamp;
+    }
+
+    public String getFormattedTime() {
+        if (timestamp == 0L) {
+            return "";   // Do not show time
+        }
+        java.text.SimpleDateFormat sdf =
+                new java.text.SimpleDateFormat("yyyy-MM-dd - HH:mm", java.util.Locale.getDefault());
+        return sdf.format(new java.util.Date(timestamp));
+    }
 
 }

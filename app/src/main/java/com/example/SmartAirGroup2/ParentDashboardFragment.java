@@ -158,6 +158,10 @@ public class ParentDashboardFragment extends Fragment {
      */
     private String type = "parent";
 
+    // Check if the safety alert shown already
+    private boolean safetyAlert = false;
+
+
     // ═══════════════════════════════════════════════════════════════════════
     // LIFECYCLE METHODS
     // ═══════════════════════════════════════════════════════════════════════
@@ -335,6 +339,13 @@ public class ParentDashboardFragment extends Fragment {
                                     statusRef.addListenerForSingleValueEvent(new ValueEventListener() {
                                         @Override
                                         public void onDataChange(@NonNull DataSnapshot statusSnap) {
+                                            // Check if the pefZone = 2
+                                            Integer pefZone = statusSnap.child("pefZone").getValue(Integer.class);
+                                            if (!safetyAlert && pefZone != null && pefZone == 2) {
+                                                safetyAlert = true;
+                                                showSafetyAlertDialog(child.getUname(), displayName);
+                                            }
+
                                             // Parse status values from Firebase
                                             List<Integer> statusList = new ArrayList<>();
 
@@ -394,6 +405,30 @@ public class ParentDashboardFragment extends Fragment {
             }
         });
     }
+
+    private void showSafetyAlertDialog(String childUname, String childDisplayName) {
+        if (!isAdded() || getContext() == null) return;
+
+        new androidx.appcompat.app.AlertDialog.Builder(requireContext())
+                .setTitle("Safety Alert")
+                .setMessage(childDisplayName + " is in the red PEF zone. Please check their asthma status.")
+                .setPositiveButton("View alerts", (dialog, which) -> {
+                    // Switch to Alert Center
+                    AlertCenterFragment alert_frag = new AlertCenterFragment();
+                    Bundle args = new Bundle();
+                    args.putString("parentUname", uname);
+                    alert_frag.setArguments(args);
+
+                    getParentFragmentManager()
+                            .beginTransaction()
+                            .replace(R.id.fragment_container, alert_frag)
+                            .addToBackStack(null)
+                            .commit();
+                })
+                .setNegativeButton("Dismiss", null)
+                .show();
+    }
+
 
     /*
     This helper method is used the get all the status code

@@ -1,5 +1,7 @@
 package com.example.SmartAirGroup2;
 
+import android.content.Context;
+import android.content.SharedPreferences;
 import android.os.Bundle;
 import android.view.LayoutInflater;
 import android.view.View;
@@ -25,10 +27,17 @@ public class AlertCenterFragment extends Fragment{
     private RecyclerView Recycler_Alerts;
     private AlertAdapter Alert_Adapter;
     private List<Alert> List_alert = new ArrayList<>();
+    private List<Alert> criticalAlerts = new ArrayList<>(); // for pefZone alerts
+    private List<Alert> normalAlerts   = new ArrayList<>(); // other
+
     private FirebaseDatabase db;
     private DatabaseReference statusRef;
     private String childName = "Andy"; // testing
     private String childUname = "andy6688"; // testing
+    private String parentUname = "kevin579"; // testing
+    @Nullable
+    private String childFilterUname = null;
+
 
 
     public AlertCenterFragment(){
@@ -39,20 +48,23 @@ public class AlertCenterFragment extends Fragment{
     public void onCreate(@NonNull Bundle savedInstanceState){
         super.onCreate(savedInstanceState);
 
-        // If parameters were passed through setArguments when creating a Fragment elsewhere, they will be received here
-        if (getArguments() != null) {
-            String argUname = getArguments().getString("childUname");
-            String argName  = getArguments().getString("childName");
-
-            // Use the parameters if available, and keep the default values if not (andy/Andy)
-            if (argUname != null && !argUname.trim().isEmpty()) {
-                childUname = argUname;
+        if (getContext() != null) {
+            SharedPreferences prefs = getContext().getSharedPreferences("APP_DATA", Context.MODE_PRIVATE);
+            String storedParent = prefs.getString("parentUname", null);
+            if (storedParent != null && !storedParent.trim().isEmpty()) {
+                parentUname = storedParent;
             }
-            if (argName != null && !argName.trim().isEmpty()) {
-                childName = argName;
+        }
+
+        if (getArguments() != null) {
+            String argParent = getArguments().getString("parentUname");
+            if (argParent != null && !argParent.trim().isEmpty()) {
+                parentUname = argParent;
             }
         }
     }
+
+
 
     @Nullable
     @Override
@@ -85,75 +97,182 @@ public class AlertCenterFragment extends Fragment{
         Recycler_Alerts.setAdapter(Alert_Adapter);
 
         db = FirebaseDatabase.getInstance("https://smart-air-group2-default-rtdb.firebaseio.com/");
-        statusRef = db.getReference("categories/users/children")
-                .child(childUname)
-                .child("status");
+        DatabaseReference childrenRef  = db.getReference("categories/users/parents")
+                .child(parentUname)
+                .child("children");
 
-        getAlertsFromFirebase();
+        loadAlertsForAllChildren(childrenRef);
 
         return view;
     }
-    private void getAlertsFromFirebase(){
-        if(statusRef == null){
-            return;
-        }
 
-        statusRef.addListenerForSingleValueEvent(new ValueEventListener(){
+    private void loadAlertsForAllChildren(DatabaseReference childrenRef) {
+        List_alert.clear();
+        criticalAlerts.clear();
+        normalAlerts.clear();
+
+        childrenRef.addListenerForSingleValueEvent(new ValueEventListener() {
             @Override
             public void onDataChange(@NonNull DataSnapshot snapshot) {
-                List_alert.clear();
-                long now = System.currentTimeMillis();
-                DataSnapshot invSnap = snapshot.child("inventory");
-
-                Integer pefZone = snapshot.child("pefZone").getValue(int.class);
-                if (pefZone != null && pefZone == 2) {
-                    Alert new_alert = new Alert("PEF Safety Alert",
-                            childName + " is in the red PEF zone.",
-                            now);
-                    List_alert.add(new_alert);
+                if (!snapshot.exists()) {
+                    Alert_Adapter.notifyDataSetChanged();
+                    return;
                 }
 
-                for (DataSnapshot medSnap : invSnap.getChildren()) {
-                    String med_name = medSnap.getKey();
-                    boolean check_Low = false;      // check if 1
-                    boolean check_Expired = false;  // check if 2
-
-                    for(DataSnapshot snap_index: medSnap.getChildren()){
-                        Integer code = snap_index.getValue(Integer.class);
-
-                        if(code == null){
-                            continue;
-                        }
-                        if(code == 1){
-                            check_Low = true;
-                        }
-                        if(code == 2){
-                            check_Expired = true;
-                        }
-                    }
-                    if(check_Low){
-                        Alert new_alert = new Alert("Medicine Low",
-                                childName+ ":" + med_name + " is running low.",
-                                now);
-                        List_alert.add(new_alert);
-                    }
-                    if(check_Expired){
-                        Alert new_alert = new Alert("Medicine Expired",
-                                childName+ ":" + med_name + " has expired.",
-                                now);
-                        List_alert.add(new_alert);
-                    }
-
+                int totalChildren = (int) snapshot.getChildrenCount();
+                if (totalChildren == 0) {
+                    Alert_Adapter.notifyDataSetChanged();
+                    return;
                 }
 
-                Alert_Adapter.notifyDataSetChanged();
+                final int[] done = {0};
+
+                for (DataSnapshot childSnap : snapshot.getChildren()) {
+                    String childUname = childSnap.getValue(String.class);
+                    if (childUname == null || childUname.trim().isEmpty()) {
+                        if (++done[0] == totalChildren) {
+                            finishLoading();
+                        }
+                        continue;
+                    }
+
+                    DatabaseReference childRef = db.getReference("categories/users/children")
+                            .child(childUname);
+
+                    childRef.addListenerForSingleValueEvent(new ValueEventListener() {
+                        @Override
+                        public void onDataChange(@NonNull DataSnapshot childData) {
+                            String displayName = childData.child("name").getValue(String.class);
+                            if (displayName == null || displayName.trim().isEmpty()) {
+                                displayName = childUname;
+                            }
+
+                            DataSnapshot statusSnap = childData.child("status");
+                            DataSnapshot inventorySnap = childData.child("inventory");
+                            parseStatusForChild(displayName, statusSnap, inventorySnap);
+
+                            if (++done[0] == totalChildren) {
+                                finishLoading();
+                            }
+                        }
+
+                        @Override
+                        public void onCancelled(@NonNull DatabaseError error) {
+                            if (++done[0] == totalChildren) {
+                                finishLoading();
+                            }
+                        }
+                    });
+                }
             }
 
             @Override
             public void onCancelled(@NonNull DatabaseError error) { }
-
         });
     }
+
+
+    private void parseStatusForChild(String childDisplayName,
+                                     DataSnapshot statusSnap,
+                                     DataSnapshot inventorySnap) {
+        if (statusSnap == null || !statusSnap.exists()) return;
+
+        //  PEF alert
+        Integer pefZone = statusSnap.child("pefZone").getValue(Integer.class);
+        if (pefZone != null && pefZone == 2) {
+
+            criticalAlerts.add(new Alert(
+                    "PEF Safety Alert",
+                    childDisplayName + " is in the red PEF zone.",
+                    0L
+            ));
+        }
+
+        // medicine alerts
+        DataSnapshot statusInvSnap = statusSnap.child("inventory");
+        if (statusInvSnap == null || !statusInvSnap.exists()) {
+            return;
+        }
+        if (inventorySnap == null || !inventorySnap.exists()) {
+            // if inventory doesn't exist, just reurn
+            return;
+        }
+
+        for (DataSnapshot medSnap : statusInvSnap.getChildren()) {
+            String medName = medSnap.getKey();
+            if (medName == null) continue;
+
+            boolean checkLow = false;
+            boolean checkExpired = false;
+
+            for (DataSnapshot snapIndex : medSnap.getChildren()) {
+                Integer code = snapIndex.getValue(Integer.class);
+                if (code == null) {
+                    continue;
+                }
+                if (code == 1) {
+                    checkLow = true;
+                }
+                if (code == 2) {
+                    checkExpired = true;
+                }
+            }
+
+            long alertTime = getMedicineTime(inventorySnap, medName);
+
+            if (checkLow) {
+                normalAlerts.add(new Alert(
+                        "Medicine Low",
+                        childDisplayName + ":" + medName + " is running low.",
+                        alertTime
+                ));
+            }
+
+            if (checkExpired) {
+                normalAlerts.add(new Alert(
+                        "Medicine Expired",
+                        childDisplayName + ":" + medName + " has expired.",
+                        alertTime
+                ));
+            }
+        }
+    }
+
+
+    private long getMedicineTime(DataSnapshot inventorySnap, String medName) {
+        if (inventorySnap == null) {
+            return System.currentTimeMillis();
+        }
+
+        DataSnapshot medInv = inventorySnap.child(medName);
+        if (!medInv.exists()) {
+            return System.currentTimeMillis();
+        }
+
+        Long timestamp = medInv.child("lastUpdated").getValue(Long.class);
+        if (timestamp != null) {
+            return timestamp;
+        }
+
+        return System.currentTimeMillis();
+    }
+
+
+    private void finishLoading() {
+            // Sort the alerts in chronological order from new to old
+        java.util.Collections.sort(normalAlerts,
+                (a, b) -> Long.compare(b.getTimestamp(), a.getTimestamp()));
+
+        List_alert.clear();
+        // put PEF（critical） first
+        List_alert.addAll(criticalAlerts);
+        // then put medicine alerts
+        List_alert.addAll(normalAlerts);
+
+        // Refresh
+        Alert_Adapter.notifyDataSetChanged();
+    }
+
 }
 
 
