@@ -16,6 +16,8 @@ import androidx.annotation.Nullable;
 import androidx.fragment.app.Fragment;
 
 import com.example.SmartAirGroup2.ChildDashboard;
+import com.example.SmartAirGroup2.Helpers.SaveState;
+import com.example.SmartAirGroup2.OnboardingActivity;
 import com.example.SmartAirGroup2.ParentDashboardActivity;
 import com.example.SmartAirGroup2.ParentDashboardFragment;
 import com.example.SmartAirGroup2.Parent_Provider_Dahsboard;
@@ -24,6 +26,8 @@ import com.example.SmartAirGroup2.auth.data.repo.AuthRepository;
 import com.example.SmartAirGroup2.auth.data.repo.FirebaseRtdbAuthRepository;
 import com.example.SmartAirGroup2.create_account;
 import com.example.SmartAirGroup2.password_recover;
+import com.google.firebase.database.DatabaseReference;
+import com.google.firebase.database.FirebaseDatabase;
 
 public class LoginFragment extends Fragment implements LoginContract.View {
     private LoginPresenter presenter;
@@ -94,20 +98,61 @@ public class LoginFragment extends Fragment implements LoginContract.View {
     public void showLoginSuccess(String role) {
         if (emailInput != null)    emailInput.setError(null);
         if (passwordInput != null) passwordInput.setError(null);
+
+
         Toast.makeText(getContext(), "Login success", Toast.LENGTH_SHORT).show();
+        String field;
         if(role.equals("Child")){
-            Intent intent = new Intent(getActivity(), ChildDashboard.class);
-            startActivity(intent);
+            field = "children";
         }else if(role.equals("Parent")){
-            Intent intent = new Intent(getActivity(), ParentDashboardActivity.class);
-            intent.putExtra("username", usernameInput.getText().toString().trim());
-            startActivity(intent);
+            field = "parents";
+        }
+        else{
+            field = "providers";
         }
 
-        else{
-            Intent intent = new Intent(getActivity(), Parent_Provider_Dahsboard.class);
-            startActivity(intent);
-        }
+        DatabaseReference stateRef = FirebaseDatabase.getInstance()
+                .getReference("categories/users")
+                .child(field)
+                .child(usernameInput.getText().toString().trim());
+
+        stateRef.child("onboarded").get()
+                .addOnSuccessListener(snapshot -> {
+                    boolean onboarded = snapshot.exists() && Boolean.TRUE.equals(snapshot.getValue(Boolean.class));
+
+                    if (!onboarded) {
+                        // User has NOT completed onboarding → redirect to onboarding
+                        Intent intent = new Intent(getActivity(), OnboardingActivity.class);
+                        intent.putExtra("username", usernameInput.getText().toString().trim());
+                        intent.putExtra("type", field);
+                        startActivity(intent);
+                    } else {
+
+                        if(role.equals("Child")){
+                            Intent intent = new Intent(getActivity(), ChildDashboard.class);
+                            startActivity(intent);
+                        }else if(role.equals("Parent")){
+                            Intent intent = new Intent(getActivity(), ParentDashboardActivity.class);
+                            intent.putExtra("username", usernameInput.getText().toString().trim());
+                            startActivity(intent);
+                        }
+
+                        else{
+                            Intent intent = new Intent(getActivity(), Parent_Provider_Dahsboard.class);
+                            startActivity(intent);
+                        }
+                    }
+                })
+                .addOnFailureListener(e -> {
+                    // Treat failure as "not onboarded"
+                    Intent intent = new Intent(getActivity(), OnboardingActivity.class);
+                    intent.putExtra("username", usernameInput.getText().toString().trim());
+                    intent.putExtra("type", field);
+                    startActivity(intent);
+                });
+
+
+
 
     }
 

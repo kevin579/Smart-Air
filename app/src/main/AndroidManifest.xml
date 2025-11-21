@@ -25,6 +25,7 @@
             android:name=".create_account"
             android:exported="false" />
         <activity android:name=".ParentDashboardActivity" />
+        <activity android:name=".OnboardingActivity" />
         <activity
             android:name=".MainActivity"
             android:exported="true"
