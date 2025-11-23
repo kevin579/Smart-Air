@@ -1,5 +1,6 @@
 package com.example.SmartAirGroup2;
 
+import android.content.SharedPreferences;
 import android.os.Bundle;
 import android.view.WindowManager;
 import android.widget.Toast;
@@ -32,12 +33,6 @@ public class MainActivity extends AppCompatActivity {
                             new com.example.SmartAirGroup2.auth.login.LoginFragment())
                     .commit();
         }
-//        if (savedInstanceState == null) {
-//            getSupportFragmentManager()
-//                    .beginTransaction()
-//                    .replace(R.id.fragment_container, new AlertCenterFragment())
-//                    .commit();
-//        }
 
     }
 

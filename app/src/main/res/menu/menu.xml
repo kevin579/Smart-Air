@@ -4,9 +4,9 @@
 
     <item
         android:id="@+id/action_notifications"
-        android:icon="@drawable/ic_notifications"
         android:title="Notifications"
-        app:showAsAction="always" />
+        app:showAsAction="always"
+        app:actionLayout="@layout/notification_badge" />
 
     <item
         android:id="@+id/action_settings"

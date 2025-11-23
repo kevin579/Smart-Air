@@ -161,6 +161,9 @@ public class ParentDashboardFragment extends Fragment {
     // Check if the safety alert shown already
     private boolean safetyAlert = false;
 
+    private View notificationActionView;
+    private View notificationBadge;
+
 
     // ═══════════════════════════════════════════════════════════════════════
     // LIFECYCLE METHODS
@@ -615,9 +618,126 @@ public class ParentDashboardFragment extends Fragment {
      */
     @Override
     public void onCreateOptionsMenu(@NonNull Menu menu, @NonNull MenuInflater inflater) {
-        MenuHelper.setupMenu(menu, inflater, requireContext());
         super.onCreateOptionsMenu(menu, inflater);
+
+        MenuHelper.setupMenu(menu, inflater, requireContext());
+
+        MenuItem notifItem = menu.findItem(R.id.action_notifications);
+        if (notifItem != null) {
+            notificationActionView = notifItem.getActionView();
+            if (notificationActionView != null) {
+                notificationBadge = notificationActionView.findViewById(R.id.viewBadge);
+
+                notificationActionView.setOnClickListener(v -> {
+                    onOptionsItemSelected(notifItem);
+                });
+            }
+        }
+
+        checkAlertsAndUpdateBadge();
     }
+
+    private void updateNotificationBadge(boolean hasAlerts) {
+        if (notificationBadge == null) return;
+        notificationBadge.setVisibility(hasAlerts ? View.VISIBLE : View.GONE);
+    }
+
+    private void checkAlertsAndUpdateBadge() {
+
+        if (db == null) {
+            db = FirebaseDatabase.getInstance("https://smart-air-group2-default-rtdb.firebaseio.com/");
+        }
+
+        DatabaseReference childrenRef = db.getReference("categories/users/parents")
+                .child(uname)
+                .child("children");
+
+        childrenRef.addListenerForSingleValueEvent(new ValueEventListener() {
+            @Override
+            public void onDataChange(@NonNull DataSnapshot snapshot) {
+                // no child → no notification
+                if (!snapshot.exists() || snapshot.getChildrenCount() == 0) {
+                    updateNotificationBadge(false);
+                    return;
+                }
+
+                int totalChildren = (int) snapshot.getChildrenCount();
+                final int[] finished = {0};
+                final boolean[] hasAlerts = {false};
+
+                for (DataSnapshot childSnap : snapshot.getChildren()) {
+                    String childUname = childSnap.getValue(String.class);
+
+                    if (childUname == null || childUname.trim().isEmpty()) {
+                        if (++finished[0] == totalChildren && !hasAlerts[0]) {
+                            updateNotificationBadge(false);
+                        }
+                        continue;
+                    }
+
+                    // find this child's status node
+                    DatabaseReference statusRef = db.getReference("categories/users/children")
+                            .child(childUname)
+                            .child("status");
+
+                    statusRef.addListenerForSingleValueEvent(new ValueEventListener() {
+                        @Override
+                        public void onDataChange(@NonNull DataSnapshot statusSnap) {
+                            if (!hasAlerts[0]) {
+                                if (statusHasAlert(statusSnap)) {
+                                    hasAlerts[0] = true;
+                                    updateNotificationBadge(true);
+                                }
+                            }
+
+                            if (++finished[0] == totalChildren && !hasAlerts[0]) {
+                                updateNotificationBadge(false);
+                            }
+                        }
+
+                        @Override
+                        public void onCancelled(@NonNull DatabaseError error) {
+                            if (++finished[0] == totalChildren && !hasAlerts[0]) {
+                                updateNotificationBadge(false);
+                            }
+                        }
+                    });
+                }
+            }
+
+            private boolean statusHasAlert(DataSnapshot statusSnap) {
+                if (statusSnap == null || !statusSnap.exists()) {
+                    return false;
+                }
+
+                Integer pefZone = statusSnap.child("pefZone").getValue(Integer.class);
+                if (pefZone != null && pefZone == 2) {
+                    return true;
+                }
+
+                DataSnapshot invSnap = statusSnap.child("inventory");
+                if (invSnap != null && invSnap.exists()) {
+                    for (DataSnapshot medSnap : invSnap.getChildren()) {
+                        for (DataSnapshot snapIndex : medSnap.getChildren()) {
+                            Integer check = snapIndex.getValue(Integer.class);
+                            if (check != null && (check == 1 || check == 2)) {
+                                return true;
+                            }
+                        }
+                    }
+                }
+
+                return false;
+            }
+
+
+            @Override
+            public void onCancelled(@NonNull DatabaseError error) {
+                updateNotificationBadge(false);
+            }
+        });
+    }
+
 
     /**
      * Handles menu item selection events.
