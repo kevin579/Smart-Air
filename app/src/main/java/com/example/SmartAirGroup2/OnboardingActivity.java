@@ -109,7 +109,7 @@ public class OnboardingActivity extends AppCompatActivity {
                         intent.putExtra("username", username);
 
                     } else {
-                        intent = new Intent(OnboardingActivity.this, Parent_Provider_Dahsboard.class);
+                        intent = new Intent(OnboardingActivity.this, Parent_Provider_Dashboard.class);
                     }
 
                     startActivity(intent);

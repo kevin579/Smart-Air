@@ -1,5 +1,6 @@
 package com.example.SmartAirGroup2;
 
+import android.content.SharedPreferences;
 import android.os.Bundle;
 import android.view.WindowManager;
 import android.widget.Toast;
@@ -10,6 +11,8 @@ import androidx.fragment.app.FragmentTransaction;
 
 import com.google.firebase.database.DatabaseReference;
 import com.google.firebase.database.FirebaseDatabase;
+import com.example.SmartAirGroup2.AlertCenterFragment;
+
 
 public class MainActivity extends AppCompatActivity {
 
@@ -19,17 +22,18 @@ public class MainActivity extends AppCompatActivity {
     protected void onCreate(Bundle savedInstanceState) {
 
         getWindow().setFlags(WindowManager.LayoutParams.FLAG_TRANSLUCENT_STATUS, WindowManager.LayoutParams.FLAG_TRANSLUCENT_STATUS);
-
+    
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_main);
 
         if (savedInstanceState == null) {
             getSupportFragmentManager()
                     .beginTransaction()
-                    .replace(R.id.container,
+                    .replace(R.id.fragment_container,
                             new com.example.SmartAirGroup2.auth.login.LoginFragment())
                     .commit();
         }
+
     }
 
     private void loadFragment(Fragment fragment) {

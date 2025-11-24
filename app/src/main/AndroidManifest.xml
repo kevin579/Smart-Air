@@ -13,7 +13,7 @@
         android:theme="@style/Theme.SmartAir"
         tools:targetApi="31">
         <activity
-            android:name=".Parent_Provider_Dahsboard"
+            android:name=".Parent_Provider_Dashboard"
             android:exported="false" />
         <activity
             android:name=".ChildDashboard"
@@ -36,6 +36,7 @@
                 <category android:name="android.intent.category.LAUNCHER" />
             </intent-filter>
         </activity>
+
         <activity
             android:name=".LoginPage"
             android:exported="false"
