@@ -100,7 +100,6 @@ import java.util.List;
  * Author: Kevin Li
  * Last Updated: November 18 2025
  */
-
 public class ParentDashboardFragment extends Fragment {
 
     // ═══════════════════════════════════════════════════════════════════════
@@ -156,7 +155,17 @@ public class ParentDashboardFragment extends Fragment {
      * User type identifier for the current user.
      * Always "parent" for this fragment.
      */
-    private String type = "parent";
+    private String type;
+
+    private boolean safetyAlert = false;
+
+    private View notificationActionView;
+    private View notificationBadge;
+
+
+    // ═══════════════════════════════════════════════════════════════════════
+    // LIFECYCLE METHODS
+    // ═══════════════════════════════════════════════════════════════════════
 
     public static ParentDashboardFragment newInstance(String username) {
         ParentDashboardFragment fragment = new ParentDashboardFragment();
@@ -164,21 +173,20 @@ public class ParentDashboardFragment extends Fragment {
         args.putString("username", username);
         fragment.setArguments(args);
         return fragment;
+
     }
-
-    // ═══════════════════════════════════════════════════════════════════════
-    // LIFECYCLE METHODS
-    // ═══════════════════════════════════════════════════════════════════════
-
 
     @Override
     public void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
 
+        // Retrieve parent username passed as argument
         if (getArguments() != null) {
             uname = getArguments().getString("username");
         }
+        type="parent";
     }
+
     /**
      * Creates and initializes the view hierarchy for this fragment.
      *
@@ -195,15 +203,30 @@ public class ParentDashboardFragment extends Fragment {
      * @param savedInstanceState Previously saved state, if any
      * @return                   The root view for this fragment
      */
-
     @Nullable
     @Override
     public View onCreateView(@NonNull LayoutInflater inflater, @Nullable ViewGroup container, @Nullable Bundle savedInstanceState) {
         View view = inflater.inflate(R.layout.fragment_parent_dashboard, container, false);
 
-        // ─────────────────────────────────────────────────────────────────
-        // Toolbar Configuration
-        // ─────────────────────────────────────────────────────────────────
+        // Get SharedPreferences
+        SharedPreferences prefs = requireActivity().getSharedPreferences("user_prefs", Context.MODE_PRIVATE);
+
+        // Get the current logged-in user's unique identifier
+        String userId = CurrentUser.get().getUname();  // or email, or a unique ID
+        String userEmail = CurrentUser.get().getEmail();
+        String userType = CurrentUser.get().getType();
+
+        // Check if this user has accepted terms
+        boolean hasAcceptedTerms = prefs.getBoolean("accepted_terms_" + userType + userId + userEmail, false);
+
+        if (!hasAcceptedTerms) {
+            // Show the TermsDialogFragment
+            TermsDialogFragment dialog = new TermsDialogFragment();
+            dialog.show(getParentFragmentManager(), "terms_dialog");
+        }
+
+
+        // Toolbar setup
         toolbar = view.findViewById(R.id.toolbar);
         ((AppCompatActivity) getActivity()).setSupportActionBar(toolbar);
         setHasOptionsMenu(true);
@@ -229,9 +252,9 @@ public class ParentDashboardFragment extends Fragment {
         // ─────────────────────────────────────────────────────────────────
         // Persist User Identity
         // ─────────────────────────────────────────────────────────────────
-        SharedPreferences prefs = requireContext().getSharedPreferences("APP_DATA", Context.MODE_PRIVATE);
-        prefs.edit().putString("parentUname", uname).apply();
-        prefs.edit().putString("type", type).apply();
+        SharedPreferences prefs2 = requireContext().getSharedPreferences("APP_DATA", Context.MODE_PRIVATE);
+        prefs2.edit().putString("parentUname", uname).apply();
+        prefs2.edit().putString("type", type).apply();
 
         // ─────────────────────────────────────────────────────────────────
         // Add Child Button Handler
@@ -353,6 +376,13 @@ public class ParentDashboardFragment extends Fragment {
                                     statusRef.addListenerForSingleValueEvent(new ValueEventListener() {
                                         @Override
                                         public void onDataChange(@NonNull DataSnapshot statusSnap) {
+
+                                            Integer pefZone = statusSnap.child("pefZone").getValue(Integer.class);
+                                            if (!safetyAlert && pefZone != null && pefZone == 2) {
+                                                safetyAlert = true;
+                                                showSafetyAlertDialog(child.getUname(), displayName);
+                                            }
+
                                             // Parse status values from Firebase
                                             List<Integer> statusList = new ArrayList<>();
 
@@ -431,6 +461,28 @@ public class ParentDashboardFragment extends Fragment {
             }
         }
     }
+    private void showSafetyAlertDialog(String childUname, String childDisplayName) {
+        if (!isAdded() || getContext() == null) return;
+
+        new AlertDialog.Builder(requireContext())
+                .setTitle("Safety Alert")
+                .setMessage("Your child is in the red PEF zone. Please check their asthma status.")
+                .setPositiveButton("View alerts", (dialog, which) -> {
+                    AlertCenterFragment alertFrag = new AlertCenterFragment();
+                    Bundle args = new Bundle();
+                    args.putString("parentUname", uname);
+                    alertFrag.setArguments(args);
+
+                    getParentFragmentManager()
+                            .beginTransaction()
+                            .replace(R.id.fragment_container, alertFrag)
+                            .addToBackStack(null)
+                            .commit();
+                })
+                .setNegativeButton("Dismiss", null)
+                .show();
+    }
+
 
     // ═══════════════════════════════════════════════════════════════════════
     // UI CONSTRUCTION HELPERS
@@ -598,17 +650,129 @@ public class ParentDashboardFragment extends Fragment {
      */
     @Override
     public void onCreateOptionsMenu(@NonNull Menu menu, @NonNull MenuInflater inflater) {
-        MenuHelper.setupMenu(menu, inflater, requireContext());
         super.onCreateOptionsMenu(menu, inflater);
+
+        MenuHelper.setupMenu(menu, inflater, requireContext());
+
+        MenuItem notifItem = menu.findItem(R.id.action_notifications);
+        if (notifItem != null) {
+            notificationActionView = notifItem.getActionView();
+            if (notificationActionView != null) {
+                notificationBadge = notificationActionView.findViewById(R.id.viewBadge);
+
+                notificationActionView.setOnClickListener(v -> onOptionsItemSelected(notifItem));
+            }
+        }
+        checkAlertsAndUpdateBadge();
+    }
+    private void updateNotificationBadge(boolean hasAlerts) {
+        if (notificationBadge == null) return;
+        notificationBadge.setVisibility(hasAlerts ? View.VISIBLE : View.GONE);
     }
 
+    private void checkAlertsAndUpdateBadge() {
+        if (db == null) {
+            db = FirebaseDatabase.getInstance("https://smart-air-group2-default-rtdb.firebaseio.com/");
+        }
+
+        DatabaseReference parentChildrenRef = db.getReference("categories/users/parents")
+                .child(uname)
+                .child("children");
+
+        parentChildrenRef.addListenerForSingleValueEvent(new ValueEventListener() {
+            @Override
+            public void onDataChange(@NonNull DataSnapshot snapshot) {
+                if (!snapshot.exists() || snapshot.getChildrenCount() == 0) {
+                    updateNotificationBadge(false);
+                    return;
+                }
+
+                int totalChildren = (int) snapshot.getChildrenCount();
+                final int[] finished = {0};
+                final boolean[] hasAlerts = {false};
+
+                for (DataSnapshot childSnap : snapshot.getChildren()) {
+                    String childUname = childSnap.getValue(String.class);
+
+                    if (childUname == null || childUname.trim().isEmpty()) {
+                        if (++finished[0] == totalChildren && !hasAlerts[0]) {
+                            updateNotificationBadge(false);
+                        }
+                        continue;
+                    }
+
+                    DatabaseReference statusRef = db.getReference("categories/users/children")
+                            .child(childUname)
+                            .child("status");
+
+                    statusRef.addListenerForSingleValueEvent(new ValueEventListener() {
+                        @Override
+                        public void onDataChange(@NonNull DataSnapshot statusSnap) {
+                            if (!hasAlerts[0]) {
+                                if (statusHasAlert(statusSnap)) {
+                                    hasAlerts[0] = true;
+                                    updateNotificationBadge(true);
+                                }
+                            }
+
+                            if (++finished[0] == totalChildren && !hasAlerts[0]) {
+                                updateNotificationBadge(false);
+                            }
+                        }
+
+                        @Override
+                        public void onCancelled(@NonNull DatabaseError error) {
+                            if (++finished[0] == totalChildren && !hasAlerts[0]) {
+                                updateNotificationBadge(false);
+                            }
+                        }
+                    });
+                }
+            }
+
+            @Override
+            public void onCancelled(@NonNull DatabaseError error) {
+                updateNotificationBadge(false);
+            }
+        });
+    }
+
+
+    private boolean statusHasAlert(DataSnapshot statusSnap) {
+        if (statusSnap == null || !statusSnap.exists()) {
+            return false;
+        }
+
+        // PEF red zone
+        Integer pefZone = statusSnap.child("pefZone").getValue(Integer.class);
+        if (pefZone != null && pefZone == 2) {
+            return true;
+        }
+
+        DataSnapshot invSnap = statusSnap.child("inventory");
+        if (invSnap != null && invSnap.exists()) {
+            for (DataSnapshot medSnap : invSnap.getChildren()) {
+                for (DataSnapshot snapIndex : medSnap.getChildren()) {
+                    Integer code = snapIndex.getValue(Integer.class);
+                    if (code != null && (code == 1 || code == 2)) {
+                        return true;
+                    }
+                }
+            }
+        }
+
+        return false;
+    }
+
+
+
     /**
-     * Handles menu item selection events.
-     * Delegates to MenuHelper for consistent menu behavior across the app.
-     *
-     * @param item The menu item that was selected
-     * @return     true if the event was handled, false otherwise
-     */
+         * Handles menu item selection events.
+         * Delegates to MenuHelper for consistent menu behavior across the app.
+         *
+         * @param item The menu item that was selected
+         * @return     true if the event was handled, false otherwise
+         */
     @Override
     public boolean onOptionsItemSelected(@NonNull MenuItem item) {
         if (MenuHelper.handleMenuSelection(item, this)) {

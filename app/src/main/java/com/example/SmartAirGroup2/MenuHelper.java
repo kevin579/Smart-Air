@@ -4,6 +4,8 @@ import android.content.Context;
 import android.content.Intent;
 import android.content.SharedPreferences;
 import android.view.Gravity;
+import android.content.SharedPreferences;
+import android.os.Bundle;
 import android.view.Menu;
 import android.view.MenuInflater;
 import android.view.MenuItem;
@@ -15,6 +17,7 @@ import androidx.annotation.NonNull;
 import androidx.appcompat.app.AlertDialog;
 import androidx.appcompat.widget.Toolbar;
 import androidx.fragment.app.Fragment;
+import com.example.SmartAirGroup2.AlertCenterFragment;
 
 import com.example.SmartAirGroup2.auth.login.LoginFragment;
 
@@ -37,11 +40,22 @@ public class MenuHelper {
 
         int id = item.getItemId();
         if (id == R.id.action_notifications) {
-            // Navigate to HomeFragment
+            Context ctx = fragment.requireContext();
+            SharedPreferences prefs =
+                    ctx.getSharedPreferences("APP_DATA", Context.MODE_PRIVATE);
+            String parentUname = prefs.getString("parentUname", null);
+
+            AlertCenterFragment alertFrag = new AlertCenterFragment();
+            if (parentUname != null && !parentUname.trim().isEmpty()) {
+                Bundle args = new Bundle();
+                args.putString("parentUname", parentUname);
+                alertFrag.setArguments(args);
+            }
+
             fragment.requireActivity()
                     .getSupportFragmentManager()
                     .beginTransaction()
-                    .replace(R.id.fragment_container, new HomeFragment())
+                    .replace(R.id.fragment_container, alertFrag)
                     .addToBackStack(null)
                     .commit();
             return true;

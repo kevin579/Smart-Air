@@ -72,6 +72,31 @@
         vestibulum. Fusce dictum libero quis erat maximus, vitae volutpat diam dignissim.
     </string>
 
+    <string name="terms_conditions">
+        By using the Smart Air app, you agree to the following terms:\n\n
+
+        Smart Air is intended to provide general health and wellness guidance only. It does not
+        constitute medical advice, diagnosis, or treatment. You should always consult a qualified
+        healthcare professional for any medical concerns.\n\n
+
+        The app may collect and store certain personal information, including your health-related
+        data, usage patterns, and account information, to improve functionality and provide a
+        personalized experience. Smart Air will handle your data according to applicable privacy
+        laws and industry standards, but you acknowledge and accept the inherent risks of data
+        storage and transmission.\n\n
+
+        While we strive to ensure the accuracy of the guidance provided, Smart Air makes no
+        warranties or guarantees regarding the outcomes, reliability, or completeness of the
+        information.\n\n
+
+        By using this app, you agree that Smart Air, its developers, affiliates, and partners are
+        not liable for any loss, injury, or damages resulting from your use of the app, including
+        reliance on its guidance or any action taken based on the information provided.\n\n
+
+        Use of the app constitutes your acknowledgment and acceptance of these terms.
+    </string>
+
+
     <string name="title1">Welcome!</string>
     <string name="title2">Rescue vs Controller</string>
     <string name="title3">Privacy Defaults</string>

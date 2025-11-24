@@ -5,7 +5,7 @@ import static android.app.PendingIntent.getActivity;
 import static androidx.core.content.ContextCompat.startActivity;
 
 import com.example.SmartAirGroup2.ChildDashboard;
-import com.example.SmartAirGroup2.Parent_Provider_Dahsboard;
+import com.example.SmartAirGroup2.Parent_Provider_Dashboard;
 import com.example.SmartAirGroup2.auth.data.repo.AuthRepository;
 import com.example.SmartAirGroup2.auth.data.repo.ProfileCheck;
 
