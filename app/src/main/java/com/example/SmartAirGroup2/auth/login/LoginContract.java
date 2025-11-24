@@ -1,7 +1,7 @@
 package com.example.SmartAirGroup2.auth.login;
 
 public class LoginContract {
-    interface View{
+    public interface View{
         void showLoginSuccess(String role);
         void showLoginFailed();
         void showInputError(String message); //"Please select a role"

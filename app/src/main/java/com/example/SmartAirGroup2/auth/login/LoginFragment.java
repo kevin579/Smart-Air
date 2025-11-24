@@ -22,12 +22,17 @@ import com.example.SmartAirGroup2.MainActivity;
 import com.example.SmartAirGroup2.OnboardingActivity;
 import com.example.SmartAirGroup2.ParentDashboardFragment;
 import com.example.SmartAirGroup2.Parent_Provider_Dashboard;
+import com.example.SmartAirGroup2.OnboardingActivity;
+import com.example.SmartAirGroup2.ParentDashboardActivity;
+import com.example.SmartAirGroup2.Parent_Provider_Dahsboard;
 import com.example.SmartAirGroup2.R;
 import com.example.SmartAirGroup2.User;
 import com.example.SmartAirGroup2.auth.data.repo.AuthRepository;
 import com.example.SmartAirGroup2.auth.data.repo.FirebaseRtdbAuthRepository;
 import com.example.SmartAirGroup2.create_account;
 import com.example.SmartAirGroup2.password_recover;
+import com.google.firebase.database.DatabaseReference;
+import com.google.firebase.database.FirebaseDatabase;
 
 public class LoginFragment extends Fragment implements LoginContract.View {
     private LoginPresenter presenter;
@@ -104,9 +109,11 @@ public class LoginFragment extends Fragment implements LoginContract.View {
         User user = new User(username, username, email, password, role);
         CurrentUser.set(user);
         Toast.makeText(getContext(), "Login success", Toast.LENGTH_SHORT).show();
+        String field;
         if(role.equals("Child")){
-            Intent intent = new Intent(getActivity(), ChildDashboard.class);
-            startActivity(intent);
+            field = "children";
+        }else if(role.equals("Parent")){
+            field = "parents";
         }
         else if (role.equals("Provider")){
             Intent intent = new Intent(getActivity(), Parent_Provider_Dashboard.class);
@@ -116,6 +123,49 @@ public class LoginFragment extends Fragment implements LoginContract.View {
             Intent intent = new Intent(getActivity(), Parent_Provider_Dashboard.class);
             startActivity(intent);
         }
+            field = "providers";
+        }
+
+        DatabaseReference stateRef = FirebaseDatabase.getInstance()
+                .getReference("categories/users")
+                .child(field)
+                .child(usernameInput.getText().toString().trim());
+
+        stateRef.child("onboarded").get()
+                .addOnSuccessListener(snapshot -> {
+                    boolean onboarded = snapshot.exists() && Boolean.TRUE.equals(snapshot.getValue(Boolean.class));
+
+                    if (!onboarded) {
+                        // User has NOT completed onboarding → redirect to onboarding
+                        Intent intent = new Intent(getActivity(), OnboardingActivity.class);
+                        intent.putExtra("username", usernameInput.getText().toString().trim());
+                        intent.putExtra("type", field);
+                        startActivity(intent);
+                    } else {
+
+                        if(role.equals("Child")){
+                            Intent intent = new Intent(getActivity(), ChildDashboard.class);
+                            startActivity(intent);
+                        }else if(role.equals("Parent")){
+                            Intent intent = new Intent(getActivity(), ParentDashboardActivity.class);
+                            intent.putExtra("username", usernameInput.getText().toString().trim());
+                            startActivity(intent);
+                        }
+
+                        else{
+                            Intent intent = new Intent(getActivity(), Parent_Provider_Dahsboard.class);
+                            startActivity(intent);
+                        }
+                    }
+                })
+                .addOnFailureListener(e -> {
+                    // Treat failure as "not onboarded"
+                    Intent intent = new Intent(getActivity(), OnboardingActivity.class);
+                    intent.putExtra("username", usernameInput.getText().toString().trim());
+                    intent.putExtra("type", field);
+                    startActivity(intent);
+                });
+
     }
 
     @Override
