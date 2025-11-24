@@ -38,7 +38,7 @@ public class LoginFragment extends Fragment implements LoginContract.View {
     private LoginPresenter presenter;
     private EditText  emailInput, passwordInput,usernameInput ;
     private Spinner roleSpinner;
-    private String email, username, password, selectedRole;
+    private String field, username, selectedRole, email, password;
 
 
     @Nullable
@@ -105,8 +105,12 @@ public class LoginFragment extends Fragment implements LoginContract.View {
         if (passwordInput != null) passwordInput.setError(null);
 
         username = usernameInput.getText().toString().trim();
-        email = emailInput.getText().toString().trim();
-        password = passwordInput.getText().toString().trim();
+        email = emailInput.getText().toString();
+        password = passwordInput.getText().toString();
+
+
+        User user = new User(username, username, email, password, role);
+        CurrentUser.set(user);
 
         if (usernameInput != null) usernameInput.setText("");
         if (emailInput != null)    emailInput.setText("");
@@ -114,14 +118,10 @@ public class LoginFragment extends Fragment implements LoginContract.View {
         if (roleSpinner != null)   roleSpinner.setSelection(0);
 
 
-        String username = usernameInput.getText().toString();
-        String email = emailInput.getText().toString();
-        String password = passwordInput.getText().toString();
-        User user = new User(username, username, email, password, role);
-        CurrentUser.set(user);
-        Toast.makeText(getContext(), "Login success", Toast.LENGTH_SHORT).show();
+//        String username = usernameInput.getText().toString();
 
-        String field;
+//        Toast.makeText(getContext(), "Login success", Toast.LENGTH_SHORT).show();
+
 
         if(role.equals("Child")){
             field = "children";
@@ -129,11 +129,8 @@ public class LoginFragment extends Fragment implements LoginContract.View {
             field = "parents";
         }
         else{
-
             field = "providers";
         }
-
-
 
 
         DatabaseReference stateRef = FirebaseDatabase.getInstance()
@@ -146,7 +143,6 @@ public class LoginFragment extends Fragment implements LoginContract.View {
                     boolean onboarded = snapshot.exists() && Boolean.TRUE.equals(snapshot.getValue(Boolean.class));
 
                     if (!onboarded) {
-                        // User has NOT completed onboarding → redirect to onboarding
                         Intent intent = new Intent(getActivity(), OnboardingActivity.class);
                         intent.putExtra("username", username);
                         intent.putExtra("type", field);
@@ -169,7 +165,6 @@ public class LoginFragment extends Fragment implements LoginContract.View {
                     }
                 })
                 .addOnFailureListener(e -> {
-                    // Treat failure as "not onboarded"
                     Intent intent = new Intent(getActivity(), OnboardingActivity.class);
                     intent.putExtra("username", username);
                     intent.putExtra("type", field);
