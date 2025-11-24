@@ -107,11 +107,15 @@ public class SymptomDashboardFragment extends Fragment {
             loadFragment(addFrag);
         });
 
-        // → Export (future feature)
-        cardExport.setOnClickListener(v ->
-                //todo implement export method
-                Toast.makeText(getContext(), "Export feature coming soon", Toast.LENGTH_SHORT).show()
-        );
+        // → Export PDF or CSV
+        cardExport.setOnClickListener(v ->{
+            ExportSymptoms ExportFrag = new ExportSymptoms();
+            Bundle args = new Bundle();
+            args.putString("childUname", uname);
+            args.putString("childName", name);
+            ExportFrag.setArguments(args);
+            loadFragment(ExportFrag);
+        });
 
         // → View History
         cardViewHistory.setOnClickListener(v -> {
