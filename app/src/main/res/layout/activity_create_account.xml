@@ -78,7 +78,7 @@
             android:layout_height="wrap_content"
             android:layout_marginTop="16dp"
             android:background="@drawable/rounded_corners"
-            android:hint="confirm password"
+            android:hint="Confirm password"
             android:inputType="textPassword"
             android:padding="18dp"
             android:textColor="@color/white"
