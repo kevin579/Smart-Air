@@ -1,12 +1,15 @@
 package com.example.SmartAirGroup2;
 
 import android.content.Context;
+import android.content.SharedPreferences;
+import android.os.Bundle;
 import android.view.Menu;
 import android.view.MenuInflater;
 import android.view.MenuItem;
 
 import androidx.annotation.NonNull;
 import androidx.fragment.app.Fragment;
+import com.example.SmartAirGroup2.AlertCenterFragment;
 
 public class MenuHelper {
     public static void setupMenu(@NonNull Menu menu, @NonNull MenuInflater inflater, @NonNull Context context) {
@@ -26,11 +29,22 @@ public class MenuHelper {
     public static boolean handleMenuSelection(@NonNull MenuItem item, @NonNull Fragment fragment) {
         int id = item.getItemId();
         if (id == R.id.action_notifications) {
-            // Navigate to HomeFragment
+            Context ctx = fragment.requireContext();
+            SharedPreferences prefs =
+                    ctx.getSharedPreferences("APP_DATA", Context.MODE_PRIVATE);
+            String parentUname = prefs.getString("parentUname", null);
+
+            AlertCenterFragment alertFrag = new AlertCenterFragment();
+            if (parentUname != null && !parentUname.trim().isEmpty()) {
+                Bundle args = new Bundle();
+                args.putString("parentUname", parentUname);
+                alertFrag.setArguments(args);
+            }
+
             fragment.requireActivity()
                     .getSupportFragmentManager()
                     .beginTransaction()
-                    .replace(R.id.fragment_container, new HomeFragment())
+                    .replace(R.id.fragment_container, alertFrag)
                     .addToBackStack(null)
                     .commit();
             return true;

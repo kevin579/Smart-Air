@@ -16,10 +16,8 @@ import androidx.annotation.Nullable;
 import androidx.fragment.app.Fragment;
 
 import com.example.SmartAirGroup2.ChildDashboard;
-import com.example.SmartAirGroup2.Helpers.SaveState;
 import com.example.SmartAirGroup2.OnboardingActivity;
 import com.example.SmartAirGroup2.ParentDashboardActivity;
-import com.example.SmartAirGroup2.ParentDashboardFragment;
 import com.example.SmartAirGroup2.Parent_Provider_Dahsboard;
 import com.example.SmartAirGroup2.R;
 import com.example.SmartAirGroup2.auth.data.repo.AuthRepository;
@@ -98,8 +96,6 @@ public class LoginFragment extends Fragment implements LoginContract.View {
     public void showLoginSuccess(String role) {
         if (emailInput != null)    emailInput.setError(null);
         if (passwordInput != null) passwordInput.setError(null);
-
-
         Toast.makeText(getContext(), "Login success", Toast.LENGTH_SHORT).show();
         String field;
         if(role.equals("Child")){
@@ -150,9 +146,6 @@ public class LoginFragment extends Fragment implements LoginContract.View {
                     intent.putExtra("type", field);
                     startActivity(intent);
                 });
-
-
-
 
     }
 

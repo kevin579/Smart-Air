@@ -1,0 +1,23 @@
+Index: app/src/main/java/com/example/SmartAirGroup2/Parent_Provider_Dahsboard.java
+IDEA additional info:
+Subsystem: com.intellij.openapi.diff.impl.patch.BaseRevisionTextPatchEP
+<+>package com.example.SmartAirGroup2;\r\n\r\nimport android.os.Bundle;\r\n\r\nimport androidx.activity.EdgeToEdge;\r\nimport androidx.appcompat.app.AppCompatActivity;\r\nimport androidx.core.graphics.Insets;\r\nimport androidx.core.view.ViewCompat;\r\nimport androidx.core.view.WindowInsetsCompat;\r\n\r\npublic class Parent_Provider_Dahsboard extends AppCompatActivity {\r\n\r\n    @Override\r\n    protected void onCreate(Bundle savedInstanceState) {\r\n        super.onCreate(savedInstanceState);\r\n        EdgeToEdge.enable(this);\r\n        setContentView(R.layout.activity_parent_provider_dahsboard);\r\n        ViewCompat.setOnApplyWindowInsetsListener(findViewById(R.id.main), (v, insets) -> {\r\n            Insets systemBars = insets.getInsets(WindowInsetsCompat.Type.systemBars());\r\n            v.setPadding(systemBars.left, systemBars.top, systemBars.right, systemBars.bottom);\r\n            return insets;\r\n        });\r\n    }\r\n}
+===================================================================
+diff --git a/app/src/main/java/com/example/SmartAirGroup2/Parent_Provider_Dahsboard.java b/app/src/main/java/com/example/SmartAirGroup2/Parent_Provider_Dahsboard.java
+--- a/app/src/main/java/com/example/SmartAirGroup2/Parent_Provider_Dahsboard.java	(revision 4d283828b31c1450cf6ce10d237199267e86e5c4)
++++ b/app/src/main/java/com/example/SmartAirGroup2/Parent_Provider_Dahsboard.java	(date 1763436968086)
+@@ -13,12 +13,6 @@
+     @Override
+     protected void onCreate(Bundle savedInstanceState) {
+         super.onCreate(savedInstanceState);
+-        EdgeToEdge.enable(this);
+-        setContentView(R.layout.activity_parent_provider_dahsboard);
+-        ViewCompat.setOnApplyWindowInsetsListener(findViewById(R.id.main), (v, insets) -> {
+-            Insets systemBars = insets.getInsets(WindowInsetsCompat.Type.systemBars());
+-            v.setPadding(systemBars.left, systemBars.top, systemBars.right, systemBars.bottom);
+-            return insets;
+-        });
++        setContentView(R.layout.activity_parent_dashboard);
+     }
+ }
+\ No newline at end of file
