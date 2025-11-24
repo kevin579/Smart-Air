@@ -173,7 +173,20 @@ public class ParentDashboardFragment extends Fragment {
         args.putString("username", username);
         fragment.setArguments(args);
         return fragment;
+
     }
+
+    @Override
+    public void onCreate(Bundle savedInstanceState) {
+        super.onCreate(savedInstanceState);
+
+        // Retrieve parent username passed as argument
+        if (getArguments() != null) {
+            uname = getArguments().getString("username");
+        }
+        type="parent";
+    }
+
     /**
      * Creates and initializes the view hierarchy for this fragment.
      *
