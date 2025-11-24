@@ -33,7 +33,7 @@ public class LoginFragment extends Fragment implements LoginContract.View {
     private LoginPresenter presenter;
     private EditText  emailInput, passwordInput,usernameInput ;
     private Spinner roleSpinner;
-    private String selectedRole;
+    private String email, username, password, selectedRole;
 
 
     @Nullable
@@ -99,6 +99,15 @@ public class LoginFragment extends Fragment implements LoginContract.View {
         if (emailInput != null)    emailInput.setError(null);
         if (passwordInput != null) passwordInput.setError(null);
 
+        username = usernameInput.getText().toString().trim();
+        email = emailInput.getText().toString().trim();
+        password = passwordInput.getText().toString().trim();
+
+        if (usernameInput != null) usernameInput.setText("");
+        if (emailInput != null)    emailInput.setText("");
+        if (passwordInput != null) passwordInput.setText("");
+        if (roleSpinner != null)   roleSpinner.setSelection(0);
+
 
         Toast.makeText(getContext(), "Login success", Toast.LENGTH_SHORT).show();
         String field;
@@ -114,7 +123,7 @@ public class LoginFragment extends Fragment implements LoginContract.View {
         DatabaseReference stateRef = FirebaseDatabase.getInstance()
                 .getReference("categories/users")
                 .child(field)
-                .child(usernameInput.getText().toString().trim());
+                .child(username);
 
         stateRef.child("onboarded").get()
                 .addOnSuccessListener(snapshot -> {
@@ -123,7 +132,7 @@ public class LoginFragment extends Fragment implements LoginContract.View {
                     if (!onboarded) {
                         // User has NOT completed onboarding → redirect to onboarding
                         Intent intent = new Intent(getActivity(), OnboardingActivity.class);
-                        intent.putExtra("username", usernameInput.getText().toString().trim());
+                        intent.putExtra("username", username);
                         intent.putExtra("type", field);
                         startActivity(intent);
                     } else {
@@ -133,7 +142,7 @@ public class LoginFragment extends Fragment implements LoginContract.View {
                             startActivity(intent);
                         }else if(role.equals("Parent")){
                             Intent intent = new Intent(getActivity(), ParentDashboardActivity.class);
-                            intent.putExtra("username", usernameInput.getText().toString().trim());
+                            intent.putExtra("username", username);
                             startActivity(intent);
                         }
 
@@ -146,13 +155,10 @@ public class LoginFragment extends Fragment implements LoginContract.View {
                 .addOnFailureListener(e -> {
                     // Treat failure as "not onboarded"
                     Intent intent = new Intent(getActivity(), OnboardingActivity.class);
-                    intent.putExtra("username", usernameInput.getText().toString().trim());
+                    intent.putExtra("username", username);
                     intent.putExtra("type", field);
                     startActivity(intent);
                 });
-
-
-
 
     }
 

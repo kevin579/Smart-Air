@@ -16,6 +16,8 @@ import androidx.appcompat.app.AlertDialog;
 import androidx.appcompat.widget.Toolbar;
 import androidx.fragment.app.Fragment;
 
+import com.example.SmartAirGroup2.auth.login.LoginFragment;
+
 public class MenuHelper {
     public static void setupMenu(@NonNull Menu menu, @NonNull MenuInflater inflater, @NonNull Context context) {
         menu.clear();
@@ -119,7 +121,7 @@ public class MenuHelper {
         editor.apply();
 
         // 3. Navigate to Login Activity
-        Intent intent = new Intent(context, LoginPage.class);
+        Intent intent = new Intent(context, LoginFragment.class);
 
         // Set the flags to clear the activity stack!
         intent.setFlags(Intent.FLAG_ACTIVITY_NEW_TASK | Intent.FLAG_ACTIVITY_CLEAR_TASK);
