@@ -3,6 +3,7 @@ package com.example.SmartAirGroup2;
 import android.annotation.SuppressLint;
 import android.content.Context;
 import android.content.SharedPreferences;
+import android.graphics.PorterDuff;
 import android.graphics.drawable.Drawable;
 import android.os.Bundle;
 import android.util.Log;
@@ -148,13 +149,13 @@ public class ParentDashboardFragment extends Fragment {
      * Username of the currently logged-in parent.
      * TODO: Replace hardcoded value with dynamic authentication.
      */
-    private String uname = "kevin579";
+    private String uname;
 
     /**
      * User type identifier for the current user.
      * Always "parent" for this fragment.
      */
-    private String type = "parent";
+    private String type;
 
     private boolean safetyAlert = false;
 
@@ -238,9 +239,9 @@ public class ParentDashboardFragment extends Fragment {
         // ─────────────────────────────────────────────────────────────────
         // Persist User Identity
         // ─────────────────────────────────────────────────────────────────
-        SharedPreferences prefs = requireContext().getSharedPreferences("APP_DATA", Context.MODE_PRIVATE);
-        prefs.edit().putString("parentUname", uname).apply();
-        prefs.edit().putString("type", type).apply();
+        SharedPreferences prefs2 = requireContext().getSharedPreferences("APP_DATA", Context.MODE_PRIVATE);
+        prefs2.edit().putString("parentUname", uname).apply();
+        prefs2.edit().putString("type", type).apply();
 
         // ─────────────────────────────────────────────────────────────────
         // Add Child Button Handler

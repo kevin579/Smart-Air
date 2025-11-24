@@ -24,7 +24,7 @@ import com.example.SmartAirGroup2.ParentDashboardFragment;
 import com.example.SmartAirGroup2.Parent_Provider_Dashboard;
 import com.example.SmartAirGroup2.OnboardingActivity;
 import com.example.SmartAirGroup2.ParentDashboardActivity;
-import com.example.SmartAirGroup2.Parent_Provider_Dahsboard;
+//import com.example.SmartAirGroup2.Parent_Provider_Dahsboard;
 import com.example.SmartAirGroup2.R;
 import com.example.SmartAirGroup2.User;
 import com.example.SmartAirGroup2.auth.data.repo.AuthRepository;
@@ -109,22 +109,21 @@ public class LoginFragment extends Fragment implements LoginContract.View {
         User user = new User(username, username, email, password, role);
         CurrentUser.set(user);
         Toast.makeText(getContext(), "Login success", Toast.LENGTH_SHORT).show();
+
         String field;
+
         if(role.equals("Child")){
             field = "children";
         }else if(role.equals("Parent")){
             field = "parents";
         }
-        else if (role.equals("Provider")){
-            Intent intent = new Intent(getActivity(), Parent_Provider_Dashboard.class);
-            startActivity(intent);
-        }
         else{
-            Intent intent = new Intent(getActivity(), Parent_Provider_Dashboard.class);
-            startActivity(intent);
-        }
+
             field = "providers";
         }
+
+
+
 
         DatabaseReference stateRef = FirebaseDatabase.getInstance()
                 .getReference("categories/users")
@@ -153,7 +152,7 @@ public class LoginFragment extends Fragment implements LoginContract.View {
                         }
 
                         else{
-                            Intent intent = new Intent(getActivity(), Parent_Provider_Dahsboard.class);
+                            Intent intent = new Intent(getActivity(), Parent_Provider_Dashboard.class);
                             startActivity(intent);
                         }
                     }
