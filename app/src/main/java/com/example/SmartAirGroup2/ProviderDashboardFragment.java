@@ -3,10 +3,8 @@ package com.example.SmartAirGroup2;
 import android.annotation.SuppressLint;
 import android.content.Context;
 import android.content.SharedPreferences;
-import android.graphics.PorterDuff;
 import android.graphics.drawable.Drawable;
 import android.os.Bundle;
-import android.util.Log;
 import android.util.TypedValue;
 import android.view.Gravity;
 import android.view.LayoutInflater;
@@ -16,14 +14,12 @@ import android.view.MenuItem;
 import android.view.View;
 import android.view.ViewGroup;
 import android.widget.FrameLayout;
-import android.widget.ImageView;
 import android.widget.LinearLayout;
 import android.widget.TextView;
 import android.widget.Toast;
 
 import androidx.annotation.NonNull;
 import androidx.annotation.Nullable;
-import androidx.appcompat.app.AlertDialog;
 import androidx.appcompat.app.AppCompatActivity;
 import androidx.appcompat.widget.Toolbar;
 import androidx.cardview.widget.CardView;
@@ -488,7 +484,7 @@ public class ProviderDashboardFragment extends Fragment {
             args.putString("childUname", childKey);
             args.putString("childName", childName);
 
-            ChildDashboardFragment childFrag = new ChildDashboardFragment();
+            ParentSideChildDashboardFragment childFrag = new ParentSideChildDashboardFragment();
             childFrag.setArguments(args);
             loadFragment(childFrag);
         });
