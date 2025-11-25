@@ -2,7 +2,7 @@ package com.example.SmartAirGroup2;
 
 import android.os.Bundle;
 
-public class ParentDashboardActivity extends BaseActivity{
+public class ProviderDashboardActivity extends BaseActivity{
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
@@ -12,7 +12,7 @@ public class ParentDashboardActivity extends BaseActivity{
         String username = getIntent().getStringExtra("username");
 
         // Load fragment and pass username
-        ParentDashboardFragment fragment = ParentDashboardFragment.newInstance(username);
+        ProviderDashboardFragment fragment = ProviderDashboardFragment.newInstance(username);
 
         getSupportFragmentManager().beginTransaction()
                 .replace(R.id.fragment_container, fragment)
