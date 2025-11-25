@@ -14,14 +14,9 @@ import android.widget.Toast;
 import androidx.annotation.NonNull;
 import androidx.annotation.Nullable;
 import androidx.fragment.app.Fragment;
-import androidx.fragment.app.FragmentTransaction;
 
 import com.example.SmartAirGroup2.ChildDashboard;
 import com.example.SmartAirGroup2.CurrentUser;
-import com.example.SmartAirGroup2.MainActivity;
-import com.example.SmartAirGroup2.OnboardingActivity;
-import com.example.SmartAirGroup2.ParentDashboardFragment;
-import com.example.SmartAirGroup2.Parent_Provider_Dashboard;
 import com.example.SmartAirGroup2.OnboardingActivity;
 import com.example.SmartAirGroup2.ParentDashboardActivity;
 //import com.example.SmartAirGroup2.Parent_Provider_Dahsboard;

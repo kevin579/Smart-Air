@@ -95,7 +95,7 @@ import com.google.firebase.database.ValueEventListener;
  * Author: Kevin Li
  * Last Updated: November 2025
  */
-public class ChildDashboardFragment extends Fragment {
+public class ParentSideChildDashboardFragment extends Fragment {
 
     // ═══════════════════════════════════════════════════════════════════════
     // UI COMPONENTS
@@ -176,7 +176,7 @@ public class ChildDashboardFragment extends Fragment {
     @Nullable
     @Override
     public View onCreateView(@NonNull LayoutInflater inflater, @Nullable ViewGroup container, @Nullable Bundle savedInstanceState) {
-        View view = inflater.inflate(R.layout.activity_child_dashboard, container, false);
+        View view = inflater.inflate(R.layout.fragment_parent_side_child_dashboard, container, false);
 
         // ─────────────────────────────────────────────────────────────────
         // Toolbar Configuration
