@@ -129,6 +129,7 @@ public class ChildDashboardFragment extends Fragment {
      * Allows parents to view logged symptoms and patterns.
      */
     private CardView cardSymptom;
+    private CardView cardTriage;
 
 
     // ═══════════════════════════════════════════════════════════════════════
@@ -213,6 +214,7 @@ public class ChildDashboardFragment extends Fragment {
         cardInventory = view.findViewById(R.id.cardInventory);
         cardPEF = view.findViewById(R.id.cardPEF);
         cardSymptom = view.findViewById(R.id.cardSymptom);
+        cardTriage = view.findViewById(R.id.cardTriage);
 
         // ─────────────────────────────────────────────────────────────────
         // Load and Apply Status Colors
@@ -256,6 +258,19 @@ public class ChildDashboardFragment extends Fragment {
             args.putString("childName", name);
             sympFrag.setArguments(args);
             loadFragment(sympFrag);
+        });
+
+        // ─────────────────────────────────────────────────────────────────
+        // triage Card Click Handler
+        // ─────────────────────────────────────────────────────────────────
+        // Navigate to symptom tracking and history view
+        cardTriage.setOnClickListener(v -> {
+            TriagelogDashboardFragment TriageFrag = new TriagelogDashboardFragment();
+            Bundle args = new Bundle();
+            args.putString("childUname", uname);
+            args.putString("childName", name);
+            TriageFrag.setArguments(args);
+            loadFragment(TriageFrag);
         });
 
         return view;
