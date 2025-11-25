@@ -135,7 +135,7 @@ public class MenuHelper {
         editor.apply();
 
         // 3. Navigate to Login Activity
-        Intent intent = new Intent(context, LoginFragment.class);
+        Intent intent = new Intent(context, MainActivity.class);
 
         // Set the flags to clear the activity stack!
         intent.setFlags(Intent.FLAG_ACTIVITY_NEW_TASK | Intent.FLAG_ACTIVITY_CLEAR_TASK);
