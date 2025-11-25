@@ -22,15 +22,22 @@ public class MainActivity extends AppCompatActivity {
     protected void onCreate(Bundle savedInstanceState) {
 
         getWindow().setFlags(WindowManager.LayoutParams.FLAG_TRANSLUCENT_STATUS, WindowManager.LayoutParams.FLAG_TRANSLUCENT_STATUS);
-    
+
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_main);
 
+//        if (savedInstanceState == null) {
+//            getSupportFragmentManager()
+//                    .beginTransaction()
+//                    .replace(R.id.fragment_container,
+//                            new com.example.SmartAirGroup2.auth.login.LoginFragment())
+//                    .commit();
+//        }
         if (savedInstanceState == null) {
             getSupportFragmentManager()
                     .beginTransaction()
                     .replace(R.id.fragment_container,
-                            new com.example.SmartAirGroup2.auth.login.LoginFragment())
+                            new ChildDashboardDemo())
                     .commit();
         }
 
