@@ -14,17 +14,13 @@ import android.widget.Toast;
 import androidx.annotation.NonNull;
 import androidx.annotation.Nullable;
 import androidx.fragment.app.Fragment;
-import androidx.fragment.app.FragmentTransaction;
 
 import com.example.SmartAirGroup2.ChildDashboard;
 import com.example.SmartAirGroup2.CurrentUser;
-import com.example.SmartAirGroup2.MainActivity;
-import com.example.SmartAirGroup2.OnboardingActivity;
-import com.example.SmartAirGroup2.ParentDashboardFragment;
-import com.example.SmartAirGroup2.Parent_Provider_Dashboard;
 import com.example.SmartAirGroup2.OnboardingActivity;
 import com.example.SmartAirGroup2.ParentDashboardActivity;
 //import com.example.SmartAirGroup2.Parent_Provider_Dahsboard;
+import com.example.SmartAirGroup2.ProviderDashboardActivity;
 import com.example.SmartAirGroup2.R;
 import com.example.SmartAirGroup2.User;
 import com.example.SmartAirGroup2.auth.data.repo.AuthRepository;
@@ -129,7 +125,7 @@ public class LoginFragment extends Fragment implements LoginContract.View {
             field = "parents";
         }
         else{
-            field = "providers";
+            field = "provider";
         }
 
 
@@ -157,9 +153,9 @@ public class LoginFragment extends Fragment implements LoginContract.View {
                             intent.putExtra("username", username);
                             startActivity(intent);
                         }
-
                         else{
-                            Intent intent = new Intent(getActivity(), Parent_Provider_Dashboard.class);
+                            Intent intent = new Intent(getActivity(), ProviderDashboardActivity.class);
+                            intent.putExtra("username", username);
                             startActivity(intent);
                         }
                     }

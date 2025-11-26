@@ -41,12 +41,12 @@ import com.google.firebase.database.ValueEventListener;
  * Last Updated: Nov 14, 2025
  */
 
-public class LinkChildFragment extends Fragment {
+public class LinkProviderFragment extends Fragment {
 
     // ───────────────────────────────
     // UI Components
     // ───────────────────────────────
-    private EditText editTextUname, editTextPassword;
+    private EditText editTextUname;
     private Button buttonAdd;
     private Toolbar toolbar;
 
@@ -54,7 +54,7 @@ public class LinkChildFragment extends Fragment {
     // ───────────────────────────────
     // Data
     // ───────────────────────────────
-    private String parentUname;   // passed from previous fragment
+    private String parentUname,providerUname;   // passed from previous fragment
 
     // ───────────────────────────────
     // Lifecycle: Fragment Creation
@@ -79,7 +79,7 @@ public class LinkChildFragment extends Fragment {
                              @Nullable Bundle savedInstanceState) {
 
         // Inflate the layout for this fragment
-        View view = inflater.inflate(R.layout.fragment_link_child_fragment, container, false);
+        View view = inflater.inflate(R.layout.fragment_link_provider_fragment, container, false);
 
         // Initialize toolbar
         toolbar = view.findViewById(R.id.toolbar);
@@ -90,7 +90,6 @@ public class LinkChildFragment extends Fragment {
 
         // Initialize UI components
         editTextUname = view.findViewById(R.id.editTextUname);
-        editTextPassword = view.findViewById(R.id.editTextPassword);
         buttonAdd = view.findViewById(R.id.buttonAdd);
 
         // Add click listener for linking operation
@@ -122,77 +121,43 @@ public class LinkChildFragment extends Fragment {
     // Main Logic: Link Existing Child
     // ───────────────────────────────
     private void link() {
-        String uname = editTextUname.getText().toString().trim();
-        String password = editTextPassword.getText().toString().trim();
+        providerUname = editTextUname.getText().toString().trim();
 
         // Validate input fields
-        if (uname.isEmpty() || password.isEmpty()) {
-            Toast.makeText(getContext(), "Please enter both username and password", Toast.LENGTH_SHORT).show();
+        if (providerUname.isEmpty() ) {
+            Toast.makeText(getContext(), "Please enter username", Toast.LENGTH_SHORT).show();
             return;
         }
 
-        DatabaseReference childrenRef = FirebaseDatabase.getInstance()
-                .getReference("categories/users/children");
+        updateParentDB();
+        updateProviderDB();
+    }
 
-        // Check if the entered child username exists
-        childrenRef.child(uname).addListenerForSingleValueEvent(new ValueEventListener() {
-            @Override
-            public void onDataChange(@NonNull DataSnapshot snapshot) {
-                // Step 1: Validate child existence
-                if (!snapshot.exists()) {
-                    Toast.makeText(getContext(), "Child account not found", Toast.LENGTH_SHORT).show();
-                    return;
-                }
+    private void updateProviderDB() {
+        DatabaseReference providerRef = FirebaseDatabase.getInstance()
+                .getReference("categories/users/provider/" + providerUname + "/parents");
 
-                // Step 2: Convert snapshot to User object
-                User child = snapshot.getValue(User.class);
-                if (child == null) {
-                    Toast.makeText(getContext(), "Invalid data for this user", Toast.LENGTH_SHORT).show();
-                    return;
-                }
+        providerRef.child(parentUname).setValue(parentUname)
+                .addOnSuccessListener(aVoid -> {
 
-                // Step 3: Verify password
-                if (!child.getPassword().equals(password)) {
-                    Toast.makeText(getContext(), "Username and password do not match", Toast.LENGTH_SHORT).show();
-                    return;
-                }
-
-                // Step 4: Get parent's "children" node reference
-                DatabaseReference parentChildrenRef = FirebaseDatabase.getInstance()
-                        .getReference("categories/users/parents/" + parentUname + "/children");
-
-                // Step 5: Check if this child is already linked
-                parentChildrenRef.child(uname).addListenerForSingleValueEvent(new ValueEventListener() {
-                    @Override
-                    public void onDataChange(@NonNull DataSnapshot existingChildSnapshot) {
-                        if (existingChildSnapshot.exists()) {
-                            Toast.makeText(getContext(), "This child is already linked", Toast.LENGTH_SHORT).show();
-                        } else {
-                            // Step 6: Link the child under parent's list
-                            parentChildrenRef.child(uname).setValue(uname)
-                                    .addOnCompleteListener(linkTask -> {
-                                        if (linkTask.isSuccessful()) {
-                                            Toast.makeText(getContext(), "Child linked successfully", Toast.LENGTH_SHORT).show();
-                                            requireActivity().getSupportFragmentManager().popBackStack();
-                                        } else {
-                                            Toast.makeText(getContext(), "Failed to link child", Toast.LENGTH_SHORT).show();
-                                        }
-                                    });
-                        }
-                    }
-
-                    @Override
-                    public void onCancelled(@NonNull DatabaseError error) {
-                        Toast.makeText(getContext(), "Database error: " + error.getMessage(), Toast.LENGTH_SHORT).show();
-                    }
+                })
+                .addOnFailureListener(e -> {
+                    Toast.makeText(getContext(), "Error updating Provider link: " + e.getMessage(), Toast.LENGTH_LONG).show();
                 });
-            }
+    }
 
-            @Override
-            public void onCancelled(@NonNull DatabaseError error) {
-                Toast.makeText(getContext(), "Database error: " + error.getMessage(), Toast.LENGTH_SHORT).show();
-            }
-        });
+
+    private void updateParentDB() {
+        DatabaseReference parentRef = FirebaseDatabase.getInstance()
+                .getReference("categories/users/parents/" + parentUname + "/providers");
+
+        parentRef.child(providerUname).setValue(providerUname)
+                .addOnSuccessListener(aVoid -> {
+                    Toast.makeText(getContext(), "Linking to " + providerUname + " complete.", Toast.LENGTH_LONG).show();
+                })
+                .addOnFailureListener(e -> {
+                    Toast.makeText(getContext(), "Error updating Parent link: " + e.getMessage(), Toast.LENGTH_LONG).show();
+                });
     }
 }
 

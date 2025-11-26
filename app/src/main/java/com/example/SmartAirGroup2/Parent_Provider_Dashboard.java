@@ -14,7 +14,7 @@ public class Parent_Provider_Dashboard extends AppCompatActivity {
         // Only add fragment if not already added
         if (savedInstanceState == null) {
             getSupportFragmentManager().beginTransaction()
-                    .replace(R.id.fragment_container, new ParentDashboardFragment())
+                    .replace(R.id.fragment_container, new ParentManageChildrenFragment())
                     .commit();
         }
     }

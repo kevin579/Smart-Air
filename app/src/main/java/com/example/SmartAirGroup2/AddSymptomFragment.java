@@ -138,8 +138,11 @@ public class AddSymptomFragment extends Fragment {
         // Handle back navigation (up button)
         toolbar.setNavigationOnClickListener(v -> getParentFragmentManager().popBackStack());
 
-        SharedPreferences prefs = requireContext().getSharedPreferences("APP_DATA", Context.MODE_PRIVATE);
-        author = prefs.getString("type", "null");
+//        SharedPreferences prefs = requireContext().getSharedPreferences("APP_DATA", Context.MODE_PRIVATE);
+//        author = prefs.getString("type", "null");
+
+        author = CurrentUser.get().getType();
+
 
         // Initialize UI elements
         editTextSymptom = view.findViewById(R.id.editTextSymptom);
