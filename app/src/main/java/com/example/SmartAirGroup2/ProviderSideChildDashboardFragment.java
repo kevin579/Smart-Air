@@ -8,6 +8,7 @@ import android.view.MenuInflater;
 import android.view.MenuItem;
 import android.view.View;
 import android.view.ViewGroup;
+import android.widget.Toast;
 
 import androidx.annotation.NonNull;
 import androidx.annotation.Nullable;
@@ -22,6 +23,8 @@ import com.google.firebase.database.DatabaseError;
 import com.google.firebase.database.DatabaseReference;
 import com.google.firebase.database.FirebaseDatabase;
 import com.google.firebase.database.ValueEventListener;
+
+import java.util.ArrayList;
 
 
 /**
@@ -95,7 +98,7 @@ import com.google.firebase.database.ValueEventListener;
  * Author: Kevin Li
  * Last Updated: November 2025
  */
-public class ParentSideChildDashboardFragment extends Fragment {
+public class ProviderSideChildDashboardFragment extends Fragment {
 
     // ═══════════════════════════════════════════════════════════════════════
     // UI COMPONENTS
@@ -113,7 +116,7 @@ public class ParentSideChildDashboardFragment extends Fragment {
      *   - Red (alert)
      *   - Green (good)
      */
-    private CardView cardInventory, cardPEF, cardSymptom, cardPrivacy;
+    private CardView cardInventory, cardPEF, cardSymptom;
 
 
     // ═══════════════════════════════════════════════════════════════════════
@@ -125,13 +128,8 @@ public class ParentSideChildDashboardFragment extends Fragment {
      * Retrieved from fragment arguments, passed from ParentDashboardFragment.
      * Used in toolbar title to personalize the view.
      */
-    private String name;
-
-    /**
-     * Unique username/identifier of the child in Firebase.
-     * Retrieved from fragment arguments, used to query child-specific data.
-     */
-    private String uname;
+    private String name, uname;
+    private ArrayList<String> permissions;
 
     // ═══════════════════════════════════════════════════════════════════════
     // LIFECYCLE METHODS
@@ -155,6 +153,7 @@ public class ParentSideChildDashboardFragment extends Fragment {
         if (getArguments() != null) {
             name = getArguments().getString("childName");
             uname = getArguments().getString("childUname");
+            permissions = getArguments().getStringArrayList("permissions");
         }
     }
 
@@ -176,7 +175,7 @@ public class ParentSideChildDashboardFragment extends Fragment {
     @Nullable
     @Override
     public View onCreateView(@NonNull LayoutInflater inflater, @Nullable ViewGroup container, @Nullable Bundle savedInstanceState) {
-        View view = inflater.inflate(R.layout.fragment_parent_side_child_dashboard, container, false);
+        View view = inflater.inflate(R.layout.fragment_provider_side_child_dashboard, container, false);
 
         // ─────────────────────────────────────────────────────────────────
         // Toolbar Configuration
@@ -198,185 +197,80 @@ public class ParentSideChildDashboardFragment extends Fragment {
         cardInventory = view.findViewById(R.id.cardInventory);
         cardPEF = view.findViewById(R.id.cardPEF);
         cardSymptom = view.findViewById(R.id.cardSymptom);
-        cardPrivacy = view.findViewById(R.id.cardPrivacy);
 
-        // ─────────────────────────────────────────────────────────────────
-        // Load and Apply Status Colors
-        // ─────────────────────────────────────────────────────────────────
-        loadChildStatus();
+        //get permissions
+//        for (String permission:permissions){
+//            Toast.makeText(getContext(), permission, Toast.LENGTH_SHORT).show();
+//        }
 
-        // ─────────────────────────────────────────────────────────────────
-        // Inventory Card Click Handler
-        // ─────────────────────────────────────────────────────────────────
-        // Navigate to detailed medicine inventory view
-        cardInventory.setOnClickListener(v -> {
-            InventoryFragment invFrag = new InventoryFragment();
-            Bundle args = new Bundle();
-            args.putString("childUname", uname);
-            args.putString("childName", name);
-            args.putString("user", "parent");
-            invFrag.setArguments(args);
-            loadFragment(invFrag);
-        });
+
+        // 1. Check Inventory Card Permission
+        if (!permissions.contains("inventory")) {
+            cardInventory.setVisibility(View.GONE);
+            // Remove the click listener to prevent accidental clicks
+            cardInventory.setOnClickListener(null);
+        } else {
+            // Inventory Card Click Handler (ONLY set if permission exists)
+            cardInventory.setOnClickListener(v -> {
+                InventoryFragment invFrag = new InventoryFragment();
+                Bundle args = new Bundle();
+                args.putString("childUname", uname);
+                args.putString("childName", name);
+                args.putString("user", "provider");
+                invFrag.setArguments(args);
+                loadFragment(invFrag);
+            });
+        }
 
         // ─────────────────────────────────────────────────────────────────
         // PEF Card Click Handler
         // ─────────────────────────────────────────────────────────────────
         // Navigate to Peak Expiratory Flow measurement view
-        cardPEF.setOnClickListener(v -> {
-            PEFZone pefFrag = new PEFZone();
-            Bundle args = new Bundle();
-            args.putString("childUname", uname);
-            args.putString("childName", name);
-            args.putString("user", "parent");
-            pefFrag.setArguments(args);
-            loadFragment(pefFrag);
-        });
+        if (!permissions.contains("pef")) {
+            cardPEF.setVisibility(View.GONE);
+            cardPEF.setOnClickListener(null);
+        } else {
+            // PEF Card Click Handler
+            cardPEF.setOnClickListener(v -> {
+                PEFZone pefFrag = new PEFZone();
+                Bundle args = new Bundle();
+                args.putString("childUname", uname);
+                args.putString("childName", name);
+                args.putString("user", "provider");
+                pefFrag.setArguments(args);
+                loadFragment(pefFrag);
+            });
+        }
 
         // ─────────────────────────────────────────────────────────────────
         // Symptom Card Click Handler
         // ─────────────────────────────────────────────────────────────────
         // Navigate to symptom tracking and history view
-        cardSymptom.setOnClickListener(v -> {
-            SymptomDashboardFragment sympFrag = new SymptomDashboardFragment();
-            Bundle args = new Bundle();
-            args.putString("childUname", uname);
-            args.putString("childName", name);
-            args.putString("user", "parent");
-            sympFrag.setArguments(args);
-            loadFragment(sympFrag);
-        });
+        if (!permissions.contains("symptoms")) {
+            cardSymptom.setVisibility(View.GONE);
+            cardSymptom.setOnClickListener(null);
+        } else {
+            // Symptom Card Click Handler
+            cardSymptom.setOnClickListener(v -> {
+                SymptomHistoryFragment sympFrag = new SymptomHistoryFragment();
+                Bundle args = new Bundle();
+                args.putString("childUname", uname);
+                args.putString("childName", name);
+                args.putString("user", "provider");
+                if (!permissions.contains("triggers")) {
+                    args.putString("triggers", "yes");
+                }else{
+                    args.putString("triggers", "no");
+                }
+                sympFrag.setArguments(args);
+                loadFragment(sympFrag);
+            });
+        }
 
-        cardPrivacy.setOnClickListener(v -> {
-            SharingPermissionsFragment privacyFrag = new SharingPermissionsFragment();
-            Bundle args = new Bundle();
-            args.putString("childName", name);
-            args.putString("childUname", uname);
-            privacyFrag.setArguments(args);
-            loadFragment(privacyFrag);
-        });
 
         return view;
     }
 
-    // ═══════════════════════════════════════════════════════════════════════
-    // FIREBASE STATUS LOADING
-    // ═══════════════════════════════════════════════════════════════════════
-
-    /**
-     * Loads the child's current health status from Firebase and applies color-coding to cards.
-     *
-     * Status Categories:
-     *   1. Inventory Status (Medicine Stock Levels):
-     *      - Scans all medicines under status/inventory
-     *      - Priority system: Alert (2) > Warning (1) > Good (0)
-     *      - If ANY medicine shows alert, entire card becomes red
-     *      - If ANY medicine shows warning (and no alerts), card becomes yellow
-     *      - Otherwise, card remains green
-     *
-     *   2. PEF Status (Breathing Zones):
-     *      - Reads pefZone value directly from status node
-     *      - Zone 2 (Red): Severe breathing difficulty
-     *      - Zone 1 (Yellow): Caution zone
-     *      - Zone 0 (Green): Normal breathing
-     *
-     *   3. Symptom Status:
-     *      - Currently not implemented (future enhancement)
-     *      - Card remains at default color
-     *
-     * Firebase Query Path:
-     *   categories/users/children/{childUname}/status
-     *
-     * Threading:
-     *   - Uses Firebase's asynchronous listener
-     *   - Updates UI on callback thread (safe as Firebase handles this)
-     *
-     * Error Handling:
-     *   - Logs errors to console with "STATUS" tag
-     *   - Cards remain at default colors if data fetch fails
-     */
-    private void loadChildStatus() {
-        DatabaseReference statusRef = FirebaseDatabase.getInstance()
-                .getReference("categories/users/children")
-                .child(uname)
-                .child("status");
-
-        statusRef.addListenerForSingleValueEvent(new ValueEventListener() {
-            @Override
-            public void onDataChange(@NonNull DataSnapshot snapshot) {
-                if (!snapshot.exists()) return;
-
-                // ─────────────────────────────────────────────────────────
-                // Read PEF Zone Status
-                // ─────────────────────────────────────────────────────────
-                Long pefZoneVal = snapshot.child("pefZone").getValue(Long.class);
-                int pefZone = pefZoneVal != null ? pefZoneVal.intValue() : 0;
-
-                // ─────────────────────────────────────────────────────────
-                // Read Inventory Status Array
-                // ─────────────────────────────────────────────────────────
-                // Default to good status
-                int inventoryStatus = 0;
-
-                if (snapshot.child("inventory").exists()) {
-                    // Iterate through each medicine
-                    for (DataSnapshot medSnapshot : snapshot.child("inventory").getChildren()) {
-                        // Each medicine has timestamped status entries
-                        for (DataSnapshot statusNode : medSnapshot.getChildren()) {
-                            Integer val = statusNode.getValue(Integer.class);
-
-                            if (val != null) {
-                                if (val == 2) {
-                                    // ALERT overrides all other statuses
-                                    inventoryStatus = 2;
-                                    break;
-                                } else if (val == 1 && inventoryStatus != 2) {
-                                    // WARNING only if no alert found yet
-                                    inventoryStatus = 1;
-                                }
-                            }
-                        }
-
-                        // Stop scanning if alert already found
-                        if (inventoryStatus == 2) break;
-                    }
-                }
-
-                // ─────────────────────────────────────────────────────────
-                // Apply Colors to Cards
-                // ─────────────────────────────────────────────────────────
-
-                // Inventory Card Color
-                if (inventoryStatus > 0) {
-                    // Any warning or alert -> Red
-                    cardInventory.setCardBackgroundColor(getResources().getColor(R.color.alert));
-                } else {
-                    // All good -> Green
-                    cardInventory.setCardBackgroundColor(getResources().getColor(R.color.good));
-                }
-
-                // PEF Card Color
-                if (pefZone == 2) {
-                    // Red Zone: Severe
-                    cardPEF.setCardBackgroundColor(getResources().getColor(R.color.alert));
-                } else if (pefZone == 1) {
-                    // Yellow Zone: Caution
-                    cardPEF.setCardBackgroundColor(getResources().getColor(R.color.warning));
-                } else {
-                    // Green Zone: Normal
-                    cardPEF.setCardBackgroundColor(getResources().getColor(R.color.good));
-                }
-
-                // Symptom Card Color
-                // Currently uses default color (future enhancement)
-            }
-
-            @Override
-            public void onCancelled(@NonNull DatabaseError error) {
-                Log.e("STATUS", "Failed to read status: " + error.getMessage());
-            }
-        });
-    }
 
     // ═══════════════════════════════════════════════════════════════════════
     // MENU HANDLING
