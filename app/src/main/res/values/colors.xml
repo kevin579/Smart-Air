@@ -20,5 +20,6 @@
     <color name="alert_warning_text">#F9A825</color>
     <color name="alert_error_border">#EF5350</color>
     <color name="alert_error_text">#D32F2F</color>
+    <color name="streak_card_blue">#E0F2FF</color>
 
 </resources>
