@@ -107,7 +107,7 @@ public class InventoryFragment extends Fragment {
 
     // Hardcoded parent username for demonstration
     // (should later be replaced by logged-in parent’s username)
-    private String name, uname;
+    private String name, uname,user;
 
     // ───────────────────────────────
     // LIFECYCLE METHODS
@@ -128,6 +128,7 @@ public class InventoryFragment extends Fragment {
         if (getArguments() != null) {
             name = getArguments().getString("childName");
             uname = getArguments().getString("childUname");
+            user = getArguments().getString("user");
         }
     }
 
@@ -165,14 +166,21 @@ public class InventoryFragment extends Fragment {
         // Load all medicine into the dashboard
         loadMedicineFromDatabase();
 
-        // Handle "Add Medicine" button logic
-        cardAddMedicine.setOnClickListener(v -> {
-            AddInventoryFragment addFrag = new AddInventoryFragment();
-            Bundle args = new Bundle();
-            args.putString("childUname", uname);
-            addFrag.setArguments(args);
-            loadFragment(addFrag);
-        });
+        if (user.equals("parent")){
+            // Handle "Add Medicine" button logic
+            cardAddMedicine.setOnClickListener(v -> {
+                AddInventoryFragment addFrag = new AddInventoryFragment();
+                Bundle args = new Bundle();
+                args.putString("childUname", uname);
+                addFrag.setArguments(args);
+                loadFragment(addFrag);
+            });
+        }else{
+            cardAddMedicine.setVisibility(View.GONE);
+            cardAddMedicine.setOnClickListener(null);
+        }
+
+
 
         return view;
     }
@@ -399,42 +407,51 @@ public class InventoryFragment extends Fragment {
         nameView.setTypeface(null, Typeface.BOLD);
         nameView.setTextColor(Color.BLACK);
 
-        // Arrow icon
-        ImageView arrowView = new ImageView(ctx);
-        LinearLayout.LayoutParams arrowParams = new LinearLayout.LayoutParams(dpToPx(24), dpToPx(24));
-        arrowView.setLayoutParams(arrowParams);
-        arrowView.setImageResource(R.drawable.ic_arrow_right);
-        arrowView.setColorFilter(ContextCompat.getColor(ctx, R.color.gray), PorterDuff.Mode.SRC_IN);
 
-        //Delete Icon
-        ImageView deleteView = new ImageView(ctx);
-        LinearLayout.LayoutParams deleteParams = new LinearLayout.LayoutParams(dpToPx(24), dpToPx(24));
-        deleteView.setLayoutParams(deleteParams);
-        deleteView.setImageResource(android.R.drawable.ic_delete);
-        deleteView.setColorFilter(ContextCompat.getColor(ctx, R.color.delete), PorterDuff.Mode.SRC_IN);
 
-        //handle delete logic
-        deleteView.setOnClickListener(v -> {
-            new AlertDialog.Builder(ctx)
-                    .setTitle("Delete Medicine")
-                    .setMessage("Are you sure you want to delete \"" + name + "\" from the inventory?")
-                    .setPositiveButton("Delete", (dialog, which) -> {
-                        medicineRef.child(name).removeValue()
-                                .addOnSuccessListener(aVoid -> {
-                                    Toast.makeText(ctx, "Medicine removed", Toast.LENGTH_SHORT).show();
-                                    loadMedicineFromDatabase(); // Refresh UI
-                                })
-                                .addOnFailureListener(e ->
-                                        Toast.makeText(ctx, "Error: " + e.getMessage(), Toast.LENGTH_LONG).show()
-                                );
-                    })
-                    .setNegativeButton("Cancel", null)
-                    .show();
-        });
 
         topRow.addView(nameView);
-        topRow.addView(deleteView);
-        topRow.addView(arrowView);
+
+        if (user.equals("parent")){
+            // Arrow icon
+            ImageView arrowView = new ImageView(ctx);
+            LinearLayout.LayoutParams arrowParams = new LinearLayout.LayoutParams(dpToPx(24), dpToPx(24));
+            arrowView.setLayoutParams(arrowParams);
+            arrowView.setImageResource(R.drawable.ic_arrow_right);
+            arrowView.setColorFilter(ContextCompat.getColor(ctx, R.color.gray), PorterDuff.Mode.SRC_IN);
+            //Delete Icon
+            ImageView deleteView = new ImageView(ctx);
+            LinearLayout.LayoutParams deleteParams = new LinearLayout.LayoutParams(dpToPx(24), dpToPx(24));
+            deleteView.setLayoutParams(deleteParams);
+            deleteView.setImageResource(android.R.drawable.ic_delete);
+            deleteView.setColorFilter(ContextCompat.getColor(ctx, R.color.delete), PorterDuff.Mode.SRC_IN);
+
+            //handle delete logic
+            deleteView.setOnClickListener(v -> {
+                new AlertDialog.Builder(ctx)
+                        .setTitle("Delete Medicine")
+                        .setMessage("Are you sure you want to delete \"" + name + "\" from the inventory?")
+                        .setPositiveButton("Delete", (dialog, which) -> {
+                            medicineRef.child(name).removeValue()
+                                    .addOnSuccessListener(aVoid -> {
+                                        Toast.makeText(ctx, "Medicine removed", Toast.LENGTH_SHORT).show();
+                                        loadMedicineFromDatabase(); // Refresh UI
+                                    })
+                                    .addOnFailureListener(e ->
+                                            Toast.makeText(ctx, "Error: " + e.getMessage(), Toast.LENGTH_LONG).show()
+                                    );
+                        })
+                        .setNegativeButton("Cancel", null)
+                        .show();
+            });
+
+            topRow.addView(deleteView);
+            topRow.addView(arrowView);
+        }
+
+
+
+
 
         String text;
 
@@ -472,17 +489,19 @@ public class InventoryFragment extends Fragment {
         cardView.addView(outerLayout);
 
 
-        // Card click (show child details, future use)
-        cardView.setOnClickListener(v ->{
-                    Bundle args = new Bundle();
-                    args.putString("childUname", uname);
-                    args.putString("medicineName", name);
-                    AddInventoryFragment addInvFrag = new AddInventoryFragment();
-                    addInvFrag.setArguments(args);
-                    loadFragment(addInvFrag);
-                }
+        if (user.equals("parent")){
+            cardView.setOnClickListener(v ->{
+                        Bundle args = new Bundle();
+                        args.putString("childUname", uname);
+                        args.putString("medicineName", name);
+                        AddInventoryFragment addInvFrag = new AddInventoryFragment();
+                        addInvFrag.setArguments(args);
+                        loadFragment(addInvFrag);
+                    }
 
-        );
+            );
+        }
+
 
 
         if (cardView.getParent() == null){

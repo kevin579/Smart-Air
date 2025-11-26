@@ -83,7 +83,7 @@ public class PEFZone extends Fragment {
     // ───────────────────────────────
     // DATA VARIABLES
     // ───────────────────────────────
-    private String name, uname;
+    private String name, uname,user;
     private String status;
     private double pb, averagePEF;
     private double[] pefs;
@@ -99,6 +99,7 @@ public class PEFZone extends Fragment {
         if (getArguments() != null) {
             name = getArguments().getString("childName");
             uname = getArguments().getString("childUname");
+            user = getArguments().getString("user");
         }
     }
 
@@ -119,8 +120,15 @@ public class PEFZone extends Fragment {
         editTextPB = view.findViewById(R.id.editTextPB);
         buttonUpdate = view.findViewById(R.id.buttonUpdate);
 
-        // Update PB on click
-        buttonUpdate.setOnClickListener(v -> updatePB());
+        if (user.equals("parent")){
+            buttonUpdate.setOnClickListener(v -> updatePB());
+        }else{
+            editTextPB.setVisibility(View.GONE);
+            editTextPB.setOnClickListener(null);
+            buttonUpdate.setVisibility(View.GONE);
+            buttonUpdate.setOnClickListener(null);
+        }
+
 
         // Load stored PEF and PB values
         getPEF();
