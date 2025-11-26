@@ -1,38 +1,250 @@
 <?xml version="1.0" encoding="utf-8"?>
-<androidx.constraintlayout.widget.ConstraintLayout
-    xmlns:android="http://schemas.android.com/apk/res/android"
+<androidx.constraintlayout.widget.ConstraintLayout xmlns:android="http://schemas.android.com/apk/res/android"
     xmlns:app="http://schemas.android.com/apk/res-auto"
     android:layout_width="match_parent"
     android:layout_height="match_parent"
-    android:padding="16dp">
+    android:background="#F0F7FF">
 
-    <TextView
-        android:id="@+id/tvCurrentStreak"
-        android:layout_width="wrap_content"
-        android:layout_height="wrap_content"
-        android:text="Current streak: 0 days"
-        android:textSize="18sp"
-        android:textStyle="bold"
+    <com.google.android.material.appbar.MaterialToolbar
+        android:id="@+id/toolbar"
+        android:layout_width="0dp"
+        android:layout_height="?attr/actionBarSize"
+        android:background="#4E9FFF"
+        app:titleTextColor="@android:color/white"
         app:layout_constraintTop_toTopOf="parent"
-        app:layout_constraintStart_toStartOf="parent"/>
+        app:layout_constraintStart_toStartOf="parent"
+        app:layout_constraintEnd_toEndOf="parent">
 
-    <TextView
-        android:id="@+id/tvLongestStreak"
-        android:layout_width="wrap_content"
-        android:layout_height="wrap_content"
-        android:text="Longest streak: 0 days"
-        android:layout_marginTop="8dp"
-        app:layout_constraintTop_toBottomOf="@id/tvCurrentStreak"
-        app:layout_constraintStart_toStartOf="parent"/>
+        <ImageButton
+            android:id="@+id/btn_back"
+            android:layout_width="48dp"
+            android:layout_height="48dp"
+            app:srcCompat="@drawable/arrow_back"
+            app:tint="@android:color/white"
+            android:background="?attr/selectableItemBackgroundBorderless"
+            android:contentDescription="Back"
+            android:layout_gravity="start|center_vertical"
+            android:layout_marginStart="8dp" />
 
-    <Button
-        android:id="@+id/btnCompleteMedication"
+        <TextView
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:text="Medication Streak"
+            android:textSize="20sp"
+            android:textStyle="bold"
+            android:textColor="@android:color/white"
+            android:layout_gravity="center" />
+    </com.google.android.material.appbar.MaterialToolbar>
+
+    <androidx.cardview.widget.CardView
+        android:id="@+id/card_streak"
         android:layout_width="0dp"
         android:layout_height="wrap_content"
-        android:text="今天用药完成"
-        android:layout_marginTop="24dp"
-        app:layout_constraintTop_toBottomOf="@id/tvLongestStreak"
+        android:layout_margin="20dp"
+        android:layout_marginBottom="16dp"
+        app:cardCornerRadius="20dp"
+        app:cardElevation="8dp"
+        app:cardBackgroundColor="@android:color/white"
+        app:layout_constraintTop_toBottomOf="@id/toolbar"
         app:layout_constraintStart_toStartOf="parent"
-        app:layout_constraintEnd_toEndOf="parent"/>
+        app:layout_constraintEnd_toEndOf="parent">
+
+        <androidx.constraintlayout.widget.ConstraintLayout
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:padding="24dp">
+
+            <TextView
+                android:id="@+id/tv_current_label"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:text="Current Streak"
+                android:textSize="16sp"
+                android:textColor="#666"
+                app:layout_constraintStart_toStartOf="parent"
+                app:layout_constraintEnd_toStartOf="@id/g1"
+                app:layout_constraintTop_toTopOf="parent"
+                app:layout_constraintHorizontal_bias="0.5" />
+
+            <TextView
+                android:id="@+id/tv_current_streak"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:text="7"
+                android:textSize="56sp"
+                android:textStyle="bold"
+                android:textColor="#4E9FFF"
+                app:layout_constraintTop_toBottomOf="@id/tv_current_label"
+                app:layout_constraintStart_toStartOf="parent"
+                app:layout_constraintEnd_toStartOf="@id/g1"
+                android:layout_marginTop="8dp" />
+
+            <TextView
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:text="days 🔥"
+                android:textSize="20sp"
+                app:layout_constraintTop_toBottomOf="@id/tv_current_streak"
+                app:layout_constraintStart_toStartOf="parent"
+                app:layout_constraintEnd_toStartOf="@id/g1"
+                android:layout_marginTop="4dp" />
+
+            <TextView
+                android:id="@+id/tv_longest_label"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:text="Longest Streak"
+                android:textSize="16sp"
+                android:textColor="#666"
+                app:layout_constraintTop_toTopOf="@id/tv_current_label"
+                app:layout_constraintStart_toEndOf="@id/g1"
+                app:layout_constraintEnd_toEndOf="parent"
+                app:layout_constraintHorizontal_bias="0.5" />
+
+            <TextView
+                android:id="@+id/tv_longest_streak"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:text="12"
+                android:textSize="56sp"
+                android:textStyle="bold"
+                android:textColor="#4E9FFF"
+                app:layout_constraintTop_toBottomOf="@id/tv_longest_label"
+                app:layout_constraintStart_toEndOf="@id/g1"
+                app:layout_constraintEnd_toEndOf="parent"
+                android:layout_marginTop="8dp" />
+
+            <TextView
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:text="days 🏆"
+                android:textSize="20sp"
+                app:layout_constraintTop_toBottomOf="@id/tv_longest_streak"
+                app:layout_constraintStart_toEndOf="@id/g1"
+                app:layout_constraintEnd_toEndOf="parent"
+                android:layout_marginTop="4dp" />
+
+            <Button
+                android:id="@+id/btn_check_in"
+                android:layout_width="240dp"
+                android:layout_height="80dp"
+                android:layout_marginTop="44dp"
+                android:backgroundTint="#4E9FFF"
+                android:text="Check In"
+                android:textAllCaps="false"
+                android:textSize="26sp"
+                android:textStyle="bold"
+                app:layout_constraintEnd_toEndOf="parent"
+                app:layout_constraintHorizontal_bias="0.493"
+                app:layout_constraintStart_toStartOf="parent"
+                app:layout_constraintTop_toBottomOf="@id/tv_current_streak" />
+
+            <androidx.constraintlayout.widget.Guideline
+                android:id="@+id/g1"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:orientation="vertical"
+                app:layout_constraintGuide_percent="0.5" />
+        </androidx.constraintlayout.widget.ConstraintLayout>
+    </androidx.cardview.widget.CardView>
+
+    <androidx.cardview.widget.CardView
+        android:id="@+id/card_badges"
+        android:layout_width="0dp"
+        android:layout_height="wrap_content"
+        android:layout_marginHorizontal="20dp"
+        android:layout_marginTop="24dp"
+        android:layout_marginBottom="32dp"
+        app:cardCornerRadius="20dp"
+        app:cardElevation="8dp"
+        app:cardBackgroundColor="@android:color/white"
+        app:layout_constraintTop_toBottomOf="@id/card_streak"
+        app:layout_constraintStart_toStartOf="parent"
+        app:layout_constraintEnd_toEndOf="parent">
+
+        <LinearLayout
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:orientation="vertical"
+            android:padding="24dp">
+
+            <TextView
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:text="My Badges"
+                android:textSize="18sp"
+                android:textStyle="bold"
+                android:layout_gravity="center_horizontal"
+                android:layout_marginBottom="16dp" />
+
+            <GridLayout
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:columnCount="3"
+                android:rowCount="2"
+                android:alignmentMode="alignBounds"
+                android:layout_marginStart="40dp"
+                android:useDefaultMargins="true">
+
+                <ImageView
+                    android:id="@+id/day5_badge"
+                    android:layout_width="76dp"
+                    android:layout_height="76dp"
+                    android:scaleType="centerInside"
+                    app:srcCompat="@drawable/day5_badge" />
+
+                <ImageView
+                    android:id="@+id/day10_badge"
+                    android:layout_width="76dp"
+                    android:layout_height="76dp"
+                    android:scaleType="centerInside"
+                    app:srcCompat="@drawable/day10_badge" />
+
+                <ImageView
+                    android:id="@+id/day15_badge"
+                    android:layout_width="76dp"
+                    android:layout_height="76dp"
+                    android:scaleType="centerInside"
+                    app:srcCompat="@drawable/day15_badge" />
+
+                <ImageView
+                    android:id="@+id/day20_badge"
+                    android:layout_width="76dp"
+                    android:layout_height="76dp"
+                    android:scaleType="centerInside"
+                    app:srcCompat = "@drawable/day20_badge" />
+
+                <ImageView
+                    android:id="@+id/day25_badge"
+                    android:layout_width="76dp"
+                    android:layout_height="76dp"
+                    android:scaleType="centerInside"
+                    app:srcCompat = "@drawable/day25_badge" />
+
+                <ImageView
+                    android:id="@+id/day30_badge"
+                    android:layout_width="76dp"
+                    android:layout_height="76dp"
+                    android:scaleType="centerInside"
+                    app:srcCompat = "@drawable/day30_badge" />
+            </GridLayout>
+
+            <Button
+                android:id="@+id/btn_view_badges"
+                style="@style/Widget.MaterialComponents.Button.TextButton"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:layout_gravity="center_horizontal"
+                android:textAllCaps="false"
+                android:text="View All Badges →"
+                android:textSize="18sp"
+                android:textStyle="bold"
+                android:textColor="#4E9FFF"
+                android:background="?attr/selectableItemBackgroundBorderless"
+                android:minHeight="48dp"
+                android:padding="16dp"
+                android:layout_marginTop="24dp" />
+        </LinearLayout>
+    </androidx.cardview.widget.CardView>
 
 </androidx.constraintlayout.widget.ConstraintLayout>
