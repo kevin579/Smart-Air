@@ -249,7 +249,7 @@ public class ProviderDashboardFragment extends Fragment {
      */
     public void searchChildrenForProvider() {
         if (uname == null || uname.trim().isEmpty()) {
-            Toast.makeText(getContext(), "Provider username is required.", Toast.LENGTH_LONG).show();
+            Toast.makeText(getContext(), "Provider username is invalid.", Toast.LENGTH_LONG).show();
             return;
         }
 
@@ -298,7 +298,6 @@ public class ProviderDashboardFragment extends Fragment {
                         for (DataSnapshot childLink : childLinksSnapshot.getChildren()) {
                             String childUname = childLink.getKey();
                             if (childUname != null) {
-
                                 childUsernames.add(childUname);
                                 childToParentMap.put(childUname, parentUname);
                             }
@@ -350,7 +349,6 @@ public class ProviderDashboardFragment extends Fragment {
                         List<String> truePermissions = new ArrayList<>();
 
                         if (permissionsSnapshot.exists()) {
-                            Toast.makeText(getContext(), "Got permission", Toast.LENGTH_LONG).show();
                             // Check all permissions
                             boolean hasTruePermission = false;
                             for (DataSnapshot permission : permissionsSnapshot.getChildren()) {
@@ -365,7 +363,6 @@ public class ProviderDashboardFragment extends Fragment {
 
                             // If at least one permission is true, call the UI function
                             if (hasTruePermission) {
-                                Toast.makeText(getContext(), "Add child", Toast.LENGTH_LONG).show();
 
                                 addChildCard(childName, childUname, truePermissions);
                             }
@@ -468,8 +465,6 @@ public class ProviderDashboardFragment extends Fragment {
         textView.setTextSize(18);
 
 
-
-
         // ─────────────────────────────────────────────────────────────────
         // Assemble Card
         // ─────────────────────────────────────────────────────────────────
@@ -483,8 +478,9 @@ public class ProviderDashboardFragment extends Fragment {
             Bundle args = new Bundle();
             args.putString("childUname", childKey);
             args.putString("childName", childName);
+            args.putStringArrayList("permissions", (ArrayList<String>) permissions);
 
-            ParentSideChildDashboardFragment childFrag = new ParentSideChildDashboardFragment();
+            ProviderSideChildDashboardFragment childFrag = new ProviderSideChildDashboardFragment();
             childFrag.setArguments(args);
             loadFragment(childFrag);
         });

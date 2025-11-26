@@ -125,7 +125,7 @@ public class LoginFragment extends Fragment implements LoginContract.View {
             field = "parents";
         }
         else{
-            field = "providers";
+            field = "provider";
         }
 
 
