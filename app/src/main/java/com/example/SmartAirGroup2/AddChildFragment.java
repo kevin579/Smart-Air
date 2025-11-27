@@ -41,8 +41,8 @@ import com.google.firebase.database.FirebaseDatabase;
  *  4. If available, the child is added to the "children" node.
  *  5. The child’s username is then linked under the parent’s "children" list.
  *
- * Author: [Your Name]
- * Last Updated: [Date]
+ * Author: Kevin Li
+ * Last Updated: November 18, 2025
  */
 
 public class AddChildFragment extends Fragment {
