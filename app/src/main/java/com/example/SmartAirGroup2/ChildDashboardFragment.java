@@ -1,5 +1,6 @@
 package com.example.SmartAirGroup2;
 
+import android.content.Intent;
 import android.os.Bundle;
 import android.util.Log;
 import android.view.LayoutInflater;
@@ -8,9 +9,11 @@ import android.view.MenuInflater;
 import android.view.MenuItem;
 import android.view.View;
 import android.view.ViewGroup;
+import android.widget.Toast;
 
 import androidx.annotation.NonNull;
 import androidx.annotation.Nullable;
+import androidx.appcompat.app.AlertDialog;
 import androidx.appcompat.app.AppCompatActivity;
 import androidx.appcompat.widget.Toolbar;
 import androidx.cardview.widget.CardView;
@@ -113,7 +116,9 @@ public class ChildDashboardFragment extends Fragment {
      *   - Red (alert)
      *   - Green (good)
      */
-    private CardView cardInventory, cardPEF, cardSymptom, cardIncident;
+    private CardView cardInventory, cardPEF, cardSymptom, cardIncident, cardProviderReport;
+
+    private ProviderReportGenerator currentReportGenerator;
 
 
     // ═══════════════════════════════════════════════════════════════════════
@@ -199,6 +204,7 @@ public class ChildDashboardFragment extends Fragment {
         cardPEF = view.findViewById(R.id.cardPEF);
         cardSymptom = view.findViewById(R.id.cardSymptom);
         cardIncident = view.findViewById(R.id.cardIncident);
+        cardProviderReport = view.findViewById(R.id.cardProviderReport);
 
         // ─────────────────────────────────────────────────────────────────
         // Load and Apply Status Colors
@@ -248,9 +254,37 @@ public class ChildDashboardFragment extends Fragment {
             //todo link
         });
 
+        cardProviderReport.setOnClickListener(v -> {
+            new AlertDialog.Builder(requireContext())
+                    .setTitle("Provider Report")
+                    .setMessage("Choose report format:")
+                    .setPositiveButton("3 months", (d, w) -> {
+                        currentReportGenerator = new ProviderReportGenerator(
+                                requireContext(), requireActivity(), uname, name
+                        );
+                        currentReportGenerator.generateThreeMonthReport();
+                    })
+                    .setNegativeButton("6 months", (d, w) -> {
+                        currentReportGenerator = new ProviderReportGenerator(
+                                requireContext(), requireActivity(), uname, name
+                        );
+                        currentReportGenerator.generateSixMonthReport();
+                    })
+                    .show();
+        });
+
+
         return view;
     }
 
+    @Override
+    public void onActivityResult(int requestCode, int resultCode, Intent data) {
+        super.onActivityResult(requestCode, resultCode, data);
+
+        if (currentReportGenerator != null) {
+            currentReportGenerator.handleActivityResult(requestCode, resultCode, data);
+        }
+    }
     // ═══════════════════════════════════════════════════════════════════════
     // FIREBASE STATUS LOADING
     // ═══════════════════════════════════════════════════════════════════════
