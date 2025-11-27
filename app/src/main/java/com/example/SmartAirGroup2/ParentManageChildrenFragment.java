@@ -15,6 +15,7 @@ import android.view.MenuInflater;
 import android.view.MenuItem;
 import android.view.View;
 import android.view.ViewGroup;
+import android.widget.Button;
 import android.widget.FrameLayout;
 import android.widget.ImageView;
 import android.widget.LinearLayout;
@@ -493,7 +494,7 @@ public class ParentManageChildrenFragment extends Fragment {
         Context ctx = requireContext();
 
         // ─────────────────────────────────────────────────────────────────
-        // Create CardView Container
+        // Create CardView Container (Rethink Clickable properties)
         // ─────────────────────────────────────────────────────────────────
         CardView cardView = new CardView(ctx);
         LinearLayout.LayoutParams cardParams = new LinearLayout.LayoutParams(
@@ -506,71 +507,108 @@ public class ParentManageChildrenFragment extends Fragment {
         // ─────────────────────────────────────────────────────────────────
         // Set Background Color Based on Status
         // ─────────────────────────────────────────────────────────────────
-        if (statusList.contains(2)) {
-            cardView.setCardBackgroundColor(ContextCompat.getColor(getContext(), R.color.alert));
-        } else if (statusList.contains(1)) {
-            cardView.setCardBackgroundColor(ContextCompat.getColor(getContext(), R.color.alert));
+        int statusColor;
+        if (statusList.contains(2) || statusList.contains(1)) {
+            statusColor = ContextCompat.getColor(getContext(), R.color.alert);
         } else {
-            cardView.setCardBackgroundColor(ContextCompat.getColor(getContext(), R.color.good));
+            statusColor = ContextCompat.getColor(getContext(), R.color.good);
         }
+        cardView.setCardBackgroundColor(statusColor);
 
         cardView.setRadius(dpToPx(8));
-        cardView.setCardElevation(0);
-        cardView.setClickable(true);
-        cardView.setFocusable(true);
+        cardView.setCardElevation(dpToPx(2)); // Added elevation for visual separation
+        cardView.setClickable(false); // Make the main card NOT clickable
+        cardView.setFocusable(false);
 
         // ─────────────────────────────────────────────────────────────────
-        // Add Ripple Effect
+        // Create Outer Vertical Layout (to stack Name/Delete and Buttons)
         // ─────────────────────────────────────────────────────────────────
-        TypedValue outValue = new TypedValue();
-        if (ctx.getTheme().resolveAttribute(android.R.attr.selectableItemBackground, outValue, true)) {
-            Drawable selectable = ContextCompat.getDrawable(ctx, outValue.resourceId);
-            if (selectable != null) cardView.setForeground(selectable);
-        }
-
-        // ─────────────────────────────────────────────────────────────────
-        // Create Inner Layout
-        // ─────────────────────────────────────────────────────────────────
-        LinearLayout innerLayout = new LinearLayout(ctx);
-        innerLayout.setOrientation(LinearLayout.HORIZONTAL);
-        innerLayout.setLayoutParams(new FrameLayout.LayoutParams(
+        LinearLayout outerVerticalLayout = new LinearLayout(ctx);
+        outerVerticalLayout.setOrientation(LinearLayout.VERTICAL);
+        outerVerticalLayout.setLayoutParams(new FrameLayout.LayoutParams(
                 FrameLayout.LayoutParams.MATCH_PARENT,
                 FrameLayout.LayoutParams.WRAP_CONTENT
         ));
-        innerLayout.setPadding(dpToPx(16), dpToPx(16), dpToPx(16), dpToPx(16));
-        innerLayout.setGravity(Gravity.CENTER_VERTICAL);
+        // Reduced outer padding slightly, inner padding is handled by name layout
 
         // ─────────────────────────────────────────────────────────────────
-        // Child Name TextView
+        // Inner Layout for Name and Delete Icon (Original top section)
         // ─────────────────────────────────────────────────────────────────
+        LinearLayout nameAndDeleteLayout = new LinearLayout(ctx);
+        nameAndDeleteLayout.setOrientation(LinearLayout.HORIZONTAL);
+        nameAndDeleteLayout.setLayoutParams(new LinearLayout.LayoutParams(
+                LinearLayout.LayoutParams.MATCH_PARENT,
+                LinearLayout.LayoutParams.WRAP_CONTENT
+        ));
+        nameAndDeleteLayout.setPadding(dpToPx(16), dpToPx(16), dpToPx(16), dpToPx(8)); // Padding adjusted
+        nameAndDeleteLayout.setGravity(Gravity.CENTER_VERTICAL);
+
+        // Child Name TextView
         TextView textView = new TextView(ctx);
         textView.setLayoutParams(new LinearLayout.LayoutParams(0, LinearLayout.LayoutParams.WRAP_CONTENT, 1f));
         textView.setText(childName);
         textView.setTextSize(18);
 
-        // ─────────────────────────────────────────────────────────────────
-        // Delete Icon
-        // ─────────────────────────────────────────────────────────────────
+        // Delete Icon (Unlink Child)
         ImageView deleteView = new ImageView(ctx);
         LinearLayout.LayoutParams imgParams = new LinearLayout.LayoutParams(dpToPx(24), dpToPx(24));
         imgParams.setMarginEnd(dpToPx(12));
         deleteView.setLayoutParams(imgParams);
         deleteView.setImageResource(android.R.drawable.ic_delete);
-        deleteView.setColorFilter(ContextCompat.getColor(ctx, R.color.delete), PorterDuff.Mode.SRC_IN);
+        deleteView.setColorFilter(ContextCompat.getColor(ctx, R.color.white), PorterDuff.Mode.SRC_IN); // Changed color for better contrast on alert/good background
 
-
-
-        // ─────────────────────────────────────────────────────────────────
-        // Assemble Card
-        // ─────────────────────────────────────────────────────────────────
-        innerLayout.addView(textView);
-        innerLayout.addView(deleteView);
-        cardView.addView(innerLayout);
+        // Assemble Name and Delete Layout
+        nameAndDeleteLayout.addView(textView);
+        nameAndDeleteLayout.addView(deleteView);
+        outerVerticalLayout.addView(nameAndDeleteLayout); // Add name/delete section to outer layout
 
         // ─────────────────────────────────────────────────────────────────
-        // Card Click Handler - Navigate to Child Dashboard
+        // Button Container Layout (NEW)
         // ─────────────────────────────────────────────────────────────────
-        cardView.setOnClickListener(v -> {
+        LinearLayout buttonLayout = new LinearLayout(ctx);
+        buttonLayout.setOrientation(LinearLayout.HORIZONTAL);
+        buttonLayout.setLayoutParams(new LinearLayout.LayoutParams(
+                LinearLayout.LayoutParams.MATCH_PARENT,
+                LinearLayout.LayoutParams.WRAP_CONTENT
+        ));
+        buttonLayout.setPadding(dpToPx(16), dpToPx(8), dpToPx(16), dpToPx(16));
+        buttonLayout.setGravity(Gravity.END); // Push buttons to the right
+
+        // ─────────────────────────────────────────────────────────────────
+        // 1. "View Status" Button
+        // ─────────────────────────────────────────────────────────────────
+        Button viewStatusButton = new Button(ctx, null, R.style.CustomLinkButton);
+        LinearLayout.LayoutParams btnViewParams = new LinearLayout.LayoutParams(LinearLayout.LayoutParams.WRAP_CONTENT, dpToPx(40));
+        btnViewParams.setMarginEnd(dpToPx(8));
+        viewStatusButton.setLayoutParams(btnViewParams);
+        viewStatusButton.setText("View");
+        viewStatusButton.setBackgroundResource(R.drawable.rounded_blue_button);
+
+
+        // "View Status" Click Handler - Navigate to ViewStatusFragment
+        viewStatusButton.setOnClickListener(v -> {
+            Bundle args = new Bundle();
+            args.putString("childUname", childKey);
+            args.putString("childName", childName);
+
+            // Assume ViewStatusFragment is the target
+            ViewStatusFragment statusFrag = new ViewStatusFragment();
+            statusFrag.setArguments(args);
+            loadFragment(statusFrag);
+        });
+        buttonLayout.addView(viewStatusButton);
+
+        // ─────────────────────────────────────────────────────────────────
+        // 2. "Manage" Button (Original Card Click Handler)
+        // ─────────────────────────────────────────────────────────────────
+        Button manageButton = new Button(ctx, null, R.style.CustomLinkButton);
+        LinearLayout.LayoutParams btnManageParams = new LinearLayout.LayoutParams(LinearLayout.LayoutParams.WRAP_CONTENT, dpToPx(40));
+        manageButton.setLayoutParams(btnManageParams);
+        manageButton.setText("Manage");
+        manageButton.setBackgroundResource(R.drawable.rounded_blue_button);
+
+        // "Manage" Click Handler - Navigate to ParentSideChildDashboardFragment
+        manageButton.setOnClickListener(v -> {
             Bundle args = new Bundle();
             args.putString("childUname", childKey);
             args.putString("childName", childName);
@@ -579,9 +617,18 @@ public class ParentManageChildrenFragment extends Fragment {
             childFrag.setArguments(args);
             loadFragment(childFrag);
         });
+        buttonLayout.addView(manageButton);
+
+        // Add button layout to outer vertical layout
+        outerVerticalLayout.addView(buttonLayout);
 
         // ─────────────────────────────────────────────────────────────────
-        // Delete Icon Click Handler - Unlink Child
+        // Assemble Card (Final step)
+        // ─────────────────────────────────────────────────────────────────
+        cardView.addView(outerVerticalLayout);
+
+        // ─────────────────────────────────────────────────────────────────
+        // DELETE ICON Click Handler (Kept separate from buttons)
         // ─────────────────────────────────────────────────────────────────
         deleteView.setOnClickListener(v -> {
             if (!isAdded()) return;
@@ -590,6 +637,8 @@ public class ParentManageChildrenFragment extends Fragment {
                     .setTitle("Remove Child")
                     .setMessage("Are you sure you want to unlink " + childName + "?")
                     .setPositiveButton("Yes", (d, w) -> {
+                        // Assuming childrenRef is a field in the class
+                        // And loadChildrenFromDatabase() is available
                         if (childrenRef != null) {
                             childrenRef.child(childKey).removeValue();
                             Toast.makeText(ctx, "Child removed", Toast.LENGTH_SHORT).show();
