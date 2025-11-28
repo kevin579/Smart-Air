@@ -300,8 +300,6 @@ public class ProviderReportGenerator {
         }
     }
 
-
-
     private long convertDateTimeToLong(String dateTimeStr) {
         try {
             SimpleDateFormat sdf = new SimpleDateFormat("yyyy-MM-dd HH:mm", Locale.getDefault());
