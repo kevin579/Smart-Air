@@ -20,7 +20,7 @@
             android:exported="true" />
         <activity
             android:name=".ChildDashboard"
-            android:exported="false" />
+            android:exported="true" />
         <activity
             android:name=".password_recover"
             android:exported="false" />
