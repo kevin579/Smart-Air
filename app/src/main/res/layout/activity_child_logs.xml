@@ -7,57 +7,69 @@
     android:layout_height="match_parent"
     tools:context=".ChildLogsActivity">
 
-    <Button
-        android:id="@+id/addInhalor"
+    <TextView
+        android:id="@+id/logsTitle"
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"
-        android:layout_marginBottom="24dp"
-        android:paddingLeft="10dp"
-        android:paddingRight="10dp"
-        android:text="+ Inhalor"
-        app:layout_constraintBottom_toBottomOf="parent"
+        android:layout_marginTop="16dp"
+        android:text="Child Logs"
+        android:textSize="20sp"
+        android:textStyle="bold"
         app:layout_constraintEnd_toEndOf="parent"
-        app:layout_constraintHorizontal_bias="0.154"
-        app:layout_constraintStart_toStartOf="parent" />
+        app:layout_constraintHorizontal_bias="0.498"
+        app:layout_constraintStart_toStartOf="parent"
+        app:layout_constraintTop_toTopOf="parent" />
 
-    <Button
-        android:id="@+id/addPEF"
-        android:layout_width="wrap_content"
+    <LinearLayout
+        android:id="@+id/filterRow"
+        android:layout_width="0dp"
         android:layout_height="wrap_content"
-        android:layout_marginBottom="24dp"
-        android:paddingLeft="10dp"
-        android:paddingRight="10dp"
-        android:text="+ PEF"
-        app:layout_constraintBottom_toBottomOf="parent"
+        android:orientation="horizontal"
+        android:layout_marginTop="12dp"
+        app:layout_constraintTop_toBottomOf="@id/logsTitle"
+        app:layout_constraintStart_toStartOf="parent"
         app:layout_constraintEnd_toEndOf="parent"
-        app:layout_constraintHorizontal_bias="0.102"
-        app:layout_constraintStart_toEndOf="@+id/addInhalor" />
+        android:gravity="center">
 
-    <Button
-        android:id="@+id/addMedicine"
-        android:layout_width="wrap_content"
-        android:layout_height="wrap_content"
-        android:layout_marginBottom="24dp"
-        android:paddingLeft="10dp"
-        android:paddingRight="10dp"
-        android:text="+ Medicine"
-        app:layout_constraintBottom_toBottomOf="parent"
-        app:layout_constraintEnd_toEndOf="parent"
-        app:layout_constraintHorizontal_bias="0.24"
-        app:layout_constraintStart_toEndOf="@+id/addPEF" />
+        <Button
+            android:id="@+id/filterAll"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:text="All" />
+
+        <Button
+            android:id="@+id/filterPEF"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:layout_marginStart="8dp"
+            android:text="PEF" />
+
+        <Button
+            android:id="@+id/filterController"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:layout_marginStart="8dp"
+            android:text="Medicine" />
+
+        <Button
+            android:id="@+id/filterRescue"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:layout_marginStart="8dp"
+            android:text="Rescue/Inhaler" />
+    </LinearLayout>
 
     <ScrollView
         android:id="@+id/scrollView2"
         android:layout_width="match_parent"
-        android:layout_height="match_parent"
-        android:layout_marginTop="85dp"
-        android:layout_marginBottom="85dp"
-        app:layout_constraintBottom_toBottomOf="parent"
-        app:layout_constraintEnd_toEndOf="parent"
+        android:layout_height="0dp"
+        android:layout_marginTop="12dp"
+        android:layout_marginBottom="80dp"
+        app:layout_constraintTop_toBottomOf="@id/filterRow"
+        app:layout_constraintBottom_toTopOf="@id/addRow"
         app:layout_constraintStart_toStartOf="parent"
-        app:layout_constraintTop_toTopOf="parent">
+        app:layout_constraintEnd_toEndOf="parent">
 
-        <!-- GIVE THIS container an id so code can add child views -->
         <LinearLayout
             android:id="@+id/logsContainer"
             android:layout_width="match_parent"
@@ -66,16 +78,42 @@
             android:padding="12dp" />
     </ScrollView>
 
-    <TextView
-        android:id="@+id/logsTitle"
-        android:layout_width="wrap_content"
+    <LinearLayout
+        android:id="@+id/addRow"
+        android:layout_width="0dp"
         android:layout_height="wrap_content"
-        android:layout_marginTop="36dp"
-        android:text="Child Logs"
-        android:textSize="20sp"
-        android:textStyle="bold"
-        app:layout_constraintEnd_toEndOf="parent"
-        app:layout_constraintHorizontal_bias="0.498"
+        android:orientation="horizontal"
+        android:layout_marginBottom="12dp"
+        app:layout_constraintBottom_toBottomOf="parent"
         app:layout_constraintStart_toStartOf="parent"
-        app:layout_constraintTop_toTopOf="parent" />
+        app:layout_constraintEnd_toEndOf="parent"
+        android:gravity="center">
+
+        <Button
+            android:id="@+id/addInhalor"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:paddingLeft="10dp"
+            android:paddingRight="10dp"
+            android:text="+ Rescue/Inhaler" />
+
+        <Button
+            android:id="@+id/addPEF"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:layout_marginStart="8dp"
+            android:paddingLeft="10dp"
+            android:paddingRight="10dp"
+            android:text="+ PEF" />
+
+        <Button
+            android:id="@+id/addMedicine"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:layout_marginStart="8dp"
+            android:paddingLeft="10dp"
+            android:paddingRight="10dp"
+            android:text="+ Medicine" />
+    </LinearLayout>
+
 </androidx.constraintlayout.widget.ConstraintLayout>
