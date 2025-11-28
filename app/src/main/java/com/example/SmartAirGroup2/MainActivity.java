@@ -26,20 +26,20 @@ public class MainActivity extends AppCompatActivity {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_main);
 
-//        if (savedInstanceState == null) {
-//            getSupportFragmentManager()
-//                    .beginTransaction()
-//                    .replace(R.id.fragment_container,
-//                            new com.example.SmartAirGroup2.auth.login.LoginFragment())
-//                    .commit();
-//        }
         if (savedInstanceState == null) {
             getSupportFragmentManager()
                     .beginTransaction()
                     .replace(R.id.fragment_container,
-                            new ChildDashboardDemo())
+                            new com.example.SmartAirGroup2.auth.login.LoginFragment())
                     .commit();
         }
+//        if (savedInstanceState == null) {
+//            getSupportFragmentManager()
+//                    .beginTransaction()
+//                    .replace(R.id.fragment_container,
+//                            new ChildDashboardDemo())
+//                    .commit();
+//        }
 
     }
 

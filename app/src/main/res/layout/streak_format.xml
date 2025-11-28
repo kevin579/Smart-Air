@@ -40,29 +40,6 @@
             android:spacing="16dp">
 
             <FrameLayout
-                android:id="@+id/winStreak"
-                android:layout_width="80dp"
-                android:layout_height="80dp"
-                android:layout_margin="10dp"
-                android:padding="10dp">
-
-                <TextView
-                    android:layout_width="match_parent"
-                    android:layout_height="61dp"
-                    android:background="@drawable/flame_bg"
-                    android:gravity="center"
-                    android:paddingTop="16dp"
-                    android:shadowColor="#FFFFFF"
-                    android:shadowDx="0"
-                    android:shadowDy="0"
-                    android:shadowRadius="5"
-                    android:text="30"
-                    android:textColor="#FFFFE3"
-                    android:textSize="20sp"
-                    android:textStyle="bold" />
-            </FrameLayout>
-
-            <FrameLayout
                 android:id="@+id/day5_badge"
                 android:layout_width="100dp"
                 android:layout_height="100dp"

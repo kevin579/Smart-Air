@@ -359,11 +359,11 @@ public class ParentManageChildrenFragment extends Fragment {
                                         @Override
                                         public void onDataChange(@NonNull DataSnapshot statusSnap) {
 
-                                            Integer pefZone = statusSnap.child("pefZone").getValue(Integer.class);
-                                            if (!safetyAlert && pefZone != null && pefZone == 2) {
-                                                safetyAlert = true;
-                                                showSafetyAlertDialog(child.getUname(), displayName);
-                                            }
+//                                            Integer pefZone = statusSnap.child("pefZone").getValue(Integer.class);
+//                                            if (!safetyAlert && pefZone != null && pefZone == 2) {
+//                                                safetyAlert = true;
+//                                                showSafetyAlertDialog(child.getUname(), displayName);
+//                                            }
 
                                             // Parse status values from Firebase
                                             List<Integer> statusList = new ArrayList<>();
