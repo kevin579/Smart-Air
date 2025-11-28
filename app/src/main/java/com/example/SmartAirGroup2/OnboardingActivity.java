@@ -26,6 +26,10 @@ import java.util.Date;
 import java.util.Locale;
 import com.example.SmartAirGroup2.Adapters.OnBoardingAdapter;
 import com.example.SmartAirGroup2.Helpers.SaveState;
+import com.google.firebase.database.DataSnapshot;
+import com.google.firebase.database.DatabaseError;
+import com.google.firebase.database.ValueEventListener;
+import androidx.annotation.NonNull;
 
 public class OnboardingActivity extends AppCompatActivity {
 
@@ -148,32 +152,63 @@ public class OnboardingActivity extends AppCompatActivity {
     }
 
     private void saveAndFinishTriage() {
-        // Assume you have the current user's ID, e.g., "randy1122"
-        String currentUserId = getIntent().getStringExtra("username");
+        // Collect data from the final slide one last time before saving.
+        collectDataFromPage(currentPosition);
 
+        // 1. Get the username that was passed from TriagelogDashboardFragment
+        final String currentUserId = getIntent().getStringExtra("username");
+
+        // Critical check to ensure we have a user to save data for.
         if (currentUserId == null || currentUserId.isEmpty()) {
-            Toast.makeText(this, "Error: Could not identify user.", Toast.LENGTH_LONG).show();
-            finish(); // Exit to prevent saving data to a null path.
-            return;   // Stop the method here.
+            Toast.makeText(this, "Error: Could not identify user to save data for.", Toast.LENGTH_LONG).show();
+            finish(); // Exit to prevent errors.
+            return;
         }
 
-        // Get current time
-        incidentData.time = new SimpleDateFormat("yyyy/MM/dd HH:mm:ss", Locale.getDefault()).format(new Date());
+        // 2. Get the specific reference to the user's "triages" branch.
+        final DatabaseReference triagesRef = FirebaseDatabase.getInstance().getReference()
+                .child(currentUserId) // This uses the username like "randy1122"
+                .child("data")
+                .child("triages");
 
-        // Set default/placeholder values
-        incidentData.guidance = "cpr"; // Example value
-        incidentData.response = "died"; // Example value
+        // 3. READ FIRST: Query Firebase to count how many incidents already exist.
+        //    We use .addListenerForSingleValueEvent() because we only need this data once.
+        triagesRef.addListenerForSingleValueEvent(new ValueEventListener() {
+            @Override
+            public void onDataChange(@NonNull DataSnapshot snapshot) {
+                // 4. Calculate the next incident number.
+                long incidentCount = 0;
+                if (snapshot.exists()) {
+                    // snapshot.getChildrenCount() returns the number of direct children (e.g., incident1, incident2)
+                    incidentCount = snapshot.getChildrenCount();
+                }
+                // Create the new key, e.g., "incident" + (1 + 1) becomes "incident2"
+                String nextIncidentKey = "incident" + (incidentCount + 1);
 
-        DatabaseReference dbRef = FirebaseDatabase.getInstance().getReference();
-        // Push creates a unique ID like "incident1", "incident2", etc.
-        dbRef.child(currentUserId).child("data").child("triages").push().setValue(incidentData)
-                .addOnSuccessListener(aVoid -> {
-                    Toast.makeText(OnboardingActivity.this, "Triage data saved!", Toast.LENGTH_SHORT).show();
-                    finish(); // Close the activity
-                })
-                .addOnFailureListener(e -> {
-                    Toast.makeText(OnboardingActivity.this, "Failed to save data.", Toast.LENGTH_SHORT).show();
-                });
+                // 5. Prepare the final data object with timestamp and placeholder values.
+                incidentData.time = new SimpleDateFormat("yyyy/MM/dd HH:mm:ss", Locale.getDefault()).format(new Date());
+                incidentData.guidance = "cpr"; // Example placeholder
+                incidentData.response = "died"; // Example placeholder
+
+                // 6. WRITE DATA: Save the new incident using the calculated sequential key.
+                //    We use .child(nextIncidentKey) instead of .push().
+                triagesRef.child(nextIncidentKey).setValue(incidentData)
+                        .addOnSuccessListener(aVoid -> {
+                            Toast.makeText(OnboardingActivity.this, "Triage Report Saved as " + nextIncidentKey, Toast.LENGTH_SHORT).show();
+                            finish(); // Success, so close the activity.
+                        })
+                        .addOnFailureListener(e -> {
+                            Toast.makeText(OnboardingActivity.this, "Failed to save data: " + e.getMessage(), Toast.LENGTH_SHORT).show();
+                        });
+            }
+
+            @Override
+            public void onCancelled(@NonNull DatabaseError error) {
+                // This method is called if the app doesn't have permission to read the data
+                // or if another error occurs during the read operation.
+                Toast.makeText(OnboardingActivity.this, "Database read failed: " + error.getMessage(), Toast.LENGTH_SHORT).show();
+            }
+        });
     }
 
     private void startMainActivity() {
