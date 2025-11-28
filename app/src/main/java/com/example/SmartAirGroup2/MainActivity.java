@@ -40,6 +40,13 @@ public class MainActivity extends AppCompatActivity {
 //                            new ChildDashboardDemo())
 //                    .commit();
 //        }
+//        if (savedInstanceState == null) {
+//            getSupportFragmentManager()
+//                    .beginTransaction()
+//                    .replace(R.id.fragment_container,
+//                            new ParentDashboardFragment())
+//                    .commit();
+//        }
 
     }
 

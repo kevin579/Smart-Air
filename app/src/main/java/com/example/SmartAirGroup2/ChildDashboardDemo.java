@@ -48,7 +48,6 @@ public class ChildDashboardDemo extends Fragment {
                     .commit();
         });
 
-
         loadDashboardStreak();
 
         return view;
