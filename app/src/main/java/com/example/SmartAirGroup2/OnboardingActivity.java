@@ -3,8 +3,10 @@ package com.example.SmartAirGroup2;
 import android.content.Intent;
 import android.os.Bundle;
 import android.text.Html;
+import android.util.Log;
 import android.widget.LinearLayout;
 import android.widget.TextView;
+import android.widget.Toast;
 
 import androidx.activity.EdgeToEdge;
 import androidx.appcompat.app.AppCompatActivity;
@@ -16,6 +18,8 @@ import androidx.viewpager.widget.ViewPager;
 
 import com.example.SmartAirGroup2.Adapters.OnBoardingAdapter;
 import com.example.SmartAirGroup2.Helpers.SaveState;
+import com.google.firebase.database.DatabaseReference;
+import com.google.firebase.database.FirebaseDatabase;
 
 public class OnboardingActivity extends AppCompatActivity {
 
@@ -41,7 +45,6 @@ public class OnboardingActivity extends AppCompatActivity {
         viewPager = findViewById(R.id.slider);
 
         // Initialize SaveState helper
-        saveState = new SaveState(this, "0B");
 
         // Setup dots and ViewPager
         dotsFunction(0);
@@ -84,10 +87,33 @@ public class OnboardingActivity extends AppCompatActivity {
             } else {
                 // This is the final screen
                 nextCard.setOnClickListener(view -> {
-                    saveState.setState(1); // Mark onboarding as complete
-                    Intent i = new Intent(OnboardingActivity.this, MainActivity.class);
-                    startActivity(i);
-                    finish(); // Finish OnboardingActivity so user can't go back
+
+                    String username = getIntent().getStringExtra("username");
+                    String field = getIntent().getStringExtra("type");
+
+                    DatabaseReference stateRef = FirebaseDatabase.getInstance()
+                            .getReference("categories/users")
+                            .child(field)
+                            .child(username);
+
+                    stateRef.child("onboarded").setValue(true);
+                    Log.d(":DB",field);
+
+
+                    Intent intent;
+
+                    if (field.equals("children")) {
+                        intent = new Intent(OnboardingActivity.this, ChildDashboard.class);
+                    } else if (field.equals("parents")) {
+                        intent = new Intent(OnboardingActivity.this, ParentDashboardActivity.class);
+                        intent.putExtra("username", username);
+
+                    } else {
+                        intent = new Intent(OnboardingActivity.this, Parent_Provider_Dashboard.class);
+                    }
+
+                    startActivity(intent);
+                    finish();
                 });
             }
         }
