@@ -181,19 +181,11 @@ public class ProviderReportGenerator {
             final int[] y = {60};
             int lineSpacing = 22;
 
-            // Helper to create a new page
-            Runnable newPage = () -> {
-                pageNumber[0]++;
-                PdfDocument.PageInfo newPageInfo = new PdfDocument.PageInfo.Builder(595, 842, pageNumber[0]).create();
-                PdfDocument.Page newPg = pdfDocument.startPage(newPageInfo);
-                page[0] = newPg;
-                canvas[0] = page[0].getCanvas();
-                y[0] = 60;
-                paint.setTextSize(14);
-            };
-
             java.util.function.Consumer<String> drawLine = (text) -> {
                 if (y[0] > 780) {
+                    // Finish the current page before starting a new one
+                    pdfDocument.finishPage(page[0]);
+
                     pageNumber[0]++;
                     PdfDocument.PageInfo newPageInfo = new PdfDocument.PageInfo.Builder(595, 842, pageNumber[0]).create();
                     page[0] = pdfDocument.startPage(newPageInfo);
@@ -243,17 +235,12 @@ public class ProviderReportGenerator {
                 drawLine.accept(month + " - Rescue events: " + rescueCount);
             }
 
-            // Finish last page
+            // Finish the last page
             pdfDocument.finishPage(page[0]);
 
             // Store PDF and show save dialog
             this.pendingPdfDocument = pdfDocument;
-            String fileName = "Provider_Report_" +
-                    name.replaceAll("[^a-zA-Z0-9]", "_") +
-                    "_" + data.months + "mo_" +
-                    new SimpleDateFormat("yyyyMMdd", Locale.getDefault()).format(new Date()) + ".pdf";
-
-            showSaveAsDialog("application/pdf", fileName, CREATE_PDF_REQUEST_CODE);
+            showSaveAsDialog("application/pdf", "Provider_report", CREATE_PDF_REQUEST_CODE);
 
         } catch (Exception e) {
             e.printStackTrace();
@@ -287,22 +274,22 @@ public class ProviderReportGenerator {
 
     private void savePdfToUri(Uri uri) {
         if (pendingPdfDocument == null) {
-            Toast.makeText(context, "PDF document is null", Toast.LENGTH_SHORT).show();
+            Toast.makeText(activity, "PDF document is null", Toast.LENGTH_SHORT).show();
             return;
         }
 
         OutputStream out = null;
         try {
-            out = context.getContentResolver().openOutputStream(uri);
+            out = activity.getContentResolver().openOutputStream(uri);
             if (out != null) {
                 pendingPdfDocument.writeTo(out); // Write raw bytes
-                Toast.makeText(context, "PDF saved successfully!", Toast.LENGTH_LONG).show();
+                Toast.makeText(activity, "PDF saved successfully!", Toast.LENGTH_LONG).show();
             } else {
-                Toast.makeText(context, "Failed to open output stream", Toast.LENGTH_SHORT).show();
+                Toast.makeText(activity, "Failed to open output stream", Toast.LENGTH_SHORT).show();
             }
         } catch (IOException e) {
             e.printStackTrace();
-            Toast.makeText(context, "Failed to save PDF: " + e.getMessage(), Toast.LENGTH_LONG).show();
+            Toast.makeText(activity, "Failed to save PDF: " + e.getMessage(), Toast.LENGTH_LONG).show();
         } finally {
             try {
                 if (out != null) out.close();

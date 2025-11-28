@@ -270,6 +270,9 @@ public class ChildDashboardFragment extends Fragment {
                         );
                         currentReportGenerator.generateSixMonthReport();
                     })
+                    .setNeutralButton("Cancel", (d, w) -> {
+                        d.dismiss();
+                    })
                     .show();
         });
 
