@@ -9,6 +9,7 @@ import android.view.MenuInflater;
 import android.view.MenuItem;
 import android.view.View;
 import android.view.ViewGroup;
+import android.widget.LinearLayout;
 
 import androidx.annotation.NonNull;
 import androidx.annotation.Nullable;
@@ -19,15 +20,11 @@ import androidx.cardview.widget.CardView;
 import androidx.fragment.app.Fragment;
 import androidx.fragment.app.FragmentTransaction;
 
-import com.google.firebase.database.DataSnapshot;
-import com.google.firebase.database.DatabaseError;
-import com.google.firebase.database.DatabaseReference;
 import com.google.firebase.database.FirebaseDatabase;
-import com.google.firebase.database.ValueEventListener;
 
 public class ParentDashboardFragment extends Fragment {
 
-    private String uname, type;
+    private String uname,type;
 
     private Toolbar toolbar;
 
@@ -35,11 +32,8 @@ public class ParentDashboardFragment extends Fragment {
      * CardView for the "Add Child" button.
      * Always displayed at the bottom of the children list.
      */
-    private CardView cardChildren, cardProvider;
+    private CardView cardChildren,cardProvider;
 
-    // Alerts
-    private FirebaseDatabase db;
-    private boolean safetyAlertShown = false;
 
     public static ParentDashboardFragment newInstance(String username) {
         ParentDashboardFragment fragment = new ParentDashboardFragment();
@@ -57,43 +51,31 @@ public class ParentDashboardFragment extends Fragment {
         if (getArguments() != null) {
             uname = getArguments().getString("username");
         }
-        type = "parent";
+        type="parent";
     }
 
     @Nullable
     @Override
-    public View onCreateView(@NonNull LayoutInflater inflater,
-                             @Nullable ViewGroup container,
-                             @Nullable Bundle savedInstanceState) {
-
+    public View onCreateView(@NonNull LayoutInflater inflater, @Nullable ViewGroup container, @Nullable Bundle savedInstanceState) {
         View view = inflater.inflate(R.layout.fragment_parent_dashboard, container, false);
 
         // Get SharedPreferences
-        SharedPreferences prefs = requireActivity()
-                .getSharedPreferences("user_prefs", Context.MODE_PRIVATE);
+        SharedPreferences prefs = requireActivity().getSharedPreferences("user_prefs", Context.MODE_PRIVATE);
 
         // Get the current logged-in user's unique identifier
         String userId = CurrentUser.get().getUname();  // or email, or a unique ID
         String userEmail = CurrentUser.get().getEmail();
         String userType = CurrentUser.get().getType();
 
-        // Save parentUname and type to APP_DATA
-        SharedPreferences appPrefs =
-                requireContext().getSharedPreferences("APP_DATA", Context.MODE_PRIVATE);
-        appPrefs.edit()
-                .putString("parentUname", (uname != null && !uname.isEmpty()) ? uname : userId)
-                .putString("type", "parent")
-                .apply();
-
         // Check if this user has accepted terms
-        boolean hasAcceptedTerms =
-                prefs.getBoolean("accepted_terms_" + userType + userId + userEmail, false);
+        boolean hasAcceptedTerms = prefs.getBoolean("accepted_terms_" + userType + userId + userEmail, false);
 
         if (!hasAcceptedTerms) {
             // Show the TermsDialogFragment
             TermsDialogFragment dialog = new TermsDialogFragment();
             dialog.show(getParentFragmentManager(), "terms_dialog");
         }
+
 
         // Toolbar setup
         toolbar = view.findViewById(R.id.toolbar);
@@ -106,6 +88,7 @@ public class ParentDashboardFragment extends Fragment {
         cardChildren = view.findViewById(R.id.cardChildren);
         cardProvider = view.findViewById(R.id.cardProvider);
 
+
         cardChildren.setOnClickListener(v -> {
             ParentManageChildrenFragment PMCFrag = new ParentManageChildrenFragment();
             loadFragment(PMCFrag);
@@ -116,92 +99,7 @@ public class ParentDashboardFragment extends Fragment {
             loadFragment(PMCFrag);
         });
 
-        db = FirebaseDatabase.getInstance("https://smart-air-group2-default-rtdb.firebaseio.com/");
-        checkChildrenPefAndMaybeShowAlert();
-
         return view;
-    }
-
-    private void checkChildrenPefAndMaybeShowAlert() {
-        if (db == null || uname == null || uname.trim().isEmpty()) {
-            return;
-        }
-
-        DatabaseReference Parent_child_Ref = db.getReference("categories/users/parents")
-                .child(uname)
-                .child("children");
-
-        Parent_child_Ref.addListenerForSingleValueEvent(new ValueEventListener() {
-            @Override
-            public void onDataChange(@NonNull DataSnapshot snapshot) {
-                if (!snapshot.exists() || safetyAlertShown) {
-                    return;
-                }
-
-                for (DataSnapshot childSnap : snapshot.getChildren()) {
-                    String childUname = childSnap.getValue(String.class);
-                    if (childUname == null || childUname.trim().isEmpty()) {
-                        continue;
-                    }
-
-                    DatabaseReference childRef = db.getReference("categories/users/children")
-                            .child(childUname);
-
-                    childRef.addListenerForSingleValueEvent(new ValueEventListener() {
-                        @Override
-                        public void onDataChange(@NonNull DataSnapshot snapshot) {
-                            if (!snapshot.exists() || safetyAlertShown || !isAdded()) {
-                                return;
-                            }
-
-                            String show_name = snapshot.child("name").getValue(String.class);
-                            if (show_name == null || show_name.trim().isEmpty()) {
-                                return;
-                            }
-
-                            DataSnapshot statusSnap = snapshot.child("status");
-                            Integer pefZone = statusSnap.child("pefZone").getValue(Integer.class);
-
-                            // 一旦发现有 red zone，就弹窗，只弹一次
-                            if (pefZone != null && pefZone == 2 && !safetyAlertShown) {
-                                safetyAlertShown = true;
-                                showSafetyAlertDialog(childUname, show_name);
-                            }
-                        }
-
-                        @Override
-                        public void onCancelled(@NonNull DatabaseError error) {
-                        }
-                    });
-                }
-            }
-
-            @Override
-            public void onCancelled(@NonNull DatabaseError error) {
-            }
-        });
-    }
-
-    private void showSafetyAlertDialog(String childUname, String childDisplayName) {
-        if (!isAdded() || getContext() == null) return;
-
-        new AlertDialog.Builder(requireContext())
-                .setTitle("Safety Alert")
-                .setMessage("Your child is in the red PEF zone. Please check their asthma status.")
-                .setPositiveButton("View alerts", (dialog, which) -> {
-                    AlertCenterFragment alertFrag = new AlertCenterFragment();
-                    Bundle args = new Bundle();
-                    args.putString("parentUname", uname);
-                    alertFrag.setArguments(args);
-
-                    getParentFragmentManager()
-                            .beginTransaction()
-                            .replace(R.id.fragment_container, alertFrag)
-                            .addToBackStack(null)
-                            .commit();
-                })
-                .setNegativeButton("Dismiss", null)
-                .show();
     }
 
     /**
@@ -223,13 +121,11 @@ public class ParentDashboardFragment extends Fragment {
     @Override
     public void onCreateOptionsMenu(@NonNull Menu menu, @NonNull MenuInflater inflater) {
         MenuHelper.setupMenu(menu, inflater, requireContext());
-        MenuHelper.setupNotification(this, menu, inflater);
         super.onCreateOptionsMenu(menu, inflater);
     }
 
     @Override
     public boolean onOptionsItemSelected(@NonNull MenuItem item) {
-        return MenuHelper.handleMenuSelection(item, this)
-                || super.onOptionsItemSelected(item);
+        return MenuHelper.handleMenuSelection(item, this) || super.onOptionsItemSelected(item);
     }
 }
