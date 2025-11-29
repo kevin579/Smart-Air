@@ -1,5 +1,7 @@
 package com.example.SmartAirGroup2;
 
+import android.content.Context;
+import android.graphics.Color;
 import android.os.Bundle;
 import android.util.Log;
 import android.view.LayoutInflater;
@@ -8,6 +10,8 @@ import android.view.MenuInflater;
 import android.view.MenuItem;
 import android.view.View;
 import android.view.ViewGroup;
+import android.widget.Button;
+import android.widget.TextView;
 import android.widget.Toast;
 
 import androidx.annotation.NonNull;
@@ -16,15 +20,30 @@ import androidx.appcompat.app.AppCompatActivity;
 import androidx.appcompat.widget.Toolbar;
 import androidx.cardview.widget.CardView;
 import androidx.fragment.app.Fragment;
-import androidx.fragment.app.FragmentTransaction;
 
+import com.github.mikephil.charting.charts.BarChart;
+import com.github.mikephil.charting.components.XAxis;
+import com.github.mikephil.charting.data.BarData;
+import com.github.mikephil.charting.data.BarDataSet;
+import com.github.mikephil.charting.data.BarEntry;
+import com.github.mikephil.charting.formatter.IndexAxisValueFormatter;
+import com.github.mikephil.charting.formatter.ValueFormatter;
+import com.google.android.material.button.MaterialButtonToggleGroup;
 import com.google.firebase.database.DataSnapshot;
 import com.google.firebase.database.DatabaseError;
 import com.google.firebase.database.DatabaseReference;
 import com.google.firebase.database.FirebaseDatabase;
+import com.google.firebase.database.Query;
 import com.google.firebase.database.ValueEventListener;
 
+import java.text.SimpleDateFormat;
 import java.util.ArrayList;
+import java.util.Arrays;
+import java.util.Calendar;
+import java.util.List;
+import java.util.Locale;
+import java.util.Map;
+import java.util.TreeMap;
 
 
 /**
@@ -98,7 +117,7 @@ import java.util.ArrayList;
  * Author: Kevin Li
  * Last Updated: November 2025
  */
-public class ProviderSideChildDashboardFragment extends Fragment {
+public class ProviderSideChildRescueSummary extends Fragment {
 
     // ═══════════════════════════════════════════════════════════════════════
     // UI COMPONENTS
@@ -116,7 +135,8 @@ public class ProviderSideChildDashboardFragment extends Fragment {
      *   - Red (alert)
      *   - Green (good)
      */
-    private CardView cardInventory, cardPEF, cardSymptom, cardLog, cardSummary, cardAdherence, cardTriage;
+    private CardView  cardTrend;
+
 
 
     // ═══════════════════════════════════════════════════════════════════════
@@ -128,8 +148,23 @@ public class ProviderSideChildDashboardFragment extends Fragment {
      * Retrieved from fragment arguments, passed from ParentDashboardFragment.
      * Used in toolbar title to personalize the view.
      */
-    private String name, uname;
-    private ArrayList<String> permissions;
+    private String name;
+
+    /**
+     * Unique username/identifier of the child in Firebase.
+     * Retrieved from fragment arguments, used to query child-specific data.
+     */
+    private String uname;
+
+    private double pb, averagePEF;
+
+    private RescueTrendFetcher trendFetcher;
+    private Context chartContext;
+
+    private BarChart chart;
+    private TextView statusTextView; // tv_chart_status
+    private MaterialButtonToggleGroup toggleGroup;
+    private Button btn7Days;
 
     // ═══════════════════════════════════════════════════════════════════════
     // LIFECYCLE METHODS
@@ -153,7 +188,6 @@ public class ProviderSideChildDashboardFragment extends Fragment {
         if (getArguments() != null) {
             name = getArguments().getString("childName");
             uname = getArguments().getString("childUname");
-            permissions = getArguments().getStringArrayList("permissions");
         }
     }
 
@@ -175,7 +209,7 @@ public class ProviderSideChildDashboardFragment extends Fragment {
     @Nullable
     @Override
     public View onCreateView(@NonNull LayoutInflater inflater, @Nullable ViewGroup container, @Nullable Bundle savedInstanceState) {
-        View view = inflater.inflate(R.layout.fragment_provider_side_child_dashboard, container, false);
+        View view = inflater.inflate(R.layout.fragment_provider_child_summary, container, false);
 
         // ─────────────────────────────────────────────────────────────────
         // Toolbar Configuration
@@ -185,7 +219,7 @@ public class ProviderSideChildDashboardFragment extends Fragment {
         setHasOptionsMenu(true);
 
         // Set personalized title with child's name
-        toolbar.setTitle(name + "'s Dashboard");
+        toolbar.setTitle(name + "'s Rescue History");
 
         // Enable back navigation to parent dashboard
         ((AppCompatActivity) getActivity()).getSupportActionBar().setDisplayHomeAsUpEnabled(true);
@@ -194,167 +228,173 @@ public class ProviderSideChildDashboardFragment extends Fragment {
         // ─────────────────────────────────────────────────────────────────
         // UI Component Initialization
         // ─────────────────────────────────────────────────────────────────
-        cardInventory = view.findViewById(R.id.cardInventory);
-        cardPEF = view.findViewById(R.id.cardPEF);
-        cardSymptom = view.findViewById(R.id.cardSymptom);
-        cardLog = view.findViewById(R.id.cardLog);
-        cardAdherence = view.findViewById(R.id.cardAdherence);
-        cardTriage = view.findViewById(R.id.cardTriage);
-        cardSummary = view.findViewById(R.id.cardSummary);
-
-        //get permissions
-//        for (String permission:permissions){
-//            Toast.makeText(getContext(), permission, Toast.LENGTH_SHORT).show();
-//        }
 
 
-        // 1. Check Inventory Card Permission
-        if (!permissions.contains("inventory")) {
-            cardInventory.setVisibility(View.GONE);
-            // Remove the click listener to prevent accidental clicks
-            cardInventory.setOnClickListener(null);
-        } else {
-            // Inventory Card Click Handler (ONLY set if permission exists)
-            cardInventory.setOnClickListener(v -> {
-                InventoryFragment invFrag = new InventoryFragment();
-                Bundle args = new Bundle();
-                args.putString("childUname", uname);
-                args.putString("childName", name);
-                args.putString("user", "provider");
-                invFrag.setArguments(args);
-                loadFragment(invFrag);
-            });
-        }
 
-        // ─────────────────────────────────────────────────────────────────
-        // PEF Card Click Handler
-        // ─────────────────────────────────────────────────────────────────
-        // Navigate to Peak Expiratory Flow measurement view
-        if (!permissions.contains("pef")) {
-            cardPEF.setVisibility(View.GONE);
-            cardPEF.setOnClickListener(null);
-        } else {
-            // PEF Card Click Handler
-            cardPEF.setOnClickListener(v -> {
-                PEFZone pefFrag = new PEFZone();
-                Bundle args = new Bundle();
-                args.putString("childUname", uname);
-                args.putString("childName", name);
-                args.putString("user", "provider");
-                pefFrag.setArguments(args);
-                loadFragment(pefFrag);
-            });
-        }
 
-        // ─────────────────────────────────────────────────────────────────
-        // Symptom Card Click Handler
-        // ─────────────────────────────────────────────────────────────────
-        // Navigate to symptom tracking and history view
-        if (!permissions.contains("symptoms")) {
-            cardSymptom.setVisibility(View.GONE);
-            cardSymptom.setOnClickListener(null);
-        } else {
-            // Symptom Card Click Handler
-            cardSymptom.setOnClickListener(v -> {
-                SymptomHistoryFragment sympFrag = new SymptomHistoryFragment();
-                Bundle args = new Bundle();
-                args.putString("childUname", uname);
-                args.putString("childName", name);
-                args.putString("user", "provider");
-                if (!permissions.contains("triggers")) {
-                    args.putString("triggers", "yes");
-                }else{
-                    args.putString("triggers", "no");
+        chart = view.findViewById(R.id.bar_chart);
+        statusTextView = view.findViewById(R.id.tv_chart_status);
+        toggleGroup = view.findViewById(R.id.toggle_duration_group);
+        btn7Days = view.findViewById(R.id.btn_7_days);
+
+        trendFetcher = new RescueTrendFetcher();
+        chartContext = requireContext();
+
+        setupChartAppearance();
+
+        if (toggleGroup != null) {
+            toggleGroup.check(R.id.btn_7_days);
+            toggleGroup.addOnButtonCheckedListener((group, checkedId, isChecked) -> {
+                if (isChecked) {
+                    int days = (checkedId == R.id.btn_7_days) ? 7 : 30;
+                    onDurationToggleClicked(days);
                 }
-                sympFrag.setArguments(args);
-                loadFragment(sympFrag);
-            });
-        }
-
-        // ─────────────────────────────────────────────────────────────────
-        // Logs Card Click Handler
-        // ─────────────────────────────────────────────────────────────────
-        // Navigate to Peak Expiratory Flow measurement view
-        if (!permissions.contains("rescueLog")) {
-            cardLog.setVisibility(View.GONE);
-            cardLog.setOnClickListener(null);
-        } else {
-            // PEF Card Click Handler
-            cardLog.setOnClickListener(v -> {
-                PEFZone pefFrag = new PEFZone();
-                Bundle args = new Bundle();
-                args.putString("childUname", uname);
-                args.putString("childName", name);
-                args.putString("user", "provider");
-                pefFrag.setArguments(args);
-                loadFragment(pefFrag);
-            });
-        }
-
-        // ─────────────────────────────────────────────────────────────────
-        // Logs Card Click Handler
-        // ─────────────────────────────────────────────────────────────────
-        // Navigate to Peak Expiratory Flow measurement view
-        if (!permissions.contains("controllerAdherence")) {
-            cardAdherence.setVisibility(View.GONE);
-            cardAdherence.setOnClickListener(null);
-        } else {
-            // PEF Card Click Handler
-            cardAdherence.setOnClickListener(v -> {
-                PEFZone pefFrag = new PEFZone();
-                Bundle args = new Bundle();
-                args.putString("childUname", uname);
-                args.putString("childName", name);
-                args.putString("user", "provider");
-                pefFrag.setArguments(args);
-                loadFragment(pefFrag);
-            });
-        }
-
-        // ─────────────────────────────────────────────────────────────────
-        // Logs Card Click Handler
-        // ─────────────────────────────────────────────────────────────────
-        // Navigate to Peak Expiratory Flow measurement view
-        if (!permissions.contains("triage")) {
-            cardTriage.setVisibility(View.GONE);
-            cardTriage.setOnClickListener(null);
-        } else {
-            // PEF Card Click Handler
-            cardTriage.setOnClickListener(v -> {
-                PEFZone pefFrag = new PEFZone();
-                Bundle args = new Bundle();
-                args.putString("childUname", uname);
-                args.putString("childName", name);
-                args.putString("user", "provider");
-                pefFrag.setArguments(args);
-                loadFragment(pefFrag);
             });
         }
 
 
-        // ─────────────────────────────────────────────────────────────────
-        // Rescue History Card Click Handler
-        // ─────────────────────────────────────────────────────────────────
-        // Navigate to Peak Expiratory Flow measurement view
-        if (!permissions.contains("charts")) {
-            cardSummary.setVisibility(View.GONE);
-            cardSummary.setOnClickListener(null);
-        } else {
-            // PEF Card Click Handler
-            cardSummary.setOnClickListener(v -> {
-                ProviderSideChildRescueSummary summaryFrag = new ProviderSideChildRescueSummary();
-                Bundle args = new Bundle();
-                args.putString("childUname", uname);
-                args.putString("childName", name);
-                summaryFrag.setArguments(args);
-                loadFragment(summaryFrag);
-            });
-        }
-
+        onDurationToggleClicked(7);
 
         return view;
     }
 
+
+
+    private void setupChartAppearance() {
+        if (chart == null) return;
+
+        chart.getDescription().setEnabled(false);
+        chart.setFitBars(true);
+        chart.getLegend().setEnabled(false);
+        chart.setTouchEnabled(false);
+        chart.setDrawValueAboveBar(true);
+
+        // Y-axis (left)
+        chart.getAxisLeft().setAxisMinimum(0f);
+        chart.getAxisLeft().setDrawGridLines(false);
+        chart.getAxisLeft().setGranularity(1f); // Integer steps
+        // Ensure Y-axis labels are integers
+        chart.getAxisLeft().setValueFormatter(new ValueFormatter() {
+            @Override
+            public String getFormattedValue(float value) {
+                return String.valueOf((int) value);
+            }
+        });
+
+
+        // Y-axis (right)
+        chart.getAxisRight().setEnabled(false);
+
+        // X-axis
+        XAxis xAxis = chart.getXAxis();
+        xAxis.setPosition(XAxis.XAxisPosition.BOTTOM);
+        xAxis.setDrawGridLines(false);
+        xAxis.setGranularity(1f);
+
+    }
+
+    public void onDurationToggleClicked(int days) {
+        if (chart == null) return;
+
+        // Show loading state
+        if (statusTextView != null) {
+            statusTextView.setText("Loading data...");
+            statusTextView.setVisibility(View.VISIBLE);
+        }
+        chart.setVisibility(View.INVISIBLE);
+
+        trendFetcher.loadRescueTrendData(uname, days, chartContext, new ChartDataCallback() {
+            @Override
+            public void onDataReady(Map<String, Integer> dailyCounts) {
+                if (!isAdded()) return;
+
+                if (statusTextView != null) statusTextView.setVisibility(View.GONE);
+                chart.setVisibility(View.VISIBLE);
+
+                if (dailyCounts.isEmpty()) {
+                    if (statusTextView != null) {
+                        statusTextView.setText("No rescue logs found in this period.");
+                        statusTextView.setVisibility(View.VISIBLE);
+                    }
+                    chart.setData(null);
+                    chart.invalidate();
+                    return;
+                }
+
+                // Prepare Data
+                List<BarEntry> entries = new ArrayList<>();
+                // TreeMap sorts by date string keys automatically
+                Map<String, Integer> sortedDailyCounts = new TreeMap<>(dailyCounts);
+                List<String> labels = new ArrayList<>(sortedDailyCounts.keySet());
+
+                for (int i = 0; i < labels.size(); i++) {
+                    String date = labels.get(i);
+                    Integer count = sortedDailyCounts.get(date);
+                    entries.add(new BarEntry(i, count));
+                }
+
+                // Configure DataSet
+                BarDataSet dataSet = new BarDataSet(entries, "Rescues");
+                dataSet.setColor(Color.parseColor("#1565C0"));
+                dataSet.setValueTextColor(Color.BLACK);
+                dataSet.setValueTextSize(10f);
+//                dataSet.setHighLightEnabled(false);
+
+                // Fix: Format values as integers and hide 0 values
+                dataSet.setValueFormatter(new ValueFormatter() {
+                    @Override
+                    public String getFormattedValue(float value) {
+                        int intValue = (int) value;
+                        if (intValue == 0) {
+                            return ""; // Hide 0 values
+                        }
+                        return String.valueOf(intValue); // Show integer
+                    }
+                });
+
+
+                // Set Data
+                BarData barData = new BarData(dataSet);
+                barData.setBarWidth(0.6f); // Thinner bars look better
+                chart.setData(barData);
+
+                // Format X-Axis
+                // Fix: Show every 3rd label if we have more than 10 data points (e.g., 30 days)
+                if (labels.size() > 10) {
+                    chart.getXAxis().setValueFormatter(new ValueFormatter() {
+                        @Override
+                        public String getFormattedValue(float value) {
+                            int index = (int) value;
+                            if (index >= 0 && index < labels.size() && index % 3 == 0) {
+                                return labels.get(index);
+                            }
+                            return ""; // Hide other labels
+                        }
+                    });
+                    chart.getXAxis().setLabelCount(labels.size() / 3 + 1, false);
+                } else {
+                    // For 7 days, show all labels
+                    chart.getXAxis().setValueFormatter(new IndexAxisValueFormatter(labels));
+                    chart.getXAxis().setLabelCount(labels.size(), false);
+                }
+
+
+                // Refresh
+                chart.animateY(600);
+                chart.invalidate();
+            }
+
+            @Override
+            public void onFailure(String errorMessage) {
+                if (!isAdded()) return;
+                chart.setVisibility(View.INVISIBLE);
+                if (statusTextView != null) {
+                    statusTextView.setText("Error: " + errorMessage);
+                    statusTextView.setVisibility(View.VISIBLE);
+                }
+            }
+        });
+    }
 
     // ═══════════════════════════════════════════════════════════════════════
     // MENU HANDLING
@@ -388,20 +428,4 @@ public class ProviderSideChildDashboardFragment extends Fragment {
         return super.onOptionsItemSelected(item);
     }
 
-    // ═══════════════════════════════════════════════════════════════════════
-    // FRAGMENT NAVIGATION
-    // ═══════════════════════════════════════════════════════════════════════
-
-    /**
-     * Navigates to another fragment within the same activity.
-     * Adds the transaction to the back stack for back button support.
-     *
-     * @param fragment The fragment to navigate to
-     */
-    private void loadFragment(Fragment fragment) {
-        FragmentTransaction transaction = getParentFragmentManager().beginTransaction();
-        transaction.replace(R.id.fragment_container, fragment);
-        transaction.addToBackStack(null);
-        transaction.commit();
-    }
 }
