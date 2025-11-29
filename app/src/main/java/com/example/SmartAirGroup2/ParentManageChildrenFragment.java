@@ -360,11 +360,6 @@ public class ParentManageChildrenFragment extends Fragment {
                                         @Override
                                         public void onDataChange(@NonNull DataSnapshot statusSnap) {
 
-                                            Integer pefZone = statusSnap.child("pefZone").getValue(Integer.class);
-                                            if (!safetyAlert && pefZone != null && pefZone == 2) {
-                                                safetyAlert = true;
-                                                showSafetyAlertDialog(child.getUname(), displayName);
-                                            }
 
                                             // Parse status values from Firebase
                                             List<Integer> statusList = new ArrayList<>();
@@ -444,27 +439,7 @@ public class ParentManageChildrenFragment extends Fragment {
             }
         }
     }
-    private void showSafetyAlertDialog(String childUname, String childDisplayName) {
-        if (!isAdded() || getContext() == null) return;
 
-        new AlertDialog.Builder(requireContext())
-                .setTitle("Safety Alert")
-                .setMessage("Your child is in the red PEF zone. Please check their asthma status.")
-                .setPositiveButton("View alerts", (dialog, which) -> {
-                    AlertCenterFragment alertFrag = new AlertCenterFragment();
-                    Bundle args = new Bundle();
-                    args.putString("parentUname", uname);
-                    alertFrag.setArguments(args);
-
-                    getParentFragmentManager()
-                            .beginTransaction()
-                            .replace(R.id.fragment_container, alertFrag)
-                            .addToBackStack(null)
-                            .commit();
-                })
-                .setNegativeButton("Dismiss", null)
-                .show();
-    }
 
 
     // ═══════════════════════════════════════════════════════════════════════
