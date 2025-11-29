@@ -39,22 +39,6 @@ public class MenuHelper {
             // TODO: Implement settings later
             return true;
         }
-        else if (id == R.id.action_show_tutorial) {
-
-            // Get the context from the fragment to create an Intent
-            Context context = fragment.requireContext();
-
-            // Create an Intent to launch OnboardingActivity
-            Intent intent = new Intent(context, OnboardingActivity.class);
-
-            // Add the "isRepeatable" flag to signal that this is a tutorial
-            intent.putExtra("isRepeatable", true);
-
-            // Start the activity
-            context.startActivity(intent);
-
-            return true;
-        }
         return false;
     }
 }
