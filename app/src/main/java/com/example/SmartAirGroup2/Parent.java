@@ -3,7 +3,6 @@ import java.util.ArrayList;
 public class Parent extends User{
     private ArrayList<String> children = new ArrayList<String>();
 
-
     public Parent() {}
 
     public Parent(String uname, String name, String email, String password, String type) {
