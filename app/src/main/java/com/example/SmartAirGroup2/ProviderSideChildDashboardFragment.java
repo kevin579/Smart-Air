@@ -116,7 +116,7 @@ public class ProviderSideChildDashboardFragment extends Fragment {
      *   - Red (alert)
      *   - Green (good)
      */
-    private CardView cardInventory, cardPEF, cardSymptom;
+    private CardView cardInventory, cardPEF, cardSymptom, cardLog, cardSummary, cardAdherence, cardTriage;
 
 
     // ═══════════════════════════════════════════════════════════════════════
@@ -197,6 +197,10 @@ public class ProviderSideChildDashboardFragment extends Fragment {
         cardInventory = view.findViewById(R.id.cardInventory);
         cardPEF = view.findViewById(R.id.cardPEF);
         cardSymptom = view.findViewById(R.id.cardSymptom);
+        cardLog = view.findViewById(R.id.cardLog);
+        cardAdherence = view.findViewById(R.id.cardAdherence);
+        cardTriage = view.findViewById(R.id.cardTriage);
+        cardSummary = view.findViewById(R.id.cardSummary);
 
         //get permissions
 //        for (String permission:permissions){
@@ -264,6 +268,87 @@ public class ProviderSideChildDashboardFragment extends Fragment {
                 }
                 sympFrag.setArguments(args);
                 loadFragment(sympFrag);
+            });
+        }
+
+        // ─────────────────────────────────────────────────────────────────
+        // Logs Card Click Handler
+        // ─────────────────────────────────────────────────────────────────
+        // Navigate to Peak Expiratory Flow measurement view
+        if (!permissions.contains("rescueLog")) {
+            cardLog.setVisibility(View.GONE);
+            cardLog.setOnClickListener(null);
+        } else {
+            // PEF Card Click Handler
+            cardLog.setOnClickListener(v -> {
+                PEFZone pefFrag = new PEFZone();
+                Bundle args = new Bundle();
+                args.putString("childUname", uname);
+                args.putString("childName", name);
+                args.putString("user", "provider");
+                pefFrag.setArguments(args);
+                loadFragment(pefFrag);
+            });
+        }
+
+        // ─────────────────────────────────────────────────────────────────
+        // Logs Card Click Handler
+        // ─────────────────────────────────────────────────────────────────
+        // Navigate to Peak Expiratory Flow measurement view
+        if (!permissions.contains("controllerAdherence")) {
+            cardAdherence.setVisibility(View.GONE);
+            cardAdherence.setOnClickListener(null);
+        } else {
+            // PEF Card Click Handler
+            cardAdherence.setOnClickListener(v -> {
+                PEFZone pefFrag = new PEFZone();
+                Bundle args = new Bundle();
+                args.putString("childUname", uname);
+                args.putString("childName", name);
+                args.putString("user", "provider");
+                pefFrag.setArguments(args);
+                loadFragment(pefFrag);
+            });
+        }
+
+        // ─────────────────────────────────────────────────────────────────
+        // Logs Card Click Handler
+        // ─────────────────────────────────────────────────────────────────
+        // Navigate to Peak Expiratory Flow measurement view
+        if (!permissions.contains("triage")) {
+            cardTriage.setVisibility(View.GONE);
+            cardTriage.setOnClickListener(null);
+        } else {
+            // PEF Card Click Handler
+            cardTriage.setOnClickListener(v -> {
+                PEFZone pefFrag = new PEFZone();
+                Bundle args = new Bundle();
+                args.putString("childUname", uname);
+                args.putString("childName", name);
+                args.putString("user", "provider");
+                pefFrag.setArguments(args);
+                loadFragment(pefFrag);
+            });
+        }
+
+
+        // ─────────────────────────────────────────────────────────────────
+        // Logs Card Click Handler
+        // ─────────────────────────────────────────────────────────────────
+        // Navigate to Peak Expiratory Flow measurement view
+        if (!permissions.contains("charts")) {
+            cardSummary.setVisibility(View.GONE);
+            cardSummary.setOnClickListener(null);
+        } else {
+            // PEF Card Click Handler
+            cardSummary.setOnClickListener(v -> {
+                PEFZone pefFrag = new PEFZone();
+                Bundle args = new Bundle();
+                args.putString("childUname", uname);
+                args.putString("childName", name);
+                args.putString("user", "provider");
+                pefFrag.setArguments(args);
+                loadFragment(pefFrag);
             });
         }
 
