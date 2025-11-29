@@ -33,6 +33,7 @@ import com.google.firebase.database.FirebaseDatabase;
 import java.text.SimpleDateFormat;
 import java.util.ArrayList;
 import java.util.Calendar;
+import java.util.Date;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Locale;
@@ -137,8 +138,11 @@ public class AddSymptomFragment extends Fragment {
         // Handle back navigation (up button)
         toolbar.setNavigationOnClickListener(v -> getParentFragmentManager().popBackStack());
 
-        SharedPreferences prefs = requireContext().getSharedPreferences("APP_DATA", Context.MODE_PRIVATE);
-        author = prefs.getString("type", "null");
+//        SharedPreferences prefs = requireContext().getSharedPreferences("APP_DATA", Context.MODE_PRIVATE);
+//        author = prefs.getString("type", "null");
+
+        author = CurrentUser.get().getType();
+
 
         // Initialize UI elements
         editTextSymptom = view.findViewById(R.id.editTextSymptom);
@@ -147,39 +151,26 @@ public class AddSymptomFragment extends Fragment {
 
         editTime.setOnClickListener(v -> {
 
-            Calendar calendar = Calendar.getInstance();
+            Calendar calendar = Calendar.getInstance(); // Default: today
 
-            DatePickerDialog datePicker = new DatePickerDialog(
+            TimePickerDialog timePicker = new TimePickerDialog(
                     getContext(),
-                    (datePickerView, year, month, dayOfMonth) -> {  // <-- changed here
+                    (timePickerView, hourOfDay, minute) -> {
 
-                        calendar.set(Calendar.YEAR, year);
-                        calendar.set(Calendar.MONTH, month);
-                        calendar.set(Calendar.DAY_OF_MONTH, dayOfMonth);
+                        calendar.set(Calendar.HOUR_OF_DAY, hourOfDay);
+                        calendar.set(Calendar.MINUTE, minute);
 
-                        TimePickerDialog timePicker = new TimePickerDialog(
-                                getContext(),
-                                (timePickerView, hourOfDay, minute) -> {
-                                    calendar.set(Calendar.HOUR_OF_DAY, hourOfDay);
-                                    calendar.set(Calendar.MINUTE, minute);
-
-                                    SimpleDateFormat sdf =
-                                            new SimpleDateFormat("yyyy/MM/dd HH:mm", Locale.getDefault());
-                                    editTime.setText(sdf.format(calendar.getTime()));
-                                },
-                                calendar.get(Calendar.HOUR_OF_DAY),
-                                calendar.get(Calendar.MINUTE),
-                                true
-                        );
-
-                        timePicker.show();
+                        // Format including today’s date + chosen time
+                        SimpleDateFormat sdf =
+                                new SimpleDateFormat("yyyy/MM/dd HH:mm", Locale.getDefault());
+                        editTime.setText(sdf.format(calendar.getTime()));
                     },
-                    calendar.get(Calendar.YEAR),
-                    calendar.get(Calendar.MONTH),
-                    calendar.get(Calendar.DAY_OF_MONTH)
+                    calendar.get(Calendar.HOUR_OF_DAY),
+                    calendar.get(Calendar.MINUTE),
+                    true
             );
 
-            datePicker.show();
+            timePicker.show();
         });
 
 
@@ -213,6 +204,8 @@ public class AddSymptomFragment extends Fragment {
         String symptom = editTextSymptom.getText().toString().trim();
 
         String time = editTime.getText().toString().trim();
+
+
 
         String triggers = getSelectedTriggers();
 

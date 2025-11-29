@@ -4,6 +4,7 @@ import android.content.Intent;
 import android.os.Bundle;
 import android.text.Html;
 import android.widget.Button;
+import android.util.Log;
 import android.widget.LinearLayout;
 import android.widget.TextView;
 import com.google.firebase.database.DatabaseReference;
@@ -12,6 +13,8 @@ import com.example.SmartAirGroup2.models.TriageIncident;
 import android.widget.Toast;
 import androidx.appcompat.app.AlertDialog;
 import android.view.View;
+import android.widget.Toast;
+
 import androidx.activity.EdgeToEdge;
 import androidx.appcompat.app.AppCompatActivity;
 import androidx.cardview.widget.CardView;
@@ -26,6 +29,8 @@ import java.util.Date;
 import java.util.Locale;
 import com.example.SmartAirGroup2.Adapters.OnBoardingAdapter;
 import com.example.SmartAirGroup2.Helpers.SaveState;
+import com.google.firebase.database.DatabaseReference;
+import com.google.firebase.database.FirebaseDatabase;
 import com.google.firebase.database.DataSnapshot;
 import com.google.firebase.database.DatabaseError;
 import com.google.firebase.database.ValueEventListener;
@@ -254,6 +259,33 @@ public class OnboardingActivity extends AppCompatActivity {
             // Check if we are on the last page (e.g., position 3 for 4 pages)
             if (position == dots.length - 1) { // Final screen
                 nextCard.setOnClickListener(view -> {
+
+                    String username = getIntent().getStringExtra("username");
+                    String field = getIntent().getStringExtra("type");
+
+                    DatabaseReference stateRef = FirebaseDatabase.getInstance()
+                            .getReference("categories/users")
+                            .child(field)
+                            .child(username);
+
+                    stateRef.child("onboarded").setValue(true);
+                    Log.d(":DB",field);
+
+
+                    Intent intent;
+
+                    if (field.equals("children")) {
+                        intent = new Intent(OnboardingActivity.this, ChildDashboard.class);
+                    } else if (field.equals("parents")) {
+                        intent = new Intent(OnboardingActivity.this, ParentDashboardActivity.class);
+                        intent.putExtra("username", username);
+
+                    } else {
+                        intent = new Intent(OnboardingActivity.this, Parent_Provider_Dashboard.class);
+                    }
+
+                    startActivity(intent);
+                    finish();
                     switch (finalOnboardingType) {
                         case "help":
                             saveAndFinishTriage();

@@ -1,0 +1,30 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <style name="CircleImageStyle">
+        <item name="cornerFamily">rounded</item>
+        <item name="cornerSize">50%</item>
+    </style>
+
+    <style name="CustomLinkButton">
+
+        <!-- Background: Links to the rounded blue drawable (must be created separately) -->
+        <item name="android:background">@drawable/rounded_blue_button</item>
+
+        <!-- Text Color: Set to white for optimal contrast on the blue background -->
+        <item name="android:textColor">@android:color/white</item>
+
+        <!-- Usability & Text Styling -->
+
+        <!-- Ensures the button text is bold -->
+        <item name="android:textStyle">bold</item>
+
+        <!-- Ensures the button meets the minimum recommended touch target size -->
+        <item name="android:minHeight">40dp</item>
+
+        <!-- Standard padding for a clean look -->
+        <item name="android:paddingStart">12dp</item>
+        <item name="android:paddingEnd">12dp</item>
+
+    </style>
+
+</resources>

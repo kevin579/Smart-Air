@@ -13,7 +13,7 @@
         android:background="#1565C0"
         android:theme="@style/ThemeOverlay.AppCompat.Dark.ActionBar"
         app:popupTheme="@style/ThemeOverlay.AppCompat.Light"
-        app:title="My Dashboard"
+        app:title="My Children"
         app:titleTextColor="@android:color/white" />
 
     <!-- Content Area -->

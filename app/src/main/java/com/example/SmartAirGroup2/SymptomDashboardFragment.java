@@ -123,6 +123,8 @@ public class SymptomDashboardFragment extends Fragment {
             Bundle args = new Bundle();
             args.putString("childUname", uname);
             args.putString("childName", name);
+            args.putString("triggers", "yes");
+            args.putString("user", "parent");
             histFrag.setArguments(args);
             loadFragment(histFrag);
         });

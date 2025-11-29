@@ -76,7 +76,7 @@ public class SymptomHistoryFragment extends Fragment {
     private Toolbar toolbar;
     private CardView cardFilter;
 
-    private String name, uname;
+    private String name, uname,triggerPermission, user;
     private String filterSymptom, filterStartDate, filterEndDate;
     private List<String> filterTriggers;
 
@@ -94,6 +94,8 @@ public class SymptomHistoryFragment extends Fragment {
         if (getArguments() != null) {
             name = getArguments().getString("childName");
             uname = getArguments().getString("childUname");
+            triggerPermission = getArguments().getString("triggers");
+            user = getArguments().getString("user");
         }
     }
 
@@ -358,48 +360,57 @@ public class SymptomHistoryFragment extends Fragment {
             return;
         }
 
-        ImageView deleteIcon = new ImageView(ctx);
-        deleteIcon.setLayoutParams(new LinearLayout.LayoutParams(dpToPx(24), dpToPx(24)));
-        deleteIcon.setImageResource(android.R.drawable.ic_delete);
-
-        deleteIcon.setOnClickListener(v -> {
-            new AlertDialog.Builder(requireContext())
-                    .setTitle("Delete Symptom")
-                    .setMessage("Are you sure you want to delete this symptom entry?")
-                    .setPositiveButton("Delete", (dialog, which) -> {
-
-                        DatabaseReference symptomRef = FirebaseDatabase.getInstance()
-                                .getReference("categories/users/children")
-                                .child(uname)
-                                .child("data/symptoms")
-                                .child(symptomId);
-
-                        symptomRef.removeValue()
-                                .addOnSuccessListener(a -> {
-                                    Toast.makeText(ctx, "Symptom removed", Toast.LENGTH_SHORT).show();
-                                    loadSymptoms();
-
-                                })
-                                .addOnFailureListener(e ->
-                                        Toast.makeText(ctx, "Delete failed: " + e.getMessage(), Toast.LENGTH_SHORT).show()
-                                );
-
-                    })
-                    .setNegativeButton("Cancel", null)
-                    .show();
-        });
-
         topRow.addView(titleView);
-        topRow.addView(deleteIcon);
+
+        if (user.equals("parent")){
+            ImageView deleteView = new ImageView(ctx);
+            deleteView.setLayoutParams(new LinearLayout.LayoutParams(dpToPx(24), dpToPx(24)));
+            deleteView.setImageResource(android.R.drawable.ic_delete);
+            deleteView.setColorFilter(ContextCompat.getColor(ctx, R.color.delete), PorterDuff.Mode.SRC_IN);
+
+            deleteView.setOnClickListener(v -> {
+                new AlertDialog.Builder(requireContext())
+                        .setTitle("Delete Symptom")
+                        .setMessage("Are you sure you want to delete this symptom entry?")
+                        .setPositiveButton("Delete", (dialog, which) -> {
+
+                            DatabaseReference symptomRef = FirebaseDatabase.getInstance()
+                                    .getReference("categories/users/children")
+                                    .child(uname)
+                                    .child("data/symptoms")
+                                    .child(symptomId);
+
+                            symptomRef.removeValue()
+                                    .addOnSuccessListener(a -> {
+                                        Toast.makeText(ctx, "Symptom removed", Toast.LENGTH_SHORT).show();
+                                        loadSymptoms();
+
+                                    })
+                                    .addOnFailureListener(e ->
+                                            Toast.makeText(ctx, "Delete failed: " + e.getMessage(), Toast.LENGTH_SHORT).show()
+                                    );
+
+                        })
+                        .setNegativeButton("Cancel", null)
+                        .show();
+            });
+            topRow.addView(deleteView);
+        }
 
         // ======= Info Labels =======
         TextView timeView = buildInfoText("Time: " + time);
-        TextView triggerView = buildInfoText("Triggers: " + triggers);
+
         TextView authorView = buildInfoText("Entered by: " + author);
 
         outerLayout.addView(topRow);
         outerLayout.addView(timeView);
-        outerLayout.addView(triggerView);
+
+        if (triggerPermission.equals("yes")){
+            TextView triggerView = buildInfoText("Triggers: " + triggers);
+            outerLayout.addView(triggerView);
+        }
+
+
         outerLayout.addView(authorView);
 
         cardView.addView(outerLayout);
