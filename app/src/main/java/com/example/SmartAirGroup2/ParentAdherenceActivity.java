@@ -25,6 +25,51 @@ import java.util.List;
 import java.util.Locale;
 import java.util.Map;
 
+/**
+ * ParentAdherenceActivity
+ *
+ * Screen for parents to review their child's controller adherence and
+ * configure the planned controller schedule.
+ *
+ * Layout:
+ *   Uses activity_parent_adherence.xml which contains:
+ *     - Overall adherence card:
+ *         - tv_overall_adherence_value : last 7 days adherence in %
+ *         - tv_overall_adherence_level : qualitative label
+ *           ("Good", "Needs attention", "Poor")
+ *     - Schedule card:
+ *         - et_medication    : editable label for controller medication
+ *         - et_times_per_day : planned doses per active day
+ *         - cb_mon ... cb_sun: which weekdays are active
+ *         - btn_save_schedule: saves the schedule to Firebase
+ *
+ * Data flow:
+ *   1) Receives child identifiers via Intent extras:
+ *        - "childUname" (required for Firebase path)
+ *        - "childName"  (optional, for display if needed)
+ *
+ *   2) Loads existing schedule from:
+ *        categories/users/children/{childUname}/controller_schedule
+ *      and populates the schedule card fields.
+ *
+ *   3) When "Save schedule" is pressed:
+ *        - Builds a ControllerSchedule instance from the form.
+ *        - Writes it back to controller_schedule in Firebase.
+ *        - Recomputes adherence to reflect the updated plan.
+ *
+ *   4) For adherence calculation:
+ *        - Reads all controller_log entries for the child.
+ *        - Calls AdherenceCalculator.calculate(...) with:
+ *             - schedule
+ *             - logs
+ *             - last 7 days time window
+ *        - Displays overallPercent and a qualitative level.
+ *
+ * Navigation:
+ *   - Opened from the parent dashboard adherence card.
+ *   - Shows an AppBar back button that simply finishes the activity.
+ */
+
 public class ParentAdherenceActivity extends AppCompatActivity {
 
     private String childUsername;

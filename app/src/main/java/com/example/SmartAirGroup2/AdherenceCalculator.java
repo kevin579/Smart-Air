@@ -8,6 +8,46 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Locale;
 import java.util.Map;
+/**
+ * AdherenceCalculator
+ *
+ * Pure Java utility class that computes controller medication adherence
+ * for a single child over a given time window, based on:
+ *  - A planned ControllerSchedule
+ *  - A list of ControllerLog entries
+ *
+ * The calculator works in three main steps:
+ *
+ * 1) Aggregate actual doses per day:
+ *    - For each ControllerLog within [startMillis, endMillis], group
+ *      by calendar date ("yyyy-MM-dd") to build:
+ *        date -> actual count of controller uses
+ *
+ * 2) Walk day-by-day from start to end:
+ *    - For each day:
+ *        expected = schedule.timesPerDay if that weekday is active
+ *                   in schedule.daysOfWeek, otherwise 0.
+ *        actual   = count from the aggregated map for that date (default 0).
+ *        used     = min(actual, expected) so "over-dosing" does not
+ *                   inflate adherence above 100%.
+ *        percent  = used / expected * 100 for days with expected > 0.
+ *      The calculator also accumulates totalExpected and totalActualUsed
+ *      across all days where expected > 0.
+ *
+ * 3) Compute overall adherence:
+ *    - overallPercent = totalActualUsed / totalExpected * 100
+ *      (if totalExpected == 0, overallPercent is 0.0).
+ *
+ * Output:
+ * - AdherenceResult:
+ *      overallPercent : adherence across the entire window
+ *      dailyList      : per-day expected/actual/percent details
+ *
+ * This class is shared by:
+ * - ParentAdherenceActivity: for parents to see their child’s adherence.
+ * - ProviderAdherenceActivity: for providers to see the same metric
+ *   in a read-only summary.
+ */
 
 public class AdherenceCalculator {
     public static class DailyAdherence {

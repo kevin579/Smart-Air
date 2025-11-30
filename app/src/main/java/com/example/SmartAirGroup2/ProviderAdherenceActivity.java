@@ -22,6 +22,45 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.Locale;
 
+/**
+ * ProviderAdherenceActivity
+ *
+ * Read-only version of the controller adherence screen for providers.
+ * This activity reuses the same layout as ParentAdherenceActivity
+ * (activity_parent_adherence.xml), but disables all editing and hides
+ * the save button.
+ *
+ * Purpose:
+ *   - Allow providers to see a summary of a child's planned controller
+ *     schedule and their recent adherence without changing the plan.
+ *
+ * Behavior:
+ *   - Receives "childUname" (and optionally "childName") via Intent extras.
+ *   - Loads ControllerSchedule from:
+ *       categories/users/children/{childUname}/controller_schedule
+ *     and populates:
+ *       - et_medication
+ *       - et_times_per_day
+ *       - weekday CheckBoxes
+ *     All of these fields are set to read-only (setEnabled(false)).
+ *
+ *   - Hides the "Save schedule" button so providers cannot modify
+ *     the parent's controller plan.
+ *
+ *   - Computes last 7 days controller adherence using the same
+ *     AdherenceCalculator as the parent side, by reading:
+ *       categories/users/children/{childUname}/logs/controller_log
+ *     and showing:
+ *       - tv_overall_adherence_value (percentage)
+ *       - tv_overall_adherence_level (Good / Needs attention / Poor).
+ *
+ * Navigation:
+ *   - Opened from the provider dashboard adherence card, subject to
+ *     the provider's "controllerAdherence" permission.
+ *   - AppBar back button finishes the activity and returns to the
+ *     provider dashboard.
+ */
+
 public class ProviderAdherenceActivity extends AppCompatActivity {
 
     private String childUname;
@@ -84,7 +123,6 @@ public class ProviderAdherenceActivity extends AppCompatActivity {
         calculateAndShowAdherence();
     }
 
-    // Toolbar 返回键
     @Override
     public boolean onOptionsItemSelected(@NonNull MenuItem item) {
         if (item.getItemId() == android.R.id.home) {
