@@ -1,0 +1,2344 @@
+Index: app/src/main/java/com/example/SmartAirGroup2/ParentDashboardFragment.java
+IDEA additional info:
+Subsystem: com.intellij.openapi.diff.impl.patch.BaseRevisionTextPatchEP
+<+>package com.example.SmartAirGroup2;\r\n\r\nimport android.annotation.SuppressLint;\r\nimport android.content.Context;\r\nimport android.content.SharedPreferences;\r\nimport android.graphics.PorterDuff;\r\nimport android.graphics.drawable.Drawable;\r\nimport android.os.Bundle;\r\nimport android.util.Log;\r\nimport android.util.TypedValue;\r\nimport android.view.Gravity;\r\nimport android.view.LayoutInflater;\r\nimport android.view.Menu;\r\nimport android.view.MenuInflater;\r\nimport android.view.MenuItem;\r\nimport android.view.View;\r\nimport android.view.ViewGroup;\r\nimport android.widget.FrameLayout;\r\nimport android.widget.ImageView;\r\nimport android.widget.LinearLayout;\r\nimport android.widget.TextView;\r\nimport android.widget.Toast;\r\n\r\nimport androidx.annotation.NonNull;\r\nimport androidx.annotation.Nullable;\r\nimport androidx.appcompat.app.AlertDialog;\r\nimport androidx.appcompat.app.AppCompatActivity;\r\nimport androidx.appcompat.widget.Toolbar;\r\nimport androidx.cardview.widget.CardView;\r\nimport androidx.core.content.ContextCompat;\r\nimport androidx.fragment.app.Fragment;\r\nimport androidx.fragment.app.FragmentTransaction;\r\n\r\nimport com.google.firebase.database.DataSnapshot;\r\nimport com.google.firebase.database.DatabaseError;\r\nimport com.google.firebase.database.DatabaseReference;\r\nimport com.google.firebase.database.FirebaseDatabase;\r\nimport com.google.firebase.database.ValueEventListener;\r\n\r\nimport java.util.ArrayList;\r\nimport java.util.List;\r\n\r\n/**\r\n * ParentDashboardFragment\r\n * -----------------------\r\n * This fragment serves as the primary dashboard for parent users within the Smart Air application.\r\n * It provides an overview of all linked child accounts and enables parents to perform account\r\n * management actions.\r\n *\r\n * Core User Actions:\r\n *   • View all children currently linked to their account.\r\n *   • Add a new child or link an existing child account.\r\n *   • Remove/unlink a child account when needed.\r\n *   • Navigate to individual child dashboards for detailed monitoring.\r\n *\r\n * UI Behavior:\r\n *   - The fragment dynamically generates CardViews representing each linked child.\r\n *   - Each card displays:\r\n *       • Child name (or username if name unavailable)\r\n *       • Status indicator (color-coded background)\r\n *       • A delete icon to allow unlinking\r\n *   - If no children are linked, only the \"Add Child\" card is displayed.\r\n *   - Cards use ripple effects for modern touch feedback.\r\n *\r\n * Firebase Structure (Relevant Paths):\r\n * └── categories/\r\n *     └── users/\r\n *         ├── parents/{parentUname}/children/{childUname: String}\r\n *         └── children/{childUname}/\r\n *             ├── name: String\r\n *             ├── uname: String\r\n *             └── status/{individual status: Integer}\r\n *\r\n * Status Logic:\r\n *   - The background color of each child card reflects their status history:\r\n *       • Red (alert color) → Contains alert values (1 or 2 detected)\r\n *       • Green (good color) → No concerning status entries\r\n *   - Status values are retrieved from the child's status history in Firebase.\r\n *\r\n * Fragment Lifecycle Responsibilities:\r\n *   ✔ Initialize toolbar and UI components\r\n *   ✔ Fetch Firebase data for linked children\r\n *   ✔ Listen for child database changes\r\n *   ✔ Dynamically create UI elements based on data\r\n *   ✔ Persist login metadata using SharedPreferences\r\n *   ✔ Handle user interactions (navigation, deletion, linking)\r\n *\r\n * Navigation:\r\n *   - Tapping a child card navigates to ChildDashboardFragment with child details.\r\n *   - Tapping \"Add Child\" opens a dialog prompting:\r\n *        → \"Yes\": Navigate to LinkChildFragment (for existing accounts)\r\n *        → \"No\" : Navigate to AddChildFragment (for new accounts)\r\n *\r\n * Dependencies:\r\n *   • Firebase Realtime Database for user and relationship data.\r\n *   • SharedPreferences for user type and logged-in identity persistence.\r\n *   • MenuHelper for toolbar menu operations.\r\n *   • User model class for child data representation.\r\n *\r\n * Author: Kevin Li\r\n * Last Updated: November 18 2025\r\n */\r\npublic class ParentDashboardFragment extends Fragment {\r\n\r\n    // ═══════════════════════════════════════════════════════════════════════\r\n    // UI COMPONENTS\r\n    // ═══════════════════════════════════════════════════════════════════════\r\n\r\n    /**\r\n     * Toolbar component displayed at the top of the fragment.\r\n     * Provides navigation and menu actions for the parent user.\r\n     */\r\n    private Toolbar toolbar;\r\n\r\n    /**\r\n     * CardView for the \"Add Child\" button.\r\n     * Always displayed at the bottom of the children list.\r\n     */\r\n    private CardView cardAddChild;\r\n\r\n    /**\r\n     * Container that holds all dynamically generated child cards.\r\n     * Children are added/removed from this layout based on Firebase data.\r\n     */\r\n    private LinearLayout contentContainer;\r\n\r\n    // ═══════════════════════════════════════════════════════════════════════\r\n    // FIREBASE REFERENCES\r\n    // ═══════════════════════════════════════════════════════════════════════\r\n\r\n    /**\r\n     * Firebase Database instance pointing to the Smart Air database.\r\n     * Used to initialize all database references.\r\n     */\r\n    private FirebaseDatabase db;\r\n\r\n    /**\r\n     * Database reference to the parent's children node.\r\n     * Path: categories/users/parents/{uname}/children\r\n     * Contains all child usernames linked to this parent.\r\n     */\r\n    private DatabaseReference childrenRef;\r\n\r\n    // ═══════════════════════════════════════════════════════════════════════\r\n    // USER IDENTITY\r\n    // ═══════════════════════════════════════════════════════════════════════\r\n\r\n    /**\r\n     * Username of the currently logged-in parent.\r\n     * TODO: Replace hardcoded value with dynamic authentication.\r\n     */\r\n    private String uname;\r\n\r\n    /**\r\n     * User type identifier for the current user.\r\n     * Always \"parent\" for this fragment.\r\n     */\r\n    private String type;\r\n\r\n    private boolean safetyAlert = false;\r\n\r\n    private View notificationActionView;\r\n    private View notificationBadge;\r\n\r\n\r\n    // ═══════════════════════════════════════════════════════════════════════\r\n    // LIFECYCLE METHODS\r\n    // ═══════════════════════════════════════════════════════════════════════\r\n\r\n    public static ParentDashboardFragment newInstance(String username) {\r\n        ParentDashboardFragment fragment = new ParentDashboardFragment();\r\n        Bundle args = new Bundle();\r\n        args.putString(\"username\", username);\r\n        fragment.setArguments(args);\r\n        return fragment;\r\n\r\n    }\r\n\r\n    @Override\r\n    public void onCreate(Bundle savedInstanceState) {\r\n        super.onCreate(savedInstanceState);\r\n\r\n        // Retrieve parent username passed as argument\r\n        if (getArguments() != null) {\r\n            uname = getArguments().getString(\"username\");\r\n        }\r\n        type=\"parent\";\r\n    }\r\n\r\n    /**\r\n     * Creates and initializes the view hierarchy for this fragment.\r\n     *\r\n     * Responsibilities:\r\n     *   - Inflates the parent dashboard layout\r\n     *   - Sets up the toolbar with menu support\r\n     *   - Initializes Firebase database references\r\n     *   - Loads children data from Firebase\r\n     *   - Persists user identity to SharedPreferences\r\n     *   - Configures \"Add Child\" button click handler\r\n     *\r\n     * @param inflater           LayoutInflater to inflate the view\r\n     * @param container          Parent view that this fragment's UI will be attached to\r\n     * @param savedInstanceState Previously saved state, if any\r\n     * @return                   The root view for this fragment\r\n     */\r\n    @Nullable\r\n    @Override\r\n    public View onCreateView(@NonNull LayoutInflater inflater, @Nullable ViewGroup container, @Nullable Bundle savedInstanceState) {\r\n        View view = inflater.inflate(R.layout.fragment_parent_dashboard, container, false);\r\n\r\n        // Get SharedPreferences\r\n        SharedPreferences prefs = requireActivity().getSharedPreferences(\"user_prefs\", Context.MODE_PRIVATE);\r\n\r\n        // Get the current logged-in user's unique identifier\r\n        String userId = CurrentUser.get().getUname();  // or email, or a unique ID\r\n        String userEmail = CurrentUser.get().getEmail();\r\n        String userType = CurrentUser.get().getType();\r\n\r\n        // Check if this user has accepted terms\r\n        boolean hasAcceptedTerms = prefs.getBoolean(\"accepted_terms_\" + userType + userId + userEmail, false);\r\n\r\n        if (!hasAcceptedTerms) {\r\n            // Show the TermsDialogFragment\r\n            TermsDialogFragment dialog = new TermsDialogFragment();\r\n            dialog.show(getParentFragmentManager(), \"terms_dialog\");\r\n        }\r\n\r\n\r\n        // Toolbar setup\r\n        toolbar = view.findViewById(R.id.toolbar);\r\n        ((AppCompatActivity) getActivity()).setSupportActionBar(toolbar);\r\n        setHasOptionsMenu(true);\r\n\r\n        // ─────────────────────────────────────────────────────────────────\r\n        // UI Component Initialization\r\n        // ─────────────────────────────────────────────────────────────────\r\n        contentContainer = view.findViewById(R.id.contentContainer);\r\n        cardAddChild = view.findViewById(R.id.cardAddChild);\r\n\r\n        // ─────────────────────────────────────────────────────────────────\r\n        // Firebase Initialization\r\n        // ─────────────────────────────────────────────────────────────────\r\n        db = FirebaseDatabase.getInstance(\"https://smart-air-group2-default-rtdb.firebaseio.com/\");\r\n        childrenRef = db.getReference(\"categories/users/parents/\" + uname + \"/children\");\r\n\r\n\r\n        // ─────────────────────────────────────────────────────────────────\r\n        // Load Children Data\r\n        // ─────────────────────────────────────────────────────────────────\r\n        loadChildrenFromDatabase();\r\n\r\n        // ─────────────────────────────────────────────────────────────────\r\n        // Persist User Identity\r\n        // ─────────────────────────────────────────────────────────────────\r\n        SharedPreferences prefs2 = requireContext().getSharedPreferences(\"APP_DATA\", Context.MODE_PRIVATE);\r\n        prefs2.edit().putString(\"parentUname\", uname).apply();\r\n        prefs2.edit().putString(\"type\", type).apply();\r\n\r\n        // ─────────────────────────────────────────────────────────────────\r\n        // Add Child Button Handler\r\n        // ─────────────────────────────────────────────────────────────────\r\n        // Shows a dialog asking if the child already has an account:\r\n        //   - \"Yes\" → Navigate to LinkChildFragment\r\n        //   - \"No\"  → Navigate to AddChildFragment\r\n        cardAddChild.setOnClickListener(v -> {\r\n            new AlertDialog.Builder(requireContext())\r\n                    .setTitle(\"Confirm Action\")\r\n                    .setMessage(\"Does your child already have an account?\")\r\n                    .setPositiveButton(\"Yes\", (dialog, which) -> {\r\n                        // Navigate to link existing child\r\n                        LinkChildFragment linkFrag = new LinkChildFragment();\r\n                        Bundle args = new Bundle();\r\n                        args.putString(\"parentUname\", uname);\r\n                        linkFrag.setArguments(args);\r\n                        loadFragment(linkFrag);\r\n                    })\r\n                    .setNegativeButton(\"No\", (dialog, which) -> {\r\n                        // Navigate to create new child\r\n                        AddChildFragment addFrag = new AddChildFragment();\r\n                        Bundle args = new Bundle();\r\n                        args.putString(\"parentUname\", uname);\r\n                        addFrag.setArguments(args);\r\n                        loadFragment(addFrag);\r\n                        dialog.dismiss();\r\n                    })\r\n                    .show();\r\n        });\r\n\r\n        return view;\r\n    }\r\n\r\n\r\n    // ═══════════════════════════════════════════════════════════════════════\r\n    // FIREBASE DATA LOADING\r\n    // ═══════════════════════════════════════════════════════════════════════\r\n\r\n    /**\r\n     * Loads all children linked to the current parent from Firebase.\r\n     *\r\n     * Process:\r\n     *   1. Queries the parent's children node for all linked usernames\r\n     *   2. For each child username:\r\n     *      a. Fetches child details (name, username)\r\n     *      b. Fetches child status history\r\n     *      c. Creates a CardView with appropriate color coding\r\n     *   3. Ensures \"Add Child\" card is added after all children load\r\n     *   4. Displays toast if no children are found\r\n     *\r\n     * Color Coding:\r\n     *   - Red (alert) if status contains 1 or 2\r\n     *   - Green (good) otherwise\r\n     *\r\n     * Threading:\r\n     *   - Uses Firebase's asynchronous listeners\r\n     *   - Tracks completion count to ensure \"Add Child\" appears last\r\n     */\r\n    private void loadChildrenFromDatabase() {\r\n\r\n        childrenRef.addListenerForSingleValueEvent(new ValueEventListener() {\r\n            @Override\r\n            public void onDataChange(@NonNull DataSnapshot snapshot) {\r\n                // Validate fragment and context availability\r\n                if (contentContainer == null || getContext() == null) return;\r\n\r\n                // Clear existing views\r\n                contentContainer.removeAllViews();\r\n                int totalChildren = (int) snapshot.getChildrenCount();\r\n\r\n                // Handle case with no children\r\n                if (totalChildren == 0) {\r\n                    contentContainer.addView(cardAddChild);\r\n                    Toast.makeText(getContext(), \"No children linked yet\", Toast.LENGTH_SHORT).show();\r\n                    return;\r\n                }\r\n\r\n                // Track loading progress to ensure \"Add Child\" button appears last\r\n                final int[] loadedChildren = {0};\r\n                final int[] completedStatusLoads = {0};\r\n\r\n                // Iterate through each child username\r\n                for (DataSnapshot childSnapshot : snapshot.getChildren()) {\r\n                    String childUname = childSnapshot.getValue(String.class);\r\n\r\n                    // Skip invalid entries\r\n                    if (childUname == null || childUname.isEmpty()) {\r\n                        loadedChildren[0]++;\r\n                        completedStatusLoads[0]++;\r\n                        if (completedStatusLoads[0] == totalChildren)\r\n                            contentContainer.addView(cardAddChild);\r\n                        continue;\r\n                    }\r\n\r\n                    // Reference to child's data node\r\n                    DatabaseReference childRef = FirebaseDatabase.getInstance()\r\n                            .getReference(\"categories/users/children\")\r\n                            .child(childUname);\r\n\r\n                    // Fetch child details\r\n                    childRef.addListenerForSingleValueEvent(new ValueEventListener() {\r\n                        @Override\r\n                        public void onDataChange(@NonNull DataSnapshot childData) {\r\n                            if (childData.exists()) {\r\n                                User child = childData.getValue(User.class);\r\n                                if (child != null) {\r\n                                    // Determine display name (prefer full name over username)\r\n                                    String displayName = (child.getName() != null && !child.getName().isEmpty())\r\n                                            ? child.getName()\r\n                                            : child.getUname();\r\n\r\n                                    // Fetch status history for color coding\r\n                                    DatabaseReference statusRef = FirebaseDatabase.getInstance()\r\n                                            .getReference(\"categories/users/children\")\r\n                                            .child(child.getUname())\r\n                                            .child(\"status\");\r\n\r\n                                    statusRef.addListenerForSingleValueEvent(new ValueEventListener() {\r\n                                        @Override\r\n                                        public void onDataChange(@NonNull DataSnapshot statusSnap) {\r\n\r\n                                            Integer pefZone = statusSnap.child(\"pefZone\").getValue(Integer.class);\r\n                                            if (!safetyAlert && pefZone != null && pefZone == 2) {\r\n                                                safetyAlert = true;\r\n                                                showSafetyAlertDialog(child.getUname(), displayName);\r\n                                            }\r\n\r\n                                            // Parse status values from Firebase\r\n                                            List<Integer> statusList = new ArrayList<>();\r\n\r\n                                            if (statusSnap.exists()) {\r\n                                                extractStatusValues(statusSnap, statusList);\r\n                                            }\r\n\r\n                                            // Create child card with status-based color\r\n                                            addChildCard(displayName, child.getUname(), statusList);\r\n\r\n                                            // Check if all children loaded\r\n                                            completedStatusLoads[0]++;\r\n                                            if (completedStatusLoads[0] == totalChildren)\r\n                                                contentContainer.addView(cardAddChild);\r\n                                        }\r\n\r\n                                        @Override\r\n                                        public void onCancelled(@NonNull DatabaseError error) {\r\n                                            // Show card with default color on error\r\n                                            addChildCard(displayName, child.getUname(), new ArrayList<>());\r\n\r\n                                            completedStatusLoads[0]++;\r\n                                            if (completedStatusLoads[0] == totalChildren)\r\n                                                contentContainer.addView(cardAddChild);\r\n                                        }\r\n                                    });\r\n                                } else {\r\n                                    // Child data is null\r\n                                    completedStatusLoads[0]++;\r\n                                    if (completedStatusLoads[0] == totalChildren)\r\n                                        contentContainer.addView(cardAddChild);\r\n                                }\r\n                            } else {\r\n                                // Child doesn't exist in database\r\n                                completedStatusLoads[0]++;\r\n                                if (completedStatusLoads[0] == totalChildren)\r\n                                    contentContainer.addView(cardAddChild);\r\n                            }\r\n\r\n                            loadedChildren[0]++;\r\n                        }\r\n\r\n                        @Override\r\n                        public void onCancelled(@NonNull DatabaseError error) {\r\n                            loadedChildren[0]++;\r\n                            completedStatusLoads[0]++;\r\n                            if (completedStatusLoads[0] == totalChildren)\r\n                                contentContainer.addView(cardAddChild);\r\n                        }\r\n                    });\r\n                }\r\n            }\r\n\r\n            @Override\r\n            public void onCancelled(@NonNull DatabaseError error) {\r\n                Log.e(\"FIREBASE\", \"Error: \" + error.getMessage());\r\n            }\r\n        });\r\n    }\r\n\r\n    /*\r\n    This helper method is used the get all the status code\r\n     */\r\n    private void extractStatusValues(DataSnapshot snap, List<Integer> result) {\r\n        for (DataSnapshot child : snap.getChildren()) {\r\n            Object val = child.getValue();\r\n\r\n            // Case 1: It's a direct integer\r\n            if (val instanceof Long || val instanceof Integer) {\r\n                result.add(((Number) val).intValue());\r\n            }\r\n\r\n            // Case 2: Nested object → go deeper\r\n            else if (child.hasChildren()) {\r\n                extractStatusValues(child, result);\r\n            }\r\n        }\r\n    }\r\n    private void showSafetyAlertDialog(String childUname, String childDisplayName) {\r\n        if (!isAdded() || getContext() == null) return;\r\n\r\n        new AlertDialog.Builder(requireContext())\r\n                .setTitle(\"Safety Alert\")\r\n                .setMessage(\"Your child is in the red PEF zone. Please check their asthma status.\")\r\n                .setPositiveButton(\"View alerts\", (dialog, which) -> {\r\n                    AlertCenterFragment alertFrag = new AlertCenterFragment();\r\n                    Bundle args = new Bundle();\r\n                    args.putString(\"parentUname\", uname);\r\n                    alertFrag.setArguments(args);\r\n\r\n                    getParentFragmentManager()\r\n                            .beginTransaction()\r\n                            .replace(R.id.fragment_container, alertFrag)\r\n                            .addToBackStack(null)\r\n                            .commit();\r\n                })\r\n                .setNegativeButton(\"Dismiss\", null)\r\n                .show();\r\n    }\r\n\r\n\r\n    // ═══════════════════════════════════════════════════════════════════════\r\n    // UI CONSTRUCTION HELPERS\r\n    // ═══════════════════════════════════════════════════════════════════════\r\n\r\n    /**\r\n     * Dynamically creates and adds a CardView for a linked child.\r\n     *\r\n     * Card Features:\r\n     *   - Displays child's name (or username as fallback)\r\n     *   - Color-coded background based on status:\r\n     *       • Red if status list contains 1 or 2 (alert)\r\n     *       • Green otherwise (good)\r\n     *   - Delete icon for unlinking the child\r\n     *   - Ripple effect for touch feedback\r\n     *   - Navigates to ChildDashboardFragment on click\r\n     *\r\n     * @param childName   Display name of the child\r\n     * @param childKey    Username/key of the child in Firebase\r\n     * @param statusList  List of status values for determining card color\r\n     */\r\n    @SuppressLint(\"ResourceType\")\r\n    private void addChildCard(String childName, String childKey, List<Integer> statusList) {\r\n        // Validate fragment state\r\n        if (!isAdded() || getContext() == null) return;\r\n        Context ctx = requireContext();\r\n\r\n        // ─────────────────────────────────────────────────────────────────\r\n        // Create CardView Container\r\n        // ─────────────────────────────────────────────────────────────────\r\n        CardView cardView = new CardView(ctx);\r\n        LinearLayout.LayoutParams cardParams = new LinearLayout.LayoutParams(\r\n                LinearLayout.LayoutParams.MATCH_PARENT,\r\n                LinearLayout.LayoutParams.WRAP_CONTENT\r\n        );\r\n        cardParams.setMargins(0, 0, 0, dpToPx(16));\r\n        cardView.setLayoutParams(cardParams);\r\n\r\n        // ─────────────────────────────────────────────────────────────────\r\n        // Set Background Color Based on Status\r\n        // ─────────────────────────────────────────────────────────────────\r\n        if (statusList.contains(2)) {\r\n            cardView.setCardBackgroundColor(ContextCompat.getColor(getContext(), R.color.alert));\r\n        } else if (statusList.contains(1)) {\r\n            cardView.setCardBackgroundColor(ContextCompat.getColor(getContext(), R.color.alert));\r\n        } else {\r\n            cardView.setCardBackgroundColor(ContextCompat.getColor(getContext(), R.color.good));\r\n        }\r\n\r\n        cardView.setRadius(dpToPx(8));\r\n        cardView.setCardElevation(0);\r\n        cardView.setClickable(true);\r\n        cardView.setFocusable(true);\r\n\r\n        // ─────────────────────────────────────────────────────────────────\r\n        // Add Ripple Effect\r\n        // ─────────────────────────────────────────────────────────────────\r\n        TypedValue outValue = new TypedValue();\r\n        if (ctx.getTheme().resolveAttribute(android.R.attr.selectableItemBackground, outValue, true)) {\r\n            Drawable selectable = ContextCompat.getDrawable(ctx, outValue.resourceId);\r\n            if (selectable != null) cardView.setForeground(selectable);\r\n        }\r\n\r\n        // ─────────────────────────────────────────────────────────────────\r\n        // Create Inner Layout\r\n        // ─────────────────────────────────────────────────────────────────\r\n        LinearLayout innerLayout = new LinearLayout(ctx);\r\n        innerLayout.setOrientation(LinearLayout.HORIZONTAL);\r\n        innerLayout.setLayoutParams(new FrameLayout.LayoutParams(\r\n                FrameLayout.LayoutParams.MATCH_PARENT,\r\n                FrameLayout.LayoutParams.WRAP_CONTENT\r\n        ));\r\n        innerLayout.setPadding(dpToPx(16), dpToPx(16), dpToPx(16), dpToPx(16));\r\n        innerLayout.setGravity(Gravity.CENTER_VERTICAL);\r\n\r\n        // ─────────────────────────────────────────────────────────────────\r\n        // Child Name TextView\r\n        // ─────────────────────────────────────────────────────────────────\r\n        TextView textView = new TextView(ctx);\r\n        textView.setLayoutParams(new LinearLayout.LayoutParams(0, LinearLayout.LayoutParams.WRAP_CONTENT, 1f));\r\n        textView.setText(childName);\r\n        textView.setTextSize(18);\r\n\r\n        // ─────────────────────────────────────────────────────────────────\r\n        // Delete Icon\r\n        // ─────────────────────────────────────────────────────────────────\r\n        ImageView deleteView = new ImageView(ctx);\r\n        LinearLayout.LayoutParams imgParams = new LinearLayout.LayoutParams(dpToPx(24), dpToPx(24));\r\n        imgParams.setMarginEnd(dpToPx(12));\r\n        deleteView.setLayoutParams(imgParams);\r\n        deleteView.setImageResource(android.R.drawable.ic_delete);\r\n        deleteView.setColorFilter(ContextCompat.getColor(ctx, R.color.delete), PorterDuff.Mode.SRC_IN);\r\n\r\n\r\n\r\n        // ─────────────────────────────────────────────────────────────────\r\n        // Assemble Card\r\n        // ─────────────────────────────────────────────────────────────────\r\n        innerLayout.addView(textView);\r\n        innerLayout.addView(deleteView);\r\n        cardView.addView(innerLayout);\r\n\r\n        // ─────────────────────────────────────────────────────────────────\r\n        // Card Click Handler - Navigate to Child Dashboard\r\n        // ─────────────────────────────────────────────────────────────────\r\n        cardView.setOnClickListener(v -> {\r\n            Bundle args = new Bundle();\r\n            args.putString(\"childUname\", childKey);\r\n            args.putString(\"childName\", childName);\r\n\r\n            ChildDashboardFragment childFrag = new ChildDashboardFragment();\r\n            childFrag.setArguments(args);\r\n            loadFragment(childFrag);\r\n        });\r\n\r\n        // ─────────────────────────────────────────────────────────────────\r\n        // Delete Icon Click Handler - Unlink Child\r\n        // ─────────────────────────────────────────────────────────────────\r\n        deleteView.setOnClickListener(v -> {\r\n            if (!isAdded()) return;\r\n\r\n            new AlertDialog.Builder(requireContext())\r\n                    .setTitle(\"Remove Child\")\r\n                    .setMessage(\"Are you sure you want to unlink \" + childName + \"?\")\r\n                    .setPositiveButton(\"Yes\", (d, w) -> {\r\n                        if (childrenRef != null) {\r\n                            childrenRef.child(childKey).removeValue();\r\n                            Toast.makeText(ctx, \"Child removed\", Toast.LENGTH_SHORT).show();\r\n                            loadChildrenFromDatabase(); // Refresh view\r\n                        }\r\n                    })\r\n                    .setNegativeButton(\"No\", null)\r\n                    .show();\r\n        });\r\n\r\n        // ─────────────────────────────────────────────────────────────────\r\n        // Add Card to Container\r\n        // ─────────────────────────────────────────────────────────────────\r\n        if (cardView.getParent() == null)\r\n            contentContainer.addView(cardView);\r\n    }\r\n\r\n    /**\r\n     * Converts density-independent pixels (dp) to actual pixels (px).\r\n     * Ensures consistent UI spacing across different screen densities.\r\n     *\r\n     * @param dp Value in density-independent pixels\r\n     * @return   Equivalent value in pixels for the current device\r\n     */\r\n    private int dpToPx(int dp) {\r\n        float density = getResources().getDisplayMetrics().density;\r\n        return Math.round(dp * density);\r\n    }\r\n\r\n    // ═══════════════════════════════════════════════════════════════════════\r\n    // MENU HANDLING\r\n    // ═══════════════════════════════════════════════════════════════════════\r\n\r\n    /**\r\n     * Inflates the toolbar menu using MenuHelper.\r\n     * Called by the Android framework when the menu is being created.\r\n     *\r\n     * @param menu     Menu object to be populated\r\n     * @param inflater MenuInflater to use for inflating menu resources\r\n     */\r\n    @Override\r\n    public void onCreateOptionsMenu(@NonNull Menu menu, @NonNull MenuInflater inflater) {\r\n        super.onCreateOptionsMenu(menu, inflater);\r\n\r\n        MenuHelper.setupMenu(menu, inflater, requireContext());\r\n\r\n        MenuItem notifItem = menu.findItem(R.id.action_notifications);\r\n        if (notifItem != null) {\r\n            notificationActionView = notifItem.getActionView();\r\n            if (notificationActionView != null) {\r\n                notificationBadge = notificationActionView.findViewById(R.id.viewBadge);\r\n\r\n                notificationActionView.setOnClickListener(v -> onOptionsItemSelected(notifItem));\r\n            }\r\n        }\r\n        checkAlertsAndUpdateBadge();\r\n    }\r\n    private void updateNotificationBadge(boolean hasAlerts) {\r\n        if (notificationBadge == null) return;\r\n        notificationBadge.setVisibility(hasAlerts ? View.VISIBLE : View.GONE);\r\n    }\r\n\r\n    private void checkAlertsAndUpdateBadge() {\r\n        if (db == null) {\r\n            db = FirebaseDatabase.getInstance(\"https://smart-air-group2-default-rtdb.firebaseio.com/\");\r\n        }\r\n\r\n        DatabaseReference parentChildrenRef = db.getReference(\"categories/users/parents\")\r\n                .child(uname)\r\n                .child(\"children\");\r\n\r\n        parentChildrenRef.addListenerForSingleValueEvent(new ValueEventListener() {\r\n            @Override\r\n            public void onDataChange(@NonNull DataSnapshot snapshot) {\r\n                if (!snapshot.exists() || snapshot.getChildrenCount() == 0) {\r\n                    updateNotificationBadge(false);\r\n                    return;\r\n                }\r\n\r\n                int totalChildren = (int) snapshot.getChildrenCount();\r\n                final int[] finished = {0};\r\n                final boolean[] hasAlerts = {false};\r\n\r\n                for (DataSnapshot childSnap : snapshot.getChildren()) {\r\n                    String childUname = childSnap.getValue(String.class);\r\n\r\n                    if (childUname == null || childUname.trim().isEmpty()) {\r\n                        if (++finished[0] == totalChildren && !hasAlerts[0]) {\r\n                            updateNotificationBadge(false);\r\n                        }\r\n                        continue;\r\n                    }\r\n\r\n                    DatabaseReference statusRef = db.getReference(\"categories/users/children\")\r\n                            .child(childUname)\r\n                            .child(\"status\");\r\n\r\n                    statusRef.addListenerForSingleValueEvent(new ValueEventListener() {\r\n                        @Override\r\n                        public void onDataChange(@NonNull DataSnapshot statusSnap) {\r\n                            if (!hasAlerts[0]) {\r\n                                if (statusHasAlert(statusSnap)) {\r\n                                    hasAlerts[0] = true;\r\n                                    updateNotificationBadge(true);\r\n                                }\r\n                            }\r\n\r\n                            if (++finished[0] == totalChildren && !hasAlerts[0]) {\r\n                                updateNotificationBadge(false);\r\n                            }\r\n                        }\r\n\r\n                        @Override\r\n                        public void onCancelled(@NonNull DatabaseError error) {\r\n                            if (++finished[0] == totalChildren && !hasAlerts[0]) {\r\n                                updateNotificationBadge(false);\r\n                            }\r\n                        }\r\n                    });\r\n                }\r\n            }\r\n\r\n            @Override\r\n            public void onCancelled(@NonNull DatabaseError error) {\r\n                updateNotificationBadge(false);\r\n            }\r\n        });\r\n    }\r\n\r\n\r\n    private boolean statusHasAlert(DataSnapshot statusSnap) {\r\n        if (statusSnap == null || !statusSnap.exists()) {\r\n            return false;\r\n        }\r\n\r\n        // PEF red zone\r\n        Integer pefZone = statusSnap.child(\"pefZone\").getValue(Integer.class);\r\n        if (pefZone != null && pefZone == 2) {\r\n            return true;\r\n        }\r\n\r\n        DataSnapshot invSnap = statusSnap.child(\"inventory\");\r\n        if (invSnap != null && invSnap.exists()) {\r\n            for (DataSnapshot medSnap : invSnap.getChildren()) {\r\n                for (DataSnapshot snapIndex : medSnap.getChildren()) {\r\n                    Integer code = snapIndex.getValue(Integer.class);\r\n                    if (code != null && (code == 1 || code == 2)) {\r\n                        return true;\r\n                    }\r\n                }\r\n            }\r\n        }\r\n\r\n        return false;\r\n    }\r\n\r\n\r\n\r\n    /**\r\n         * Handles menu item selection events.\r\n         * Delegates to MenuHelper for consistent menu behavior across the app.\r\n         *\r\n         * @param item The menu item that was selected\r\n         * @return     true if the event was handled, false otherwise\r\n         */\r\n    @Override\r\n    public boolean onOptionsItemSelected(@NonNull MenuItem item) {\r\n        if (MenuHelper.handleMenuSelection(item, this)) {\r\n            return true;\r\n        }\r\n        return super.onOptionsItemSelected(item);\r\n    }\r\n\r\n    // ═══════════════════════════════════════════════════════════════════════\r\n    // FRAGMENT NAVIGATION\r\n    // ═══════════════════════════════════════════════════════════════════════\r\n\r\n    /**\r\n     * Navigates to another fragment within the same activity.\r\n     * Adds the transaction to the back stack for back button support.\r\n     *\r\n     * @param fragment The fragment to navigate to\r\n     */\r\n    private void loadFragment(Fragment fragment) {\r\n        FragmentTransaction transaction = getParentFragmentManager().beginTransaction();\r\n        transaction.replace(R.id.fragment_container, fragment);\r\n        transaction.addToBackStack(null);\r\n        transaction.commit();\r\n    }\r\n}\r\n
+Subsystem: com.intellij.openapi.diff.impl.patch.CharsetEP
+<+>UTF-8
+===================================================================
+diff --git a/app/src/main/java/com/example/SmartAirGroup2/ParentDashboardFragment.java b/app/src/main/java/com/example/SmartAirGroup2/ParentDashboardFragment.java
+--- a/app/src/main/java/com/example/SmartAirGroup2/ParentDashboardFragment.java	(revision d673f0b962688344b24fe28ee01a2d21cbe4a845)
++++ b/app/src/main/java/com/example/SmartAirGroup2/ParentDashboardFragment.java	(date 1764296575886)
+@@ -1,25 +1,15 @@
+ package com.example.SmartAirGroup2;
+ 
+-import android.annotation.SuppressLint;
+ import android.content.Context;
+ import android.content.SharedPreferences;
+-import android.graphics.PorterDuff;
+-import android.graphics.drawable.Drawable;
+ import android.os.Bundle;
+-import android.util.Log;
+-import android.util.TypedValue;
+-import android.view.Gravity;
+ import android.view.LayoutInflater;
+ import android.view.Menu;
+ import android.view.MenuInflater;
+ import android.view.MenuItem;
+ import android.view.View;
+ import android.view.ViewGroup;
+-import android.widget.FrameLayout;
+-import android.widget.ImageView;
+ import android.widget.LinearLayout;
+-import android.widget.TextView;
+-import android.widget.Toast;
+ 
+ import androidx.annotation.NonNull;
+ import androidx.annotation.Nullable;
+@@ -27,145 +17,28 @@
+ import androidx.appcompat.app.AppCompatActivity;
+ import androidx.appcompat.widget.Toolbar;
+ import androidx.cardview.widget.CardView;
+-import androidx.core.content.ContextCompat;
+ import androidx.fragment.app.Fragment;
+ import androidx.fragment.app.FragmentTransaction;
+ 
+-import com.google.firebase.database.DataSnapshot;
+-import com.google.firebase.database.DatabaseError;
+-import com.google.firebase.database.DatabaseReference;
+ import com.google.firebase.database.FirebaseDatabase;
+-import com.google.firebase.database.ValueEventListener;
+ 
+-import java.util.ArrayList;
+-import java.util.List;
+-
+-/**
+- * ParentDashboardFragment
+- * -----------------------
+- * This fragment serves as the primary dashboard for parent users within the Smart Air application.
+- * It provides an overview of all linked child accounts and enables parents to perform account
+- * management actions.
+- *
+- * Core User Actions:
+- *   • View all children currently linked to their account.
+- *   • Add a new child or link an existing child account.
+- *   • Remove/unlink a child account when needed.
+- *   • Navigate to individual child dashboards for detailed monitoring.
+- *
+- * UI Behavior:
+- *   - The fragment dynamically generates CardViews representing each linked child.
+- *   - Each card displays:
+- *       • Child name (or username if name unavailable)
+- *       • Status indicator (color-coded background)
+- *       • A delete icon to allow unlinking
+- *   - If no children are linked, only the "Add Child" card is displayed.
+- *   - Cards use ripple effects for modern touch feedback.
+- *
+- * Firebase Structure (Relevant Paths):
+- * └── categories/
+- *     └── users/
+- *         ├── parents/{parentUname}/children/{childUname: String}
+- *         └── children/{childUname}/
+- *             ├── name: String
+- *             ├── uname: String
+- *             └── status/{individual status: Integer}
+- *
+- * Status Logic:
+- *   - The background color of each child card reflects their status history:
+- *       • Red (alert color) → Contains alert values (1 or 2 detected)
+- *       • Green (good color) → No concerning status entries
+- *   - Status values are retrieved from the child's status history in Firebase.
+- *
+- * Fragment Lifecycle Responsibilities:
+- *   ✔ Initialize toolbar and UI components
+- *   ✔ Fetch Firebase data for linked children
+- *   ✔ Listen for child database changes
+- *   ✔ Dynamically create UI elements based on data
+- *   ✔ Persist login metadata using SharedPreferences
+- *   ✔ Handle user interactions (navigation, deletion, linking)
+- *
+- * Navigation:
+- *   - Tapping a child card navigates to ChildDashboardFragment with child details.
+- *   - Tapping "Add Child" opens a dialog prompting:
+- *        → "Yes": Navigate to LinkChildFragment (for existing accounts)
+- *        → "No" : Navigate to AddChildFragment (for new accounts)
+- *
+- * Dependencies:
+- *   • Firebase Realtime Database for user and relationship data.
+- *   • SharedPreferences for user type and logged-in identity persistence.
+- *   • MenuHelper for toolbar menu operations.
+- *   • User model class for child data representation.
+- *
+- * Author: Kevin Li
+- * Last Updated: November 18 2025
+- */
+ public class ParentDashboardFragment extends Fragment {
+ 
+-    // ═══════════════════════════════════════════════════════════════════════
+-    // UI COMPONENTS
+-    // ═══════════════════════════════════════════════════════════════════════
++    private String uname,type;
+ 
+-    /**
+-     * Toolbar component displayed at the top of the fragment.
+-     * Provides navigation and menu actions for the parent user.
+-     */
+     private Toolbar toolbar;
+ 
+     /**
+      * CardView for the "Add Child" button.
+      * Always displayed at the bottom of the children list.
+      */
+-    private CardView cardAddChild;
+-
+-    /**
+-     * Container that holds all dynamically generated child cards.
+-     * Children are added/removed from this layout based on Firebase data.
+-     */
+-    private LinearLayout contentContainer;
+-
+-    // ═══════════════════════════════════════════════════════════════════════
+-    // FIREBASE REFERENCES
+-    // ═══════════════════════════════════════════════════════════════════════
+-
+-    /**
+-     * Firebase Database instance pointing to the Smart Air database.
+-     * Used to initialize all database references.
+-     */
+-    private FirebaseDatabase db;
+-
+-    /**
+-     * Database reference to the parent's children node.
+-     * Path: categories/users/parents/{uname}/children
+-     * Contains all child usernames linked to this parent.
+-     */
+-    private DatabaseReference childrenRef;
+-
+-    // ═══════════════════════════════════════════════════════════════════════
+-    // USER IDENTITY
+-    // ═══════════════════════════════════════════════════════════════════════
+-
+-    /**
+-     * Username of the currently logged-in parent.
+-     * TODO: Replace hardcoded value with dynamic authentication.
+-     */
+-    private String uname;
+-
+-    /**
+-     * User type identifier for the current user.
+-     * Always "parent" for this fragment.
+-     */
+-    private String type;
++    private CardView cardChildren,cardProvider;
+ 
+-    private boolean safetyAlert = false;
+-
++    // Alerts
+     private View notificationActionView;
+     private View notificationBadge;
++    private FirebaseDatabase db;
+ 
+-
+-    // ═══════════════════════════════════════════════════════════════════════
+-    // LIFECYCLE METHODS
+-    // ═══════════════════════════════════════════════════════════════════════
+ 
+     public static ParentDashboardFragment newInstance(String username) {
+         ParentDashboardFragment fragment = new ParentDashboardFragment();
+@@ -173,7 +46,6 @@
+         args.putString("username", username);
+         fragment.setArguments(args);
+         return fragment;
+-
+     }
+ 
+     @Override
+@@ -187,22 +59,6 @@
+         type="parent";
+     }
+ 
+-    /**
+-     * Creates and initializes the view hierarchy for this fragment.
+-     *
+-     * Responsibilities:
+-     *   - Inflates the parent dashboard layout
+-     *   - Sets up the toolbar with menu support
+-     *   - Initializes Firebase database references
+-     *   - Loads children data from Firebase
+-     *   - Persists user identity to SharedPreferences
+-     *   - Configures "Add Child" button click handler
+-     *
+-     * @param inflater           LayoutInflater to inflate the view
+-     * @param container          Parent view that this fragment's UI will be attached to
+-     * @param savedInstanceState Previously saved state, if any
+-     * @return                   The root view for this fragment
+-     */
+     @Nullable
+     @Override
+     public View onCreateView(@NonNull LayoutInflater inflater, @Nullable ViewGroup container, @Nullable Bundle savedInstanceState) {
+@@ -216,6 +72,14 @@
+         String userEmail = CurrentUser.get().getEmail();
+         String userType = CurrentUser.get().getType();
+ 
++        // Save parentUname and type to APP_DATA
++        SharedPreferences appPrefs = requireContext().getSharedPreferences("APP_DATA", Context.MODE_PRIVATE);
++        appPrefs.edit()
++                .putString("parentUname", (uname != null && !uname.isEmpty()) ? uname : userId)
++                .putString("type", "parent")
++                .apply();
++
++
+         // Check if this user has accepted terms
+         boolean hasAcceptedTerms = prefs.getBoolean("accepted_terms_" + userType + userId + userEmail, false);
+ 
+@@ -234,557 +98,23 @@
+         // ─────────────────────────────────────────────────────────────────
+         // UI Component Initialization
+         // ─────────────────────────────────────────────────────────────────
+-        contentContainer = view.findViewById(R.id.contentContainer);
+-        cardAddChild = view.findViewById(R.id.cardAddChild);
+-
+-        // ─────────────────────────────────────────────────────────────────
+-        // Firebase Initialization
+-        // ─────────────────────────────────────────────────────────────────
+-        db = FirebaseDatabase.getInstance("https://smart-air-group2-default-rtdb.firebaseio.com/");
+-        childrenRef = db.getReference("categories/users/parents/" + uname + "/children");
+-
+-
+-        // ─────────────────────────────────────────────────────────────────
+-        // Load Children Data
+-        // ─────────────────────────────────────────────────────────────────
+-        loadChildrenFromDatabase();
+-
+-        // ─────────────────────────────────────────────────────────────────
+-        // Persist User Identity
+-        // ─────────────────────────────────────────────────────────────────
+-        SharedPreferences prefs2 = requireContext().getSharedPreferences("APP_DATA", Context.MODE_PRIVATE);
+-        prefs2.edit().putString("parentUname", uname).apply();
+-        prefs2.edit().putString("type", type).apply();
++        cardChildren = view.findViewById(R.id.cardChildren);
++        cardProvider = view.findViewById(R.id.cardProvider);
++
+ 
+-        // ─────────────────────────────────────────────────────────────────
+-        // Add Child Button Handler
+-        // ─────────────────────────────────────────────────────────────────
+-        // Shows a dialog asking if the child already has an account:
+-        //   - "Yes" → Navigate to LinkChildFragment
+-        //   - "No"  → Navigate to AddChildFragment
+-        cardAddChild.setOnClickListener(v -> {
+-            new AlertDialog.Builder(requireContext())
+-                    .setTitle("Confirm Action")
+-                    .setMessage("Does your child already have an account?")
+-                    .setPositiveButton("Yes", (dialog, which) -> {
+-                        // Navigate to link existing child
+-                        LinkChildFragment linkFrag = new LinkChildFragment();
+-                        Bundle args = new Bundle();
+-                        args.putString("parentUname", uname);
+-                        linkFrag.setArguments(args);
+-                        loadFragment(linkFrag);
+-                    })
+-                    .setNegativeButton("No", (dialog, which) -> {
+-                        // Navigate to create new child
+-                        AddChildFragment addFrag = new AddChildFragment();
+-                        Bundle args = new Bundle();
+-                        args.putString("parentUname", uname);
+-                        addFrag.setArguments(args);
+-                        loadFragment(addFrag);
+-                        dialog.dismiss();
+-                    })
+-                    .show();
++        cardChildren.setOnClickListener(v -> {
++            ParentManageChildrenFragment PMCFrag = new ParentManageChildrenFragment();
++            loadFragment(PMCFrag);
++        });
++
++        cardProvider.setOnClickListener(v -> {
++            ParentManageProviderFragment PMCFrag = new ParentManageProviderFragment();
++            loadFragment(PMCFrag);
+         });
+ 
+         return view;
+     }
+ 
+-
+-    // ═══════════════════════════════════════════════════════════════════════
+-    // FIREBASE DATA LOADING
+-    // ═══════════════════════════════════════════════════════════════════════
+-
+-    /**
+-     * Loads all children linked to the current parent from Firebase.
+-     *
+-     * Process:
+-     *   1. Queries the parent's children node for all linked usernames
+-     *   2. For each child username:
+-     *      a. Fetches child details (name, username)
+-     *      b. Fetches child status history
+-     *      c. Creates a CardView with appropriate color coding
+-     *   3. Ensures "Add Child" card is added after all children load
+-     *   4. Displays toast if no children are found
+-     *
+-     * Color Coding:
+-     *   - Red (alert) if status contains 1 or 2
+-     *   - Green (good) otherwise
+-     *
+-     * Threading:
+-     *   - Uses Firebase's asynchronous listeners
+-     *   - Tracks completion count to ensure "Add Child" appears last
+-     */
+-    private void loadChildrenFromDatabase() {
+-
+-        childrenRef.addListenerForSingleValueEvent(new ValueEventListener() {
+-            @Override
+-            public void onDataChange(@NonNull DataSnapshot snapshot) {
+-                // Validate fragment and context availability
+-                if (contentContainer == null || getContext() == null) return;
+-
+-                // Clear existing views
+-                contentContainer.removeAllViews();
+-                int totalChildren = (int) snapshot.getChildrenCount();
+-
+-                // Handle case with no children
+-                if (totalChildren == 0) {
+-                    contentContainer.addView(cardAddChild);
+-                    Toast.makeText(getContext(), "No children linked yet", Toast.LENGTH_SHORT).show();
+-                    return;
+-                }
+-
+-                // Track loading progress to ensure "Add Child" button appears last
+-                final int[] loadedChildren = {0};
+-                final int[] completedStatusLoads = {0};
+-
+-                // Iterate through each child username
+-                for (DataSnapshot childSnapshot : snapshot.getChildren()) {
+-                    String childUname = childSnapshot.getValue(String.class);
+-
+-                    // Skip invalid entries
+-                    if (childUname == null || childUname.isEmpty()) {
+-                        loadedChildren[0]++;
+-                        completedStatusLoads[0]++;
+-                        if (completedStatusLoads[0] == totalChildren)
+-                            contentContainer.addView(cardAddChild);
+-                        continue;
+-                    }
+-
+-                    // Reference to child's data node
+-                    DatabaseReference childRef = FirebaseDatabase.getInstance()
+-                            .getReference("categories/users/children")
+-                            .child(childUname);
+-
+-                    // Fetch child details
+-                    childRef.addListenerForSingleValueEvent(new ValueEventListener() {
+-                        @Override
+-                        public void onDataChange(@NonNull DataSnapshot childData) {
+-                            if (childData.exists()) {
+-                                User child = childData.getValue(User.class);
+-                                if (child != null) {
+-                                    // Determine display name (prefer full name over username)
+-                                    String displayName = (child.getName() != null && !child.getName().isEmpty())
+-                                            ? child.getName()
+-                                            : child.getUname();
+-
+-                                    // Fetch status history for color coding
+-                                    DatabaseReference statusRef = FirebaseDatabase.getInstance()
+-                                            .getReference("categories/users/children")
+-                                            .child(child.getUname())
+-                                            .child("status");
+-
+-                                    statusRef.addListenerForSingleValueEvent(new ValueEventListener() {
+-                                        @Override
+-                                        public void onDataChange(@NonNull DataSnapshot statusSnap) {
+-
+-                                            Integer pefZone = statusSnap.child("pefZone").getValue(Integer.class);
+-                                            if (!safetyAlert && pefZone != null && pefZone == 2) {
+-                                                safetyAlert = true;
+-                                                showSafetyAlertDialog(child.getUname(), displayName);
+-                                            }
+-
+-                                            // Parse status values from Firebase
+-                                            List<Integer> statusList = new ArrayList<>();
+-
+-                                            if (statusSnap.exists()) {
+-                                                extractStatusValues(statusSnap, statusList);
+-                                            }
+-
+-                                            // Create child card with status-based color
+-                                            addChildCard(displayName, child.getUname(), statusList);
+-
+-                                            // Check if all children loaded
+-                                            completedStatusLoads[0]++;
+-                                            if (completedStatusLoads[0] == totalChildren)
+-                                                contentContainer.addView(cardAddChild);
+-                                        }
+-
+-                                        @Override
+-                                        public void onCancelled(@NonNull DatabaseError error) {
+-                                            // Show card with default color on error
+-                                            addChildCard(displayName, child.getUname(), new ArrayList<>());
+-
+-                                            completedStatusLoads[0]++;
+-                                            if (completedStatusLoads[0] == totalChildren)
+-                                                contentContainer.addView(cardAddChild);
+-                                        }
+-                                    });
+-                                } else {
+-                                    // Child data is null
+-                                    completedStatusLoads[0]++;
+-                                    if (completedStatusLoads[0] == totalChildren)
+-                                        contentContainer.addView(cardAddChild);
+-                                }
+-                            } else {
+-                                // Child doesn't exist in database
+-                                completedStatusLoads[0]++;
+-                                if (completedStatusLoads[0] == totalChildren)
+-                                    contentContainer.addView(cardAddChild);
+-                            }
+-
+-                            loadedChildren[0]++;
+-                        }
+-
+-                        @Override
+-                        public void onCancelled(@NonNull DatabaseError error) {
+-                            loadedChildren[0]++;
+-                            completedStatusLoads[0]++;
+-                            if (completedStatusLoads[0] == totalChildren)
+-                                contentContainer.addView(cardAddChild);
+-                        }
+-                    });
+-                }
+-            }
+-
+-            @Override
+-            public void onCancelled(@NonNull DatabaseError error) {
+-                Log.e("FIREBASE", "Error: " + error.getMessage());
+-            }
+-        });
+-    }
+-
+-    /*
+-    This helper method is used the get all the status code
+-     */
+-    private void extractStatusValues(DataSnapshot snap, List<Integer> result) {
+-        for (DataSnapshot child : snap.getChildren()) {
+-            Object val = child.getValue();
+-
+-            // Case 1: It's a direct integer
+-            if (val instanceof Long || val instanceof Integer) {
+-                result.add(((Number) val).intValue());
+-            }
+-
+-            // Case 2: Nested object → go deeper
+-            else if (child.hasChildren()) {
+-                extractStatusValues(child, result);
+-            }
+-        }
+-    }
+-    private void showSafetyAlertDialog(String childUname, String childDisplayName) {
+-        if (!isAdded() || getContext() == null) return;
+-
+-        new AlertDialog.Builder(requireContext())
+-                .setTitle("Safety Alert")
+-                .setMessage("Your child is in the red PEF zone. Please check their asthma status.")
+-                .setPositiveButton("View alerts", (dialog, which) -> {
+-                    AlertCenterFragment alertFrag = new AlertCenterFragment();
+-                    Bundle args = new Bundle();
+-                    args.putString("parentUname", uname);
+-                    alertFrag.setArguments(args);
+-
+-                    getParentFragmentManager()
+-                            .beginTransaction()
+-                            .replace(R.id.fragment_container, alertFrag)
+-                            .addToBackStack(null)
+-                            .commit();
+-                })
+-                .setNegativeButton("Dismiss", null)
+-                .show();
+-    }
+-
+-
+-    // ═══════════════════════════════════════════════════════════════════════
+-    // UI CONSTRUCTION HELPERS
+-    // ═══════════════════════════════════════════════════════════════════════
+-
+-    /**
+-     * Dynamically creates and adds a CardView for a linked child.
+-     *
+-     * Card Features:
+-     *   - Displays child's name (or username as fallback)
+-     *   - Color-coded background based on status:
+-     *       • Red if status list contains 1 or 2 (alert)
+-     *       • Green otherwise (good)
+-     *   - Delete icon for unlinking the child
+-     *   - Ripple effect for touch feedback
+-     *   - Navigates to ChildDashboardFragment on click
+-     *
+-     * @param childName   Display name of the child
+-     * @param childKey    Username/key of the child in Firebase
+-     * @param statusList  List of status values for determining card color
+-     */
+-    @SuppressLint("ResourceType")
+-    private void addChildCard(String childName, String childKey, List<Integer> statusList) {
+-        // Validate fragment state
+-        if (!isAdded() || getContext() == null) return;
+-        Context ctx = requireContext();
+-
+-        // ─────────────────────────────────────────────────────────────────
+-        // Create CardView Container
+-        // ─────────────────────────────────────────────────────────────────
+-        CardView cardView = new CardView(ctx);
+-        LinearLayout.LayoutParams cardParams = new LinearLayout.LayoutParams(
+-                LinearLayout.LayoutParams.MATCH_PARENT,
+-                LinearLayout.LayoutParams.WRAP_CONTENT
+-        );
+-        cardParams.setMargins(0, 0, 0, dpToPx(16));
+-        cardView.setLayoutParams(cardParams);
+-
+-        // ─────────────────────────────────────────────────────────────────
+-        // Set Background Color Based on Status
+-        // ─────────────────────────────────────────────────────────────────
+-        if (statusList.contains(2)) {
+-            cardView.setCardBackgroundColor(ContextCompat.getColor(getContext(), R.color.alert));
+-        } else if (statusList.contains(1)) {
+-            cardView.setCardBackgroundColor(ContextCompat.getColor(getContext(), R.color.alert));
+-        } else {
+-            cardView.setCardBackgroundColor(ContextCompat.getColor(getContext(), R.color.good));
+-        }
+-
+-        cardView.setRadius(dpToPx(8));
+-        cardView.setCardElevation(0);
+-        cardView.setClickable(true);
+-        cardView.setFocusable(true);
+-
+-        // ─────────────────────────────────────────────────────────────────
+-        // Add Ripple Effect
+-        // ─────────────────────────────────────────────────────────────────
+-        TypedValue outValue = new TypedValue();
+-        if (ctx.getTheme().resolveAttribute(android.R.attr.selectableItemBackground, outValue, true)) {
+-            Drawable selectable = ContextCompat.getDrawable(ctx, outValue.resourceId);
+-            if (selectable != null) cardView.setForeground(selectable);
+-        }
+-
+-        // ─────────────────────────────────────────────────────────────────
+-        // Create Inner Layout
+-        // ─────────────────────────────────────────────────────────────────
+-        LinearLayout innerLayout = new LinearLayout(ctx);
+-        innerLayout.setOrientation(LinearLayout.HORIZONTAL);
+-        innerLayout.setLayoutParams(new FrameLayout.LayoutParams(
+-                FrameLayout.LayoutParams.MATCH_PARENT,
+-                FrameLayout.LayoutParams.WRAP_CONTENT
+-        ));
+-        innerLayout.setPadding(dpToPx(16), dpToPx(16), dpToPx(16), dpToPx(16));
+-        innerLayout.setGravity(Gravity.CENTER_VERTICAL);
+-
+-        // ─────────────────────────────────────────────────────────────────
+-        // Child Name TextView
+-        // ─────────────────────────────────────────────────────────────────
+-        TextView textView = new TextView(ctx);
+-        textView.setLayoutParams(new LinearLayout.LayoutParams(0, LinearLayout.LayoutParams.WRAP_CONTENT, 1f));
+-        textView.setText(childName);
+-        textView.setTextSize(18);
+-
+-        // ─────────────────────────────────────────────────────────────────
+-        // Delete Icon
+-        // ─────────────────────────────────────────────────────────────────
+-        ImageView deleteView = new ImageView(ctx);
+-        LinearLayout.LayoutParams imgParams = new LinearLayout.LayoutParams(dpToPx(24), dpToPx(24));
+-        imgParams.setMarginEnd(dpToPx(12));
+-        deleteView.setLayoutParams(imgParams);
+-        deleteView.setImageResource(android.R.drawable.ic_delete);
+-        deleteView.setColorFilter(ContextCompat.getColor(ctx, R.color.delete), PorterDuff.Mode.SRC_IN);
+-
+-
+-
+-        // ─────────────────────────────────────────────────────────────────
+-        // Assemble Card
+-        // ─────────────────────────────────────────────────────────────────
+-        innerLayout.addView(textView);
+-        innerLayout.addView(deleteView);
+-        cardView.addView(innerLayout);
+-
+-        // ─────────────────────────────────────────────────────────────────
+-        // Card Click Handler - Navigate to Child Dashboard
+-        // ─────────────────────────────────────────────────────────────────
+-        cardView.setOnClickListener(v -> {
+-            Bundle args = new Bundle();
+-            args.putString("childUname", childKey);
+-            args.putString("childName", childName);
+-
+-            ChildDashboardFragment childFrag = new ChildDashboardFragment();
+-            childFrag.setArguments(args);
+-            loadFragment(childFrag);
+-        });
+-
+-        // ─────────────────────────────────────────────────────────────────
+-        // Delete Icon Click Handler - Unlink Child
+-        // ─────────────────────────────────────────────────────────────────
+-        deleteView.setOnClickListener(v -> {
+-            if (!isAdded()) return;
+-
+-            new AlertDialog.Builder(requireContext())
+-                    .setTitle("Remove Child")
+-                    .setMessage("Are you sure you want to unlink " + childName + "?")
+-                    .setPositiveButton("Yes", (d, w) -> {
+-                        if (childrenRef != null) {
+-                            childrenRef.child(childKey).removeValue();
+-                            Toast.makeText(ctx, "Child removed", Toast.LENGTH_SHORT).show();
+-                            loadChildrenFromDatabase(); // Refresh view
+-                        }
+-                    })
+-                    .setNegativeButton("No", null)
+-                    .show();
+-        });
+-
+-        // ─────────────────────────────────────────────────────────────────
+-        // Add Card to Container
+-        // ─────────────────────────────────────────────────────────────────
+-        if (cardView.getParent() == null)
+-            contentContainer.addView(cardView);
+-    }
+-
+-    /**
+-     * Converts density-independent pixels (dp) to actual pixels (px).
+-     * Ensures consistent UI spacing across different screen densities.
+-     *
+-     * @param dp Value in density-independent pixels
+-     * @return   Equivalent value in pixels for the current device
+-     */
+-    private int dpToPx(int dp) {
+-        float density = getResources().getDisplayMetrics().density;
+-        return Math.round(dp * density);
+-    }
+-
+-    // ═══════════════════════════════════════════════════════════════════════
+-    // MENU HANDLING
+-    // ═══════════════════════════════════════════════════════════════════════
+-
+-    /**
+-     * Inflates the toolbar menu using MenuHelper.
+-     * Called by the Android framework when the menu is being created.
+-     *
+-     * @param menu     Menu object to be populated
+-     * @param inflater MenuInflater to use for inflating menu resources
+-     */
+-    @Override
+-    public void onCreateOptionsMenu(@NonNull Menu menu, @NonNull MenuInflater inflater) {
+-        super.onCreateOptionsMenu(menu, inflater);
+-
+-        MenuHelper.setupMenu(menu, inflater, requireContext());
+-
+-        MenuItem notifItem = menu.findItem(R.id.action_notifications);
+-        if (notifItem != null) {
+-            notificationActionView = notifItem.getActionView();
+-            if (notificationActionView != null) {
+-                notificationBadge = notificationActionView.findViewById(R.id.viewBadge);
+-
+-                notificationActionView.setOnClickListener(v -> onOptionsItemSelected(notifItem));
+-            }
+-        }
+-        checkAlertsAndUpdateBadge();
+-    }
+-    private void updateNotificationBadge(boolean hasAlerts) {
+-        if (notificationBadge == null) return;
+-        notificationBadge.setVisibility(hasAlerts ? View.VISIBLE : View.GONE);
+-    }
+-
+-    private void checkAlertsAndUpdateBadge() {
+-        if (db == null) {
+-            db = FirebaseDatabase.getInstance("https://smart-air-group2-default-rtdb.firebaseio.com/");
+-        }
+-
+-        DatabaseReference parentChildrenRef = db.getReference("categories/users/parents")
+-                .child(uname)
+-                .child("children");
+-
+-        parentChildrenRef.addListenerForSingleValueEvent(new ValueEventListener() {
+-            @Override
+-            public void onDataChange(@NonNull DataSnapshot snapshot) {
+-                if (!snapshot.exists() || snapshot.getChildrenCount() == 0) {
+-                    updateNotificationBadge(false);
+-                    return;
+-                }
+-
+-                int totalChildren = (int) snapshot.getChildrenCount();
+-                final int[] finished = {0};
+-                final boolean[] hasAlerts = {false};
+-
+-                for (DataSnapshot childSnap : snapshot.getChildren()) {
+-                    String childUname = childSnap.getValue(String.class);
+-
+-                    if (childUname == null || childUname.trim().isEmpty()) {
+-                        if (++finished[0] == totalChildren && !hasAlerts[0]) {
+-                            updateNotificationBadge(false);
+-                        }
+-                        continue;
+-                    }
+-
+-                    DatabaseReference statusRef = db.getReference("categories/users/children")
+-                            .child(childUname)
+-                            .child("status");
+-
+-                    statusRef.addListenerForSingleValueEvent(new ValueEventListener() {
+-                        @Override
+-                        public void onDataChange(@NonNull DataSnapshot statusSnap) {
+-                            if (!hasAlerts[0]) {
+-                                if (statusHasAlert(statusSnap)) {
+-                                    hasAlerts[0] = true;
+-                                    updateNotificationBadge(true);
+-                                }
+-                            }
+-
+-                            if (++finished[0] == totalChildren && !hasAlerts[0]) {
+-                                updateNotificationBadge(false);
+-                            }
+-                        }
+-
+-                        @Override
+-                        public void onCancelled(@NonNull DatabaseError error) {
+-                            if (++finished[0] == totalChildren && !hasAlerts[0]) {
+-                                updateNotificationBadge(false);
+-                            }
+-                        }
+-                    });
+-                }
+-            }
+-
+-            @Override
+-            public void onCancelled(@NonNull DatabaseError error) {
+-                updateNotificationBadge(false);
+-            }
+-        });
+-    }
+-
+-
+-    private boolean statusHasAlert(DataSnapshot statusSnap) {
+-        if (statusSnap == null || !statusSnap.exists()) {
+-            return false;
+-        }
+-
+-        // PEF red zone
+-        Integer pefZone = statusSnap.child("pefZone").getValue(Integer.class);
+-        if (pefZone != null && pefZone == 2) {
+-            return true;
+-        }
+-
+-        DataSnapshot invSnap = statusSnap.child("inventory");
+-        if (invSnap != null && invSnap.exists()) {
+-            for (DataSnapshot medSnap : invSnap.getChildren()) {
+-                for (DataSnapshot snapIndex : medSnap.getChildren()) {
+-                    Integer code = snapIndex.getValue(Integer.class);
+-                    if (code != null && (code == 1 || code == 2)) {
+-                        return true;
+-                    }
+-                }
+-            }
+-        }
+-
+-        return false;
+-    }
+-
+-
+-
+-    /**
+-         * Handles menu item selection events.
+-         * Delegates to MenuHelper for consistent menu behavior across the app.
+-         *
+-         * @param item The menu item that was selected
+-         * @return     true if the event was handled, false otherwise
+-         */
+-    @Override
+-    public boolean onOptionsItemSelected(@NonNull MenuItem item) {
+-        if (MenuHelper.handleMenuSelection(item, this)) {
+-            return true;
+-        }
+-        return super.onOptionsItemSelected(item);
+-    }
+-
+-    // ═══════════════════════════════════════════════════════════════════════
+-    // FRAGMENT NAVIGATION
+-    // ═══════════════════════════════════════════════════════════════════════
+-
+     /**
+      * Navigates to another fragment within the same activity.
+      * Adds the transaction to the back stack for back button support.
+@@ -797,4 +127,22 @@
+         transaction.addToBackStack(null);
+         transaction.commit();
+     }
++
++    // ───────────────────────────────
++    // MENU HANDLING
++    // ───────────────────────────────
++    @Override
++    public void onCreateOptionsMenu(@NonNull Menu menu, @NonNull MenuInflater inflater) {
++        MenuHelper.setupMenu(menu, inflater, requireContext());
++        MenuHelper.setupNotification(this, menu, inflater);
++
++        super.onCreateOptionsMenu(menu, inflater);
++
++
++    }
++
++    @Override
++    public boolean onOptionsItemSelected(@NonNull MenuItem item) {
++        return MenuHelper.handleMenuSelection(item, this) || super.onOptionsItemSelected(item);
++    }
+ }
+Index: app/src/main/java/com/example/SmartAirGroup2/MenuHelper.java
+IDEA additional info:
+Subsystem: com.intellij.openapi.diff.impl.patch.BaseRevisionTextPatchEP
+<+>package com.example.SmartAirGroup2;\r\n\r\nimport android.content.Context;\r\nimport android.content.Intent;\r\nimport android.content.SharedPreferences;\r\nimport android.view.Gravity;\r\nimport android.content.SharedPreferences;\r\nimport android.os.Bundle;\r\nimport android.view.Menu;\r\nimport android.view.MenuInflater;\r\nimport android.view.MenuItem;\r\nimport android.view.View;\r\nimport android.widget.PopupMenu;\r\nimport android.widget.Toast;\r\n\r\nimport androidx.annotation.NonNull;\r\nimport androidx.appcompat.app.AlertDialog;\r\nimport androidx.appcompat.widget.Toolbar;\r\nimport androidx.fragment.app.Fragment;\r\nimport com.example.SmartAirGroup2.AlertCenterFragment;\r\n\r\nimport com.example.SmartAirGroup2.auth.login.LoginFragment;\r\n\r\npublic class MenuHelper {\r\n    public static void setupMenu(@NonNull Menu menu, @NonNull MenuInflater inflater, @NonNull Context context) {\r\n        menu.clear();\r\n        inflater.inflate(R.menu.menu, menu);\r\n\r\n        // Tint icons white for visibility\r\n        for (int i = 0; i < menu.size(); i++) {\r\n            MenuItem item = menu.getItem(i);\r\n            if (item.getIcon() != null) {\r\n                item.getIcon().setTint(context.getResources().getColor(android.R.color.white));\r\n            }\r\n        }\r\n    }\r\n\r\n    // Handle menu item clicks\r\n    public static boolean handleMenuSelection(@NonNull MenuItem item, @NonNull Fragment fragment) {\r\n\r\n        int id = item.getItemId();\r\n        if (id == R.id.action_notifications) {\r\n            Context ctx = fragment.requireContext();\r\n            SharedPreferences prefs =\r\n                    ctx.getSharedPreferences(\"APP_DATA\", Context.MODE_PRIVATE);\r\n            String parentUname = prefs.getString(\"parentUname\", null);\r\n\r\n            AlertCenterFragment alertFrag = new AlertCenterFragment();\r\n            if (parentUname != null && !parentUname.trim().isEmpty()) {\r\n                Bundle args = new Bundle();\r\n                args.putString(\"parentUname\", parentUname);\r\n                alertFrag.setArguments(args);\r\n            }\r\n\r\n            fragment.requireActivity()\r\n                    .getSupportFragmentManager()\r\n                    .beginTransaction()\r\n                    .replace(R.id.fragment_container, alertFrag)\r\n                    .addToBackStack(null)\r\n                    .commit();\r\n            return true;\r\n        } else if (id == R.id.action_settings) {\r\n            View settingsIconView = findMenuItemView(fragment, item);\r\n            showSettingsPopupMenu(fragment, settingsIconView);\r\n            return true;\r\n        }\r\n        return false;\r\n    }\r\n\r\n    private static View findMenuItemView(@NonNull Fragment fragment, @NonNull MenuItem item) {\r\n\r\n        Toolbar toolbar = fragment.requireActivity().findViewById(R.id.toolbar);\r\n\r\n        if (toolbar != null) {\r\n            if (item.getActionView() != null) {\r\n                return item.getActionView();\r\n            }\r\n\r\n            return toolbar;\r\n        }\r\n\r\n        // If we can't find the Toolbar, return the Fragment's root view as a fallback anchor\r\n        return fragment.getView();\r\n    }\r\n\r\n    private static void showSettingsPopupMenu(@NonNull Fragment fragment, @NonNull View anchorView) {\r\n        // 1. Create the PopupMenu, anchored to the settings icon View\r\n        PopupMenu popup = new PopupMenu(fragment.requireContext(), anchorView, Gravity.END);\r\n\r\n        // 2. Inflate the menu XML we created\r\n        popup.getMenuInflater().inflate(R.menu.dropdown, popup.getMenu());\r\n\r\n        // 3. Set the listener for when an item in the popup is clicked\r\n        popup.setOnMenuItemClickListener(new PopupMenu.OnMenuItemClickListener() {\r\n            @Override\r\n            public boolean onMenuItemClick(MenuItem item) {\r\n                int itemId = item.getItemId();\r\n\r\n                if (itemId == R.id.action_logout) {\r\n                    new AlertDialog.Builder(fragment.requireContext())\r\n                            .setTitle(\"Logout\")\r\n                            .setMessage(\"Are you sure you want to logout?\")\r\n                            .setPositiveButton(\"Yes\", (d, w) -> {\r\n                                logoutUser(fragment.requireContext());\r\n                            })\r\n                            .setNegativeButton(\"No\", null)\r\n                            .show();\r\n\r\n                    return true;\r\n                } else if (itemId == R.id.action_set_privacy) {\r\n                    // Navigate to a PrivacySettingsFragment\r\n                    return true;\r\n                } else if (itemId == R.id.action_more) {\r\n                    // Navigate to a MoreSettingsFragment\r\n                    return true;\r\n                }\r\n                return false;\r\n            }\r\n        });\r\n\r\n        // 4. Show the menu\r\n        popup.show();\r\n    }\r\n\r\n    public static void logoutUser(@NonNull Context context) {\r\n\r\n        SessionTimeoutManager.getInstance(context).stopTimer();\r\n\r\n        // 1. Clear SharedPreferences\r\n        SharedPreferences prefs = context.getSharedPreferences(\"APP_DATA\", Context.MODE_PRIVATE);\r\n        SharedPreferences.Editor editor = prefs.edit();\r\n\r\n        // Clear everything\r\n        editor.clear();\r\n        editor.apply();\r\n\r\n        // 3. Navigate to Login Activity\r\n        Intent intent = new Intent(context, LoginFragment.class);\r\n\r\n        // Set the flags to clear the activity stack!\r\n        intent.setFlags(Intent.FLAG_ACTIVITY_NEW_TASK | Intent.FLAG_ACTIVITY_CLEAR_TASK);\r\n\r\n        // Start the Login Activity\r\n        context.startActivity(intent);\r\n    }\r\n}\r\n
+Subsystem: com.intellij.openapi.diff.impl.patch.CharsetEP
+<+>UTF-8
+===================================================================
+diff --git a/app/src/main/java/com/example/SmartAirGroup2/MenuHelper.java b/app/src/main/java/com/example/SmartAirGroup2/MenuHelper.java
+--- a/app/src/main/java/com/example/SmartAirGroup2/MenuHelper.java	(revision d673f0b962688344b24fe28ee01a2d21cbe4a845)
++++ b/app/src/main/java/com/example/SmartAirGroup2/MenuHelper.java	(date 1764296194633)
+@@ -19,7 +19,13 @@
+ import androidx.fragment.app.Fragment;
+ import com.example.SmartAirGroup2.AlertCenterFragment;
+ 
++import com.example.SmartAirGroup2.auth.data.repo.FirebaseRtdbAuthRepository;
+ import com.example.SmartAirGroup2.auth.login.LoginFragment;
++import com.google.firebase.database.DataSnapshot;
++import com.google.firebase.database.DatabaseError;
++import com.google.firebase.database.DatabaseReference;
++import com.google.firebase.database.FirebaseDatabase;
++import com.google.firebase.database.ValueEventListener;
+ 
+ public class MenuHelper {
+     public static void setupMenu(@NonNull Menu menu, @NonNull MenuInflater inflater, @NonNull Context context) {
+@@ -143,4 +149,123 @@
+         // Start the Login Activity
+         context.startActivity(intent);
+     }
++
++    public static void setupNotification(@NonNull Fragment fragment, @NonNull Menu menu, @NonNull MenuInflater inflater){
++        setupMenu(menu,inflater,fragment.requireContext());
++
++        MenuItem bellItem = menu.findItem(R.id.action_notifications);
++        if(bellItem == null){
++            return;
++        }
++        View actionView = bellItem.getActionView();
++        if (actionView == null){
++            return;
++        }
++
++        View badgeView = actionView.findViewById(R.id.viewBadge);
++
++        actionView.setOnClickListener(v -> fragment.onOptionsItemSelected(bellItem));
++        updateNotificationBadge(fragment.requireContext(), badgeView);
++    }
++
++    private static void updateNotificationBadge(Context ctx, View badgeView){
++        if(badgeView == null){
++            return;
++        }
++
++        badgeView.setVisibility(View.GONE);
++
++        SharedPreferences prefs = ctx.getSharedPreferences("APP_DATA", Context.MODE_PRIVATE);
++        String parentUname = prefs.getString("parentUname", null);
++
++        if(parentUname == null|| parentUname.trim().isEmpty()){
++            return;
++        }
++
++        FirebaseDatabase db = FirebaseDatabase.getInstance("https://smart-air-group2-default-rtdb.firebaseio.com/");
++
++        DatabaseReference childRef = db.getReference("categories/users/parents")
++                .child(parentUname)
++                .child("children");
++
++        childRef.addListenerForSingleValueEvent(new ValueEventListener() {
++            @Override
++            public void onDataChange(@NonNull DataSnapshot snapshot) {
++                if(!snapshot.exists() || snapshot.getChildrenCount()==0){
++                    return;
++                }
++                int childrenCount = (int)snapshot.getChildrenCount();
++                final int[] finished = {0};
++                final boolean[] hasAlerts = {false};
++                for (DataSnapshot childSnap : snapshot.getChildren()) {
++                    String childUname = childSnap.getValue(String.class);
++
++                    if (childUname == null || childUname.trim().isEmpty()) {
++                        if (++finished[0] == childrenCount && !hasAlerts[0]) {
++                            badgeView.setVisibility(View.GONE);
++                        }
++                        continue;
++                    }
++
++                    DatabaseReference statusRef = db.getReference("categories/users/children")
++                            .child(childUname)
++                            .child("status");
++
++                    statusRef.addListenerForSingleValueEvent(new ValueEventListener() {
++                        @Override
++                        public void onDataChange(@NonNull DataSnapshot statusSnap) {
++                            if (!hasAlerts[0] && statusHasAlert(statusSnap)) {
++                                hasAlerts[0] = true;
++                                badgeView.setVisibility(View.VISIBLE);   // find alert: show red badge
++                            }
++
++                            if (++finished[0] == childrenCount && !hasAlerts[0]) {
++                                badgeView.setVisibility(View.GONE);      // no alert: do not show red badge
++                            }
++                        }
++
++                        @Override
++                        public void onCancelled(@NonNull DatabaseError error) {
++                            if (++finished[0] == childrenCount && !hasAlerts[0]) {
++                                badgeView.setVisibility(View.GONE);
++                            }
++                        }
++                    });
++                }
++            }
++
++            @Override
++            public void onCancelled(@NonNull DatabaseError error) {
++                badgeView.setVisibility(View.GONE);
++            }
++        });
++    }
++
++    private static boolean statusHasAlert(DataSnapshot statusSnap) {
++        if (statusSnap == null || !statusSnap.exists()) {
++            return false;
++        }
++
++        // 1. pefZone == 2 : red zone
++        Integer pefZone = statusSnap.child("pefZone").getValue(Integer.class);
++        if (pefZone != null && pefZone == 2) {
++            return true;
++        }
++
++        DataSnapshot invSnap = statusSnap.child("inventory");
++        if (invSnap != null && invSnap.exists()) {
++            for (DataSnapshot medSnap : invSnap.getChildren()) {
++                for (DataSnapshot snapIndex : medSnap.getChildren()) {
++                    Integer code = snapIndex.getValue(Integer.class);
++                    if (code != null && (code == 1 || code == 2)) {
++                        return true;
++                    }
++                }
++            }
++        }
++
++        return false;
++    }
++
++
+ }
+Index: app/src/main/java/com/example/SmartAirGroup2/MainActivity.java
+IDEA additional info:
+Subsystem: com.intellij.openapi.diff.impl.patch.BaseRevisionTextPatchEP
+<+>package com.example.SmartAirGroup2;\r\n\r\nimport android.content.SharedPreferences;\r\nimport android.os.Bundle;\r\nimport android.view.WindowManager;\r\nimport android.widget.Toast;\r\n\r\nimport androidx.appcompat.app.AppCompatActivity;\r\nimport androidx.fragment.app.Fragment;\r\nimport androidx.fragment.app.FragmentTransaction;\r\n\r\nimport com.google.firebase.database.DatabaseReference;\r\nimport com.google.firebase.database.FirebaseDatabase;\r\nimport com.example.SmartAirGroup2.AlertCenterFragment;\r\n\r\n\r\npublic class MainActivity extends AppCompatActivity {\r\n\r\n    FirebaseDatabase db;\r\n\r\n    @Override\r\n    protected void onCreate(Bundle savedInstanceState) {\r\n\r\n        getWindow().setFlags(WindowManager.LayoutParams.FLAG_TRANSLUCENT_STATUS, WindowManager.LayoutParams.FLAG_TRANSLUCENT_STATUS);\r\n    \r\n        super.onCreate(savedInstanceState);\r\n        setContentView(R.layout.activity_main);\r\n\r\n        if (savedInstanceState == null) {\r\n            getSupportFragmentManager()\r\n                    .beginTransaction()\r\n                    .replace(R.id.fragment_container,\r\n                            new com.example.SmartAirGroup2.auth.login.LoginFragment())\r\n                    .commit();\r\n        }\r\n\r\n    }\r\n\r\n    private void loadFragment(Fragment fragment) {\r\n        FragmentTransaction transaction = getSupportFragmentManager().beginTransaction();\r\n        transaction.replace(R.id.fragment_container, fragment);\r\n        transaction.addToBackStack(null);\r\n        transaction.commit();\r\n    }\r\n\r\n    @Override\r\n    public void onBackPressed() {\r\n        if (getSupportFragmentManager().getBackStackEntryCount() > 1) {\r\n            getSupportFragmentManager().popBackStack();\r\n        } else {\r\n            super.onBackPressed();\r\n        }\r\n    }\r\n}
+Subsystem: com.intellij.openapi.diff.impl.patch.CharsetEP
+<+>UTF-8
+===================================================================
+diff --git a/app/src/main/java/com/example/SmartAirGroup2/MainActivity.java b/app/src/main/java/com/example/SmartAirGroup2/MainActivity.java
+--- a/app/src/main/java/com/example/SmartAirGroup2/MainActivity.java	(revision d673f0b962688344b24fe28ee01a2d21cbe4a845)
++++ b/app/src/main/java/com/example/SmartAirGroup2/MainActivity.java	(date 1764296566430)
+@@ -22,7 +22,7 @@
+     protected void onCreate(Bundle savedInstanceState) {
+ 
+         getWindow().setFlags(WindowManager.LayoutParams.FLAG_TRANSLUCENT_STATUS, WindowManager.LayoutParams.FLAG_TRANSLUCENT_STATUS);
+-    
++
+         super.onCreate(savedInstanceState);
+         setContentView(R.layout.activity_main);
+ 
+@@ -33,6 +33,13 @@
+                             new com.example.SmartAirGroup2.auth.login.LoginFragment())
+                     .commit();
+         }
++//        if (savedInstanceState == null) {
++//            getSupportFragmentManager()
++//                    .beginTransaction()
++//                    .replace(R.id.fragment_container,
++//                            new ChildDashboardDemo())
++//                    .commit();
++//        }
+ 
+     }
+ 
+Index: .idea/shelf/Uncommitted_changes_before_Checkout_at_2025_11_20_19_12__Changes_.xml
+IDEA additional info:
+Subsystem: com.intellij.openapi.diff.impl.patch.CharsetEP
+<+>UTF-8
+===================================================================
+diff --git a/.idea/shelf/Uncommitted_changes_before_Checkout_at_2025_11_20_19_12__Changes_.xml b/.idea/shelf/Uncommitted_changes_before_Checkout_at_2025_11_20_19_12__Changes_.xml
+deleted file mode 100644
+--- a/.idea/shelf/Uncommitted_changes_before_Checkout_at_2025_11_20_19_12__Changes_.xml	(revision d673f0b962688344b24fe28ee01a2d21cbe4a845)
++++ /dev/null	(revision d673f0b962688344b24fe28ee01a2d21cbe4a845)
+@@ -1,4 +0,0 @@
+-<changelist name="Uncommitted_changes_before_Checkout_at_2025_11_20_19_12_[Changes]" date="1763683956065" recycled="true" deleted="true">
+-  <option name="PATH" value="$PROJECT_DIR$/.idea/shelf/Uncommitted_changes_before_Checkout_at_2025_11_20_19_12_[Changes]/shelved.patch" />
+-  <option name="DESCRIPTION" value="Uncommitted changes before Checkout at 2025/11/20 19:12 [Changes]" />
+-</changelist>
+\ No newline at end of file
+Index: app/src/main/java/com/example/SmartAirGroup2/ParentManageChildrenFragment.java
+IDEA additional info:
+Subsystem: com.intellij.openapi.diff.impl.patch.CharsetEP
+<+>UTF-8
+===================================================================
+diff --git a/app/src/main/java/com/example/SmartAirGroup2/ParentManageChildrenFragment.java b/app/src/main/java/com/example/SmartAirGroup2/ParentManageChildrenFragment.java
+new file mode 100644
+--- /dev/null	(date 1764296574237)
++++ b/app/src/main/java/com/example/SmartAirGroup2/ParentManageChildrenFragment.java	(date 1764296574237)
+@@ -0,0 +1,723 @@
++package com.example.SmartAirGroup2;
++
++import android.annotation.SuppressLint;
++import android.content.Context;
++import android.content.SharedPreferences;
++import android.graphics.PorterDuff;
++import android.graphics.drawable.Drawable;
++import android.os.Bundle;
++import android.util.Log;
++import android.util.TypedValue;
++import android.view.Gravity;
++import android.view.LayoutInflater;
++import android.view.Menu;
++import android.view.MenuInflater;
++import android.view.MenuItem;
++import android.view.View;
++import android.view.ViewGroup;
++import android.widget.Button;
++import android.widget.FrameLayout;
++import android.widget.ImageView;
++import android.widget.LinearLayout;
++import android.widget.TextView;
++import android.widget.Toast;
++
++import androidx.annotation.NonNull;
++import androidx.annotation.Nullable;
++import androidx.appcompat.app.AlertDialog;
++import androidx.appcompat.app.AppCompatActivity;
++import androidx.appcompat.widget.Toolbar;
++import androidx.cardview.widget.CardView;
++import androidx.core.content.ContextCompat;
++import androidx.fragment.app.Fragment;
++import androidx.fragment.app.FragmentTransaction;
++
++import com.google.firebase.database.DataSnapshot;
++import com.google.firebase.database.DatabaseError;
++import com.google.firebase.database.DatabaseReference;
++import com.google.firebase.database.FirebaseDatabase;
++import com.google.firebase.database.ValueEventListener;
++
++import java.util.ArrayList;
++import java.util.List;
++
++/**
++ * ParentDashboardFragment
++ * -----------------------
++ * This fragment serves as the primary dashboard for parent users within the Smart Air application.
++ * It provides an overview of all linked child accounts and enables parents to perform account
++ * management actions.
++ *
++ * Core User Actions:
++ *   • View all children currently linked to their account.
++ *   • Add a new child or link an existing child account.
++ *   • Remove/unlink a child account when needed.
++ *   • Navigate to individual child dashboards for detailed monitoring.
++ *
++ * UI Behavior:
++ *   - The fragment dynamically generates CardViews representing each linked child.
++ *   - Each card displays:
++ *       • Child name (or username if name unavailable)
++ *       • Status indicator (color-coded background)
++ *       • A delete icon to allow unlinking
++ *   - If no children are linked, only the "Add Child" card is displayed.
++ *   - Cards use ripple effects for modern touch feedback.
++ *
++ * Firebase Structure (Relevant Paths):
++ * └── categories/
++ *     └── users/
++ *         ├── parents/{parentUname}/children/{childUname: String}
++ *         └── children/{childUname}/
++ *             ├── name: String
++ *             ├── uname: String
++ *             └── status/{individual status: Integer}
++ *
++ * Status Logic:
++ *   - The background color of each child card reflects their status history:
++ *       • Red (alert color) → Contains alert values (1 or 2 detected)
++ *       • Green (good color) → No concerning status entries
++ *   - Status values are retrieved from the child's status history in Firebase.
++ *
++ * Fragment Lifecycle Responsibilities:
++ *   ✔ Initialize toolbar and UI components
++ *   ✔ Fetch Firebase data for linked children
++ *   ✔ Listen for child database changes
++ *   ✔ Dynamically create UI elements based on data
++ *   ✔ Persist login metadata using SharedPreferences
++ *   ✔ Handle user interactions (navigation, deletion, linking)
++ *
++ * Navigation:
++ *   - Tapping a child card navigates to ChildDashboardFragment with child details.
++ *   - Tapping "Add Child" opens a dialog prompting:
++ *        → "Yes": Navigate to LinkChildFragment (for existing accounts)
++ *        → "No" : Navigate to AddChildFragment (for new accounts)
++ *
++ * Dependencies:
++ *   • Firebase Realtime Database for user and relationship data.
++ *   • SharedPreferences for user type and logged-in identity persistence.
++ *   • MenuHelper for toolbar menu operations.
++ *   • User model class for child data representation.
++ *
++ * Author: Kevin Li
++ * Last Updated: November 18 2025
++ */
++public class ParentManageChildrenFragment extends Fragment {
++
++    // ═══════════════════════════════════════════════════════════════════════
++    // UI COMPONENTS
++    // ═══════════════════════════════════════════════════════════════════════
++
++    /**
++     * Toolbar component displayed at the top of the fragment.
++     * Provides navigation and menu actions for the parent user.
++     */
++    private Toolbar toolbar;
++
++    /**
++     * CardView for the "Add Child" button.
++     * Always displayed at the bottom of the children list.
++     */
++    private CardView cardAddChild;
++
++    /**
++     * Container that holds all dynamically generated child cards.
++     * Children are added/removed from this layout based on Firebase data.
++     */
++    private LinearLayout contentContainer;
++
++    // ═══════════════════════════════════════════════════════════════════════
++    // FIREBASE REFERENCES
++    // ═══════════════════════════════════════════════════════════════════════
++
++    /**
++     * Firebase Database instance pointing to the Smart Air database.
++     * Used to initialize all database references.
++     */
++    private FirebaseDatabase db;
++
++    /**
++     * Database reference to the parent's children node.
++     * Path: categories/users/parents/{uname}/children
++     * Contains all child usernames linked to this parent.
++     */
++    private DatabaseReference childrenRef;
++
++    // ═══════════════════════════════════════════════════════════════════════
++    // USER IDENTITY
++    // ═══════════════════════════════════════════════════════════════════════
++
++    /**
++     * Username of the currently logged-in parent.
++     * TODO: Replace hardcoded value with dynamic authentication.
++     */
++    private String uname;
++
++    /**
++     * User type identifier for the current user.
++     * Always "parent" for this fragment.
++     */
++    private String type;
++
++    private boolean safetyAlert = false;
++
++    private View notificationActionView;
++    private View notificationBadge;
++
++
++    // ═══════════════════════════════════════════════════════════════════════
++    // LIFECYCLE METHODS
++    // ═══════════════════════════════════════════════════════════════════════
++
++
++
++    /**
++     * Creates and initializes the view hierarchy for this fragment.
++     *
++     * Responsibilities:
++     *   - Inflates the parent dashboard layout
++     *   - Sets up the toolbar with menu support
++     *   - Initializes Firebase database references
++     *   - Loads children data from Firebase
++     *   - Persists user identity to SharedPreferences
++     *   - Configures "Add Child" button click handler
++     *
++     * @param inflater           LayoutInflater to inflate the view
++     * @param container          Parent view that this fragment's UI will be attached to
++     * @param savedInstanceState Previously saved state, if any
++     * @return                   The root view for this fragment
++     */
++    @Nullable
++    @Override
++    public View onCreateView(@NonNull LayoutInflater inflater, @Nullable ViewGroup container, @Nullable Bundle savedInstanceState) {
++        View view = inflater.inflate(R.layout.fragment_parent_manage_children, container, false);
++
++        // Get SharedPreferences
++        SharedPreferences prefs = requireActivity().getSharedPreferences("user_prefs", Context.MODE_PRIVATE);
++
++        // Get the current logged-in user's unique identifier
++        uname = CurrentUser.get().getUname();  // or email, or a unique ID
++        String email = CurrentUser.get().getEmail();
++        type = CurrentUser.get().getType();
++
++
++        // Check if this user has accepted terms
++        boolean hasAcceptedTerms = prefs.getBoolean("accepted_terms_" + type + uname + email, false);
++
++        if (!hasAcceptedTerms) {
++            // Show the TermsDialogFragment
++            TermsDialogFragment dialog = new TermsDialogFragment();
++            dialog.show(getParentFragmentManager(), "terms_dialog");
++        }
++
++
++        // Toolbar setup
++        toolbar = view.findViewById(R.id.toolbar);
++        ((AppCompatActivity) getActivity()).setSupportActionBar(toolbar);
++        setHasOptionsMenu(true);
++
++        ((AppCompatActivity) getActivity()).getSupportActionBar().setDisplayHomeAsUpEnabled(true);
++        toolbar.setNavigationOnClickListener(v -> getParentFragmentManager().popBackStack());
++
++        // ─────────────────────────────────────────────────────────────────
++        // UI Component Initialization
++        // ─────────────────────────────────────────────────────────────────
++        contentContainer = view.findViewById(R.id.contentContainer);
++        cardAddChild = view.findViewById(R.id.cardAddChild);
++
++        // ─────────────────────────────────────────────────────────────────
++        // Firebase Initialization
++        // ─────────────────────────────────────────────────────────────────
++        db = FirebaseDatabase.getInstance("https://smart-air-group2-default-rtdb.firebaseio.com/");
++        childrenRef = db.getReference("categories/users/parents/" + uname + "/children");
++
++
++        // ─────────────────────────────────────────────────────────────────
++        // Load Children Data
++        // ─────────────────────────────────────────────────────────────────
++        loadChildrenFromDatabase();
++
++
++
++
++        // ─────────────────────────────────────────────────────────────────
++        // Add Child Button Handler
++        // ─────────────────────────────────────────────────────────────────
++        // Shows a dialog asking if the child already has an account:
++        //   - "Yes" → Navigate to LinkChildFragment
++        //   - "No"  → Navigate to AddChildFragment
++        cardAddChild.setOnClickListener(v -> {
++            new AlertDialog.Builder(requireContext())
++                    .setTitle("Confirm Action")
++                    .setMessage("Does your child already have an account?")
++                    .setPositiveButton("Yes", (dialog, which) -> {
++                        // Navigate to link existing child
++                        LinkChildFragment linkFrag = new LinkChildFragment();
++                        Bundle args = new Bundle();
++                        args.putString("parentUname", uname);
++                        linkFrag.setArguments(args);
++                        loadFragment(linkFrag);
++                    })
++                    .setNegativeButton("No", (dialog, which) -> {
++                        // Navigate to create new child
++                        AddChildFragment addFrag = new AddChildFragment();
++                        Bundle args = new Bundle();
++                        args.putString("parentUname", uname);
++                        addFrag.setArguments(args);
++                        loadFragment(addFrag);
++                        dialog.dismiss();
++                    })
++                    .show();
++        });
++
++        return view;
++    }
++
++
++    // ═══════════════════════════════════════════════════════════════════════
++    // FIREBASE DATA LOADING
++    // ═══════════════════════════════════════════════════════════════════════
++
++    /**
++     * Loads all children linked to the current parent from Firebase.
++     *
++     * Process:
++     *   1. Queries the parent's children node for all linked usernames
++     *   2. For each child username:
++     *      a. Fetches child details (name, username)
++     *      b. Fetches child status history
++     *      c. Creates a CardView with appropriate color coding
++     *   3. Ensures "Add Child" card is added after all children load
++     *   4. Displays toast if no children are found
++     *
++     * Color Coding:
++     *   - Red (alert) if status contains 1 or 2
++     *   - Green (good) otherwise
++     *
++     * Threading:
++     *   - Uses Firebase's asynchronous listeners
++     *   - Tracks completion count to ensure "Add Child" appears last
++     */
++    private void loadChildrenFromDatabase() {
++
++        childrenRef.addListenerForSingleValueEvent(new ValueEventListener() {
++            @Override
++            public void onDataChange(@NonNull DataSnapshot snapshot) {
++                // Validate fragment and context availability
++                if (contentContainer == null || getContext() == null) return;
++
++                // Clear existing views
++                contentContainer.removeAllViews();
++                int totalChildren = (int) snapshot.getChildrenCount();
++
++                // Handle case with no children
++                if (totalChildren == 0) {
++                    contentContainer.addView(cardAddChild);
++                    Toast.makeText(getContext(), "No children linked yet", Toast.LENGTH_SHORT).show();
++                    return;
++                }
++
++                // Track loading progress to ensure "Add Child" button appears last
++                final int[] loadedChildren = {0};
++                final int[] completedStatusLoads = {0};
++
++                // Iterate through each child username
++                for (DataSnapshot childSnapshot : snapshot.getChildren()) {
++                    String childUname = childSnapshot.getValue(String.class);
++
++                    // Skip invalid entries
++                    if (childUname == null || childUname.isEmpty()) {
++                        loadedChildren[0]++;
++                        completedStatusLoads[0]++;
++                        if (completedStatusLoads[0] == totalChildren)
++                            contentContainer.addView(cardAddChild);
++                        continue;
++                    }
++
++                    // Reference to child's data node
++                    DatabaseReference childRef = FirebaseDatabase.getInstance()
++                            .getReference("categories/users/children")
++                            .child(childUname);
++
++                    // Fetch child details
++                    childRef.addListenerForSingleValueEvent(new ValueEventListener() {
++                        @Override
++                        public void onDataChange(@NonNull DataSnapshot childData) {
++                            if (childData.exists()) {
++                                User child = childData.getValue(User.class);
++                                if (child != null) {
++                                    // Determine display name (prefer full name over username)
++                                    String displayName = (child.getName() != null && !child.getName().isEmpty())
++                                            ? child.getName()
++                                            : child.getUname();
++
++                                    // Fetch status history for color coding
++                                    DatabaseReference statusRef = FirebaseDatabase.getInstance()
++                                            .getReference("categories/users/children")
++                                            .child(child.getUname())
++                                            .child("status");
++
++                                    statusRef.addListenerForSingleValueEvent(new ValueEventListener() {
++                                        @Override
++                                        public void onDataChange(@NonNull DataSnapshot statusSnap) {
++
++//                                            Integer pefZone = statusSnap.child("pefZone").getValue(Integer.class);
++//                                            if (!safetyAlert && pefZone != null && pefZone == 2) {
++//                                                safetyAlert = true;
++//                                                showSafetyAlertDialog(child.getUname(), displayName);
++//                                            }
++
++                                            // Parse status values from Firebase
++                                            List<Integer> statusList = new ArrayList<>();
++
++                                            if (statusSnap.exists()) {
++                                                extractStatusValues(statusSnap, statusList);
++                                            }
++
++                                            // Create child card with status-based color
++                                            addChildCard(displayName, child.getUname(), statusList);
++
++                                            // Check if all children loaded
++                                            completedStatusLoads[0]++;
++                                            if (completedStatusLoads[0] == totalChildren)
++                                                contentContainer.addView(cardAddChild);
++                                        }
++
++                                        @Override
++                                        public void onCancelled(@NonNull DatabaseError error) {
++                                            // Show card with default color on error
++                                            addChildCard(displayName, child.getUname(), new ArrayList<>());
++
++                                            completedStatusLoads[0]++;
++                                            if (completedStatusLoads[0] == totalChildren)
++                                                contentContainer.addView(cardAddChild);
++                                        }
++                                    });
++                                } else {
++                                    // Child data is null
++                                    completedStatusLoads[0]++;
++                                    if (completedStatusLoads[0] == totalChildren)
++                                        contentContainer.addView(cardAddChild);
++                                }
++                            } else {
++                                // Child doesn't exist in database
++                                completedStatusLoads[0]++;
++                                if (completedStatusLoads[0] == totalChildren)
++                                    contentContainer.addView(cardAddChild);
++                            }
++
++                            loadedChildren[0]++;
++                        }
++
++                        @Override
++                        public void onCancelled(@NonNull DatabaseError error) {
++                            loadedChildren[0]++;
++                            completedStatusLoads[0]++;
++                            if (completedStatusLoads[0] == totalChildren)
++                                contentContainer.addView(cardAddChild);
++                        }
++                    });
++                }
++            }
++
++            @Override
++            public void onCancelled(@NonNull DatabaseError error) {
++                Log.e("FIREBASE", "Error: " + error.getMessage());
++            }
++        });
++    }
++
++    /*
++    This helper method is used the get all the status code
++     */
++    private void extractStatusValues(DataSnapshot snap, List<Integer> result) {
++        for (DataSnapshot child : snap.getChildren()) {
++            Object val = child.getValue();
++
++            // Case 1: It's a direct integer
++            if (val instanceof Long || val instanceof Integer) {
++                result.add(((Number) val).intValue());
++            }
++
++            // Case 2: Nested object → go deeper
++            else if (child.hasChildren()) {
++                extractStatusValues(child, result);
++            }
++        }
++    }
++    private void showSafetyAlertDialog(String childUname, String childDisplayName) {
++        if (!isAdded() || getContext() == null) return;
++
++        new AlertDialog.Builder(requireContext())
++                .setTitle("Safety Alert")
++                .setMessage("Your child is in the red PEF zone. Please check their asthma status.")
++                .setPositiveButton("View alerts", (dialog, which) -> {
++                    AlertCenterFragment alertFrag = new AlertCenterFragment();
++                    Bundle args = new Bundle();
++                    args.putString("parentUname", uname);
++                    alertFrag.setArguments(args);
++
++                    getParentFragmentManager()
++                            .beginTransaction()
++                            .replace(R.id.fragment_container, alertFrag)
++                            .addToBackStack(null)
++                            .commit();
++                })
++                .setNegativeButton("Dismiss", null)
++                .show();
++    }
++
++
++    // ═══════════════════════════════════════════════════════════════════════
++    // UI CONSTRUCTION HELPERS
++    // ═══════════════════════════════════════════════════════════════════════
++
++    /**
++     * Dynamically creates and adds a CardView for a linked child.
++     *
++     * Card Features:
++     *   - Displays child's name (or username as fallback)
++     *   - Color-coded background based on status:
++     *       • Red if status list contains 1 or 2 (alert)
++     *       • Green otherwise (good)
++     *   - Delete icon for unlinking the child
++     *   - Ripple effect for touch feedback
++     *   - Navigates to ChildDashboardFragment on click
++     *
++     * @param childName   Display name of the child
++     * @param childKey    Username/key of the child in Firebase
++     * @param statusList  List of status values for determining card color
++     */
++    @SuppressLint("ResourceType")
++    private void addChildCard(String childName, String childKey, List<Integer> statusList) {
++        // Validate fragment state
++        if (!isAdded() || getContext() == null) return;
++        Context ctx = requireContext();
++
++        // ─────────────────────────────────────────────────────────────────
++        // Create CardView Container (Rethink Clickable properties)
++        // ─────────────────────────────────────────────────────────────────
++        CardView cardView = new CardView(ctx);
++        LinearLayout.LayoutParams cardParams = new LinearLayout.LayoutParams(
++                LinearLayout.LayoutParams.MATCH_PARENT,
++                LinearLayout.LayoutParams.WRAP_CONTENT
++        );
++        cardParams.setMargins(0, 0, 0, dpToPx(16));
++        cardView.setLayoutParams(cardParams);
++
++        // ─────────────────────────────────────────────────────────────────
++        // Set Background Color Based on Status
++        // ─────────────────────────────────────────────────────────────────
++        int statusColor;
++        if (statusList.contains(2) || statusList.contains(1)) {
++            statusColor = ContextCompat.getColor(getContext(), R.color.alert);
++        } else {
++            statusColor = ContextCompat.getColor(getContext(), R.color.good);
++        }
++        cardView.setCardBackgroundColor(statusColor);
++
++        cardView.setRadius(dpToPx(8));
++        cardView.setCardElevation(dpToPx(2)); // Added elevation for visual separation
++        cardView.setClickable(false); // Make the main card NOT clickable
++        cardView.setFocusable(false);
++
++        // ─────────────────────────────────────────────────────────────────
++        // Create Outer Vertical Layout (to stack Name/Delete and Buttons)
++        // ─────────────────────────────────────────────────────────────────
++        LinearLayout outerVerticalLayout = new LinearLayout(ctx);
++        outerVerticalLayout.setOrientation(LinearLayout.VERTICAL);
++        outerVerticalLayout.setLayoutParams(new FrameLayout.LayoutParams(
++                FrameLayout.LayoutParams.MATCH_PARENT,
++                FrameLayout.LayoutParams.WRAP_CONTENT
++        ));
++        // Reduced outer padding slightly, inner padding is handled by name layout
++
++        // ─────────────────────────────────────────────────────────────────
++        // Inner Layout for Name and Delete Icon (Original top section)
++        // ─────────────────────────────────────────────────────────────────
++        LinearLayout nameAndDeleteLayout = new LinearLayout(ctx);
++        nameAndDeleteLayout.setOrientation(LinearLayout.HORIZONTAL);
++        nameAndDeleteLayout.setLayoutParams(new LinearLayout.LayoutParams(
++                LinearLayout.LayoutParams.MATCH_PARENT,
++                LinearLayout.LayoutParams.WRAP_CONTENT
++        ));
++        nameAndDeleteLayout.setPadding(dpToPx(16), dpToPx(16), dpToPx(16), dpToPx(8)); // Padding adjusted
++        nameAndDeleteLayout.setGravity(Gravity.CENTER_VERTICAL);
++
++        // Child Name TextView
++        TextView textView = new TextView(ctx);
++        textView.setLayoutParams(new LinearLayout.LayoutParams(0, LinearLayout.LayoutParams.WRAP_CONTENT, 1f));
++        textView.setText(childName);
++        textView.setTextSize(18);
++
++        // Delete Icon (Unlink Child)
++        ImageView deleteView = new ImageView(ctx);
++        LinearLayout.LayoutParams imgParams = new LinearLayout.LayoutParams(dpToPx(24), dpToPx(24));
++        imgParams.setMarginEnd(dpToPx(12));
++        deleteView.setLayoutParams(imgParams);
++        deleteView.setImageResource(android.R.drawable.ic_delete);
++        deleteView.setColorFilter(ContextCompat.getColor(ctx, R.color.white), PorterDuff.Mode.SRC_IN); // Changed color for better contrast on alert/good background
++
++        // Assemble Name and Delete Layout
++        nameAndDeleteLayout.addView(textView);
++        nameAndDeleteLayout.addView(deleteView);
++        outerVerticalLayout.addView(nameAndDeleteLayout); // Add name/delete section to outer layout
++
++        // ─────────────────────────────────────────────────────────────────
++        // Button Container Layout (NEW)
++        // ─────────────────────────────────────────────────────────────────
++        LinearLayout buttonLayout = new LinearLayout(ctx);
++        buttonLayout.setOrientation(LinearLayout.HORIZONTAL);
++        buttonLayout.setLayoutParams(new LinearLayout.LayoutParams(
++                LinearLayout.LayoutParams.MATCH_PARENT,
++                LinearLayout.LayoutParams.WRAP_CONTENT
++        ));
++        buttonLayout.setPadding(dpToPx(16), dpToPx(8), dpToPx(16), dpToPx(16));
++        buttonLayout.setGravity(Gravity.END); // Push buttons to the right
++
++        // ─────────────────────────────────────────────────────────────────
++        // 1. "View Status" Button
++        // ─────────────────────────────────────────────────────────────────
++        Button viewStatusButton = new Button(ctx, null, R.style.CustomLinkButton);
++        LinearLayout.LayoutParams btnViewParams = new LinearLayout.LayoutParams(LinearLayout.LayoutParams.WRAP_CONTENT, dpToPx(40));
++        btnViewParams.setMarginEnd(dpToPx(8));
++        viewStatusButton.setLayoutParams(btnViewParams);
++        viewStatusButton.setText("View");
++        viewStatusButton.setBackgroundResource(R.drawable.rounded_blue_button);
++
++
++        // "View Status" Click Handler - Navigate to ViewStatusFragment
++        viewStatusButton.setOnClickListener(v -> {
++            Bundle args = new Bundle();
++            args.putString("childUname", childKey);
++            args.putString("childName", childName);
++
++            // Assume ViewStatusFragment is the target
++            ViewStatusFragment statusFrag = new ViewStatusFragment();
++            statusFrag.setArguments(args);
++            loadFragment(statusFrag);
++        });
++        buttonLayout.addView(viewStatusButton);
++
++        // ─────────────────────────────────────────────────────────────────
++        // 2. "Manage" Button (Original Card Click Handler)
++        // ─────────────────────────────────────────────────────────────────
++        Button manageButton = new Button(ctx, null, R.style.CustomLinkButton);
++        LinearLayout.LayoutParams btnManageParams = new LinearLayout.LayoutParams(LinearLayout.LayoutParams.WRAP_CONTENT, dpToPx(40));
++        manageButton.setLayoutParams(btnManageParams);
++        manageButton.setText("Manage");
++        manageButton.setBackgroundResource(R.drawable.rounded_blue_button);
++
++        // "Manage" Click Handler - Navigate to ParentSideChildDashboardFragment
++        manageButton.setOnClickListener(v -> {
++            Bundle args = new Bundle();
++            args.putString("childUname", childKey);
++            args.putString("childName", childName);
++
++            ParentSideChildDashboardFragment childFrag = new ParentSideChildDashboardFragment();
++            childFrag.setArguments(args);
++            loadFragment(childFrag);
++        });
++        buttonLayout.addView(manageButton);
++
++        // Add button layout to outer vertical layout
++        outerVerticalLayout.addView(buttonLayout);
++
++        // ─────────────────────────────────────────────────────────────────
++        // Assemble Card (Final step)
++        // ─────────────────────────────────────────────────────────────────
++        cardView.addView(outerVerticalLayout);
++
++        // ─────────────────────────────────────────────────────────────────
++        // DELETE ICON Click Handler (Kept separate from buttons)
++        // ─────────────────────────────────────────────────────────────────
++        deleteView.setOnClickListener(v -> {
++            if (!isAdded()) return;
++
++            new AlertDialog.Builder(requireContext())
++                    .setTitle("Remove Child")
++                    .setMessage("Are you sure you want to unlink " + childName + "?")
++                    .setPositiveButton("Yes", (d, w) -> {
++                        // Assuming childrenRef is a field in the class
++                        // And loadChildrenFromDatabase() is available
++                        if (childrenRef != null) {
++                            childrenRef.child(childKey).removeValue();
++                            Toast.makeText(ctx, "Child removed", Toast.LENGTH_SHORT).show();
++                            loadChildrenFromDatabase(); // Refresh view
++                        }
++                    })
++                    .setNegativeButton("No", null)
++                    .show();
++        });
++
++        // ─────────────────────────────────────────────────────────────────
++        // Add Card to Container
++        // ─────────────────────────────────────────────────────────────────
++        if (cardView.getParent() == null)
++            contentContainer.addView(cardView);
++    }
++
++    /**
++     * Converts density-independent pixels (dp) to actual pixels (px).
++     * Ensures consistent UI spacing across different screen densities.
++     *
++     * @param dp Value in density-independent pixels
++     * @return   Equivalent value in pixels for the current device
++     */
++    private int dpToPx(int dp) {
++        float density = getResources().getDisplayMetrics().density;
++        return Math.round(dp * density);
++    }
++
++    // ═══════════════════════════════════════════════════════════════════════
++    // MENU HANDLING
++    // ═══════════════════════════════════════════════════════════════════════
++
++    /**
++     * Inflates the toolbar menu using MenuHelper.
++     * Called by the Android framework when the menu is being created.
++     *
++     * @param menu     Menu object to be populated
++     * @param inflater MenuInflater to use for inflating menu resources
++     */
++    @Override
++    public void onCreateOptionsMenu(@NonNull Menu menu, @NonNull MenuInflater inflater) {
++        MenuHelper.setupNotification(this, menu, inflater);
++        super.onCreateOptionsMenu(menu, inflater);
++
++    }
++
++
++
++
++    /**
++         * Handles menu item selection events.
++         * Delegates to MenuHelper for consistent menu behavior across the app.
++         *
++         * @param item The menu item that was selected
++         * @return     true if the event was handled, false otherwise
++         */
++    @Override
++    public boolean onOptionsItemSelected(@NonNull MenuItem item) {
++        if (MenuHelper.handleMenuSelection(item, this)) {
++            return true;
++        }
++        return super.onOptionsItemSelected(item);
++    }
++
++    // ═══════════════════════════════════════════════════════════════════════
++    // FRAGMENT NAVIGATION
++    // ═══════════════════════════════════════════════════════════════════════
++
++    /**
++     * Navigates to another fragment within the same activity.
++     * Adds the transaction to the back stack for back button support.
++     *
++     * @param fragment The fragment to navigate to
++     */
++    private void loadFragment(Fragment fragment) {
++        FragmentTransaction transaction = getParentFragmentManager().beginTransaction();
++        transaction.replace(R.id.fragment_container, fragment);
++        transaction.addToBackStack(null);
++        transaction.commit();
++    }
++}
+Index: app/src/main/java/com/example/SmartAirGroup2/ParentManageProviderFragment.java
+IDEA additional info:
+Subsystem: com.intellij.openapi.diff.impl.patch.CharsetEP
+<+>UTF-8
+===================================================================
+diff --git a/app/src/main/java/com/example/SmartAirGroup2/ParentManageProviderFragment.java b/app/src/main/java/com/example/SmartAirGroup2/ParentManageProviderFragment.java
+new file mode 100644
+--- /dev/null	(date 1764296575382)
++++ b/app/src/main/java/com/example/SmartAirGroup2/ParentManageProviderFragment.java	(date 1764296575382)
+@@ -0,0 +1,565 @@
++package com.example.SmartAirGroup2;
++
++import android.annotation.SuppressLint;
++import android.content.Context;
++import android.content.SharedPreferences;
++import android.graphics.PorterDuff;
++import android.graphics.drawable.Drawable;
++import android.os.Bundle;
++import android.util.Log;
++import android.util.TypedValue;
++import android.view.Gravity;
++import android.view.LayoutInflater;
++import android.view.Menu;
++import android.view.MenuInflater;
++import android.view.MenuItem;
++import android.view.View;
++import android.view.ViewGroup;
++import android.widget.FrameLayout;
++import android.widget.ImageView;
++import android.widget.LinearLayout;
++import android.widget.TextView;
++import android.widget.Toast;
++
++import androidx.annotation.NonNull;
++import androidx.annotation.Nullable;
++import androidx.appcompat.app.AlertDialog;
++import androidx.appcompat.app.AppCompatActivity;
++import androidx.appcompat.widget.Toolbar;
++import androidx.cardview.widget.CardView;
++import androidx.core.content.ContextCompat;
++import androidx.fragment.app.Fragment;
++import androidx.fragment.app.FragmentTransaction;
++
++import com.google.android.gms.tasks.Task;
++import com.google.android.gms.tasks.Tasks;
++import com.google.firebase.database.DataSnapshot;
++import com.google.firebase.database.DatabaseError;
++import com.google.firebase.database.DatabaseReference;
++import com.google.firebase.database.FirebaseDatabase;
++import com.google.firebase.database.ValueEventListener;
++
++import java.util.ArrayList;
++import java.util.List;
++
++/**
++ * ParentDashboardFragment
++ * -----------------------
++ * This fragment serves as the primary dashboard for parent users within the Smart Air application.
++ * It provides an overview of all linked provider accounts and enables parents to perform account
++ * management actions.
++ *
++ * Core User Actions:
++ *   • View all Provider currently linked to their account.
++ *   • Add a new provider or link an existing provider account.
++ *   • Remove/unlink a provider account when needed.
++ *   • Navigate to individual provider dashboards for detailed monitoring.
++ *
++ * UI Behavior:
++ *   - The fragment dynamically generates CardViews representing each linked provider.
++ *   - Each card displays:
++ *       • provider name (or username if name unavailable)
++ *       • Status indicator (color-coded background)
++ *       • A delete icon to allow unlinking
++ *   - If no Provider are linked, only the "Add provider" card is displayed.
++ *   - Cards use ripple effects for modern touch feedback.
++ *
++ * Firebase Structure (Relevant Paths):
++ * └── categories/
++ *     └── users/
++ *         ├── parents/{parentUname}/Provider/{providerUname: String}
++ *         └── Provider/{providerUname}/
++ *             ├── name: String
++ *             ├── uname: String
++ *             └── status/{individual status: Integer}
++ *
++ * Status Logic:
++ *   - The background color of each provider card reflects their status history:
++ *       • Red (alert color) → Contains alert values (1 or 2 detected)
++ *       • Green (good color) → No concerning status entries
++ *   - Status values are retrieved from the provider's status history in Firebase.
++ *
++ * Fragment Lifecycle Responsibilities:
++ *   ✔ Initialize toolbar and UI components
++ *   ✔ Fetch Firebase data for linked Provider
++ *   ✔ Listen for provider database changes
++ *   ✔ Dynamically create UI elements based on data
++ *   ✔ Persist login metadata using SharedPreferences
++ *   ✔ Handle user interactions (navigation, deletion, linking)
++ *
++ * Navigation:
++ *   - Tapping a provider card navigates to providerDashboardFragment with provider details.
++ *   - Tapping "Add provider" opens a dialog prompting:
++ *        → "Yes": Navigate to LinkproviderFragment (for existing accounts)
++ *        → "No" : Navigate to AddproviderFragment (for new accounts)
++ *
++ * Dependencies:
++ *   • Firebase Realtime Database for user and relationship data.
++ *   • SharedPreferences for user type and logged-in identity persistence.
++ *   • MenuHelper for toolbar menu operations.
++ *   • User model class for provider data representation.
++ *
++ * Author: Kevin Li
++ * Last Updated: November 18 2025
++ */
++public class ParentManageProviderFragment extends Fragment {
++
++    // ═══════════════════════════════════════════════════════════════════════
++    // UI COMPONENTS
++    // ═══════════════════════════════════════════════════════════════════════
++
++    /**
++     * Toolbar component displayed at the top of the fragment.
++     * Provides navigation and menu actions for the parent user.
++     */
++    private Toolbar toolbar;
++
++    /**
++     * CardView for the "Add provider" button.
++     * Always displayed at the bottom of the Provider list.
++     */
++    private CardView cardAddProvider;
++
++    /**
++     * Container that holds all dynamically generated provider cards.
++     * Provider are added/removed from this layout based on Firebase data.
++     */
++    private LinearLayout contentContainer;
++
++    // ═══════════════════════════════════════════════════════════════════════
++    // FIREBASE REFERENCES
++    // ═══════════════════════════════════════════════════════════════════════
++
++    /**
++     * Firebase Database instance pointing to the Smart Air database.
++     * Used to initialize all database references.
++     */
++    private FirebaseDatabase db;
++
++    /**
++     * Database reference to the parent's Provider node.
++     * Path: categories/users/parents/{uname}/Provider
++     * Contains all provider usernames linked to this parent.
++     */
++    private DatabaseReference providerRef;
++
++    // ═══════════════════════════════════════════════════════════════════════
++    // USER IDENTITY
++    // ═══════════════════════════════════════════════════════════════════════
++
++    /**
++     * Username of the currently logged-in parent.
++     * TODO: Replace hardcoded value with dynamic authentication.
++     */
++    private String uname;
++
++    /**
++     * User type identifier for the current user.
++     * Always "parent" for this fragment.
++     */
++    private String type;
++
++    private boolean safetyAlert = false;
++
++    private View notificationActionView;
++    private View notificationBadge;
++
++
++    // ═══════════════════════════════════════════════════════════════════════
++    // LIFECYCLE METHODS
++    // ═══════════════════════════════════════════════════════════════════════
++
++
++
++    /**
++     * Creates and initializes the view hierarchy for this fragment.
++     *
++     * Responsibilities:
++     *   - Inflates the parent dashboard layout
++     *   - Sets up the toolbar with menu support
++     *   - Initializes Firebase database references
++     *   - Loads Provider data from Firebase
++     *   - Persists user identity to SharedPreferences
++     *   - Configures "Add provider" button click handler
++     *
++     * @param inflater           LayoutInflater to inflate the view
++     * @param container          Parent view that this fragment's UI will be attached to
++     * @param savedInstanceState Previously saved state, if any
++     * @return                   The root view for this fragment
++     */
++    @Nullable
++    @Override
++    public View onCreateView(@NonNull LayoutInflater inflater, @Nullable ViewGroup container, @Nullable Bundle savedInstanceState) {
++        View view = inflater.inflate(R.layout.fragment_parent_manage_provider, container, false);
++
++        // Get SharedPreferences
++
++        // Get the current logged-in user's unique identifier
++        uname = CurrentUser.get().getUname();  // or email, or a unique ID
++        type = CurrentUser.get().getType();
++
++        // Toolbar setup
++        toolbar = view.findViewById(R.id.toolbar);
++        ((AppCompatActivity) getActivity()).setSupportActionBar(toolbar);
++        setHasOptionsMenu(true);
++
++        ((AppCompatActivity) getActivity()).getSupportActionBar().setDisplayHomeAsUpEnabled(true);
++        toolbar.setNavigationOnClickListener(v -> getParentFragmentManager().popBackStack());
++
++        // ─────────────────────────────────────────────────────────────────
++        // UI Component Initialization
++        // ─────────────────────────────────────────────────────────────────
++        contentContainer = view.findViewById(R.id.contentContainer);
++        cardAddProvider = view.findViewById(R.id.cardAddProvider);
++
++        // ─────────────────────────────────────────────────────────────────
++        // Firebase Initialization
++        // ─────────────────────────────────────────────────────────────────
++        db = FirebaseDatabase.getInstance("https://smart-air-group2-default-rtdb.firebaseio.com/");
++        providerRef = db.getReference("categories/users/parents/" + uname + "/providers");
++
++
++        // ─────────────────────────────────────────────────────────────────
++        // Load Provider Data
++        // ─────────────────────────────────────────────────────────────────
++        loadProviderFromDatabase();
++
++        // ─────────────────────────────────────────────────────────────────
++        // Add provider Button Handler
++        // ─────────────────────────────────────────────────────────────────
++
++        cardAddProvider.setOnClickListener(v -> {
++            LinkProviderFragment linkFrag = new LinkProviderFragment();
++            Bundle args = new Bundle();
++            args.putString("parentUname", uname);
++            linkFrag.setArguments(args);
++            loadFragment(linkFrag);
++
++        });
++
++        return view;
++    }
++
++
++    // ═══════════════════════════════════════════════════════════════════════
++    // FIREBASE DATA LOADING
++    // ═══════════════════════════════════════════════════════════════════════
++
++    /**
++     * Loads all Provider linked to the current parent from Firebase.
++     *
++     * Process:
++     *   1. Queries the parent's Provider node for all linked usernames
++     *   2. For each provider username:
++     *      a. Fetches provider details (name, username)
++     *      b. Fetches provider status history
++     *      c. Creates a CardView with appropriate color coding
++     *   3. Ensures "Add provider" card is added after all Provider load
++     *   4. Displays toast if no Provider are found
++     *
++     * Color Coding:
++     *   - Red (alert) if status contains 1 or 2
++     *   - Green (good) otherwise
++     *
++     * Threading:
++     *   - Uses Firebase's asynchronous listeners
++     *   - Tracks completion count to ensure "Add provider" appears last
++     */
++    private void loadProviderFromDatabase() {
++
++        providerRef.addListenerForSingleValueEvent(new ValueEventListener() {
++            @Override
++            public void onDataChange(@NonNull DataSnapshot snapshot) {
++                // Validate fragment and context availability
++                if (contentContainer == null || getContext() == null) return;
++
++                // Clear existing views
++                contentContainer.removeAllViews();
++                int totalProvider = (int) snapshot.getChildrenCount();
++
++                // Handle case with no Provider
++                if (totalProvider == 0) {
++                    contentContainer.addView(cardAddProvider);
++                    Toast.makeText(getContext(), "No providers linked yet", Toast.LENGTH_SHORT).show();
++                    return;
++                }
++
++                // Track loading progress to ensure "Add provider" button appears last
++                final int[] loadedProvider = {0};
++                final int[] completedStatusLoads = {0};
++
++                // Iterate through each provider username
++                for (DataSnapshot providerSnapshot : snapshot.getChildren()) {
++                    String providerUname = providerSnapshot.getValue(String.class);
++
++                    // Skip invalid entries
++                    if (providerUname == null || providerUname.isEmpty()) {
++                        loadedProvider[0]++;
++                        completedStatusLoads[0]++;
++                        if (completedStatusLoads[0] == totalProvider)
++                            contentContainer.addView(cardAddProvider);
++                        continue;
++                    }
++
++                    addproviderCard(providerUname);
++                }
++                contentContainer.addView(cardAddProvider);
++            }
++
++            @Override
++            public void onCancelled(@NonNull DatabaseError error) {
++                Log.e("FIREBASE", "Error: " + error.getMessage());
++            }
++        });
++    }
++
++
++
++    // ═══════════════════════════════════════════════════════════════════════
++    // UI CONSTRUCTION HELPERS
++    // ═══════════════════════════════════════════════════════════════════════
++
++    /**
++     * Dynamically creates and adds a CardView for a linked provider.
++     *
++     * Card Features:
++     *   - Displays provider's name (or username as fallback)
++     *   - Color-coded background based on status:
++     *       • Red if status list contains 1 or 2 (alert)
++     *       • Green otherwise (good)
++     *   - Delete icon for unlinking the provider
++     *   - Ripple effect for touch feedback
++     *   - Navigates to providerDashboardFragment on click
++     *
++     * @param providerKey    Username/key of the provider in Firebase
++     */
++    @SuppressLint("ResourceType")
++    private void addproviderCard(String providerKey) {
++        // Validate fragment state
++        if (!isAdded() || getContext() == null) return;
++        Context ctx = requireContext();
++
++        // ─────────────────────────────────────────────────────────────────
++        // Create CardView Container
++        // ─────────────────────────────────────────────────────────────────
++        CardView cardView = new CardView(ctx);
++        LinearLayout.LayoutParams cardParams = new LinearLayout.LayoutParams(
++                LinearLayout.LayoutParams.MATCH_PARENT,
++                LinearLayout.LayoutParams.WRAP_CONTENT
++        );
++        cardParams.setMargins(0, 0, 0, dpToPx(16));
++        cardView.setLayoutParams(cardParams);
++        cardView.setCardBackgroundColor(ContextCompat.getColor(getContext(), R.color.blue_light));
++
++
++        cardView.setRadius(dpToPx(8));
++        cardView.setCardElevation(0);
++        cardView.setClickable(true);
++        cardView.setFocusable(true);
++
++        // ─────────────────────────────────────────────────────────────────
++        // Add Ripple Effect
++        // ─────────────────────────────────────────────────────────────────
++        TypedValue outValue = new TypedValue();
++        if (ctx.getTheme().resolveAttribute(android.R.attr.selectableItemBackground, outValue, true)) {
++            Drawable selectable = ContextCompat.getDrawable(ctx, outValue.resourceId);
++            if (selectable != null) cardView.setForeground(selectable);
++        }
++
++        // ─────────────────────────────────────────────────────────────────
++        // Create Inner Layout
++        // ─────────────────────────────────────────────────────────────────
++        LinearLayout innerLayout = new LinearLayout(ctx);
++        innerLayout.setOrientation(LinearLayout.HORIZONTAL);
++        innerLayout.setLayoutParams(new FrameLayout.LayoutParams(
++                FrameLayout.LayoutParams.MATCH_PARENT,
++                FrameLayout.LayoutParams.WRAP_CONTENT
++        ));
++        innerLayout.setPadding(dpToPx(16), dpToPx(16), dpToPx(16), dpToPx(16));
++        innerLayout.setGravity(Gravity.CENTER_VERTICAL);
++
++        // ─────────────────────────────────────────────────────────────────
++        // provider Name TextView
++        // ─────────────────────────────────────────────────────────────────
++        TextView textView = new TextView(ctx);
++        textView.setLayoutParams(new LinearLayout.LayoutParams(0, LinearLayout.LayoutParams.WRAP_CONTENT, 1f));
++        textView.setText(providerKey);
++        textView.setTextSize(18);
++
++        // ─────────────────────────────────────────────────────────────────
++        // Delete Icon
++        // ─────────────────────────────────────────────────────────────────
++        ImageView deleteView = new ImageView(ctx);
++        LinearLayout.LayoutParams imgParams = new LinearLayout.LayoutParams(dpToPx(24), dpToPx(24));
++        imgParams.setMarginEnd(dpToPx(12));
++        deleteView.setLayoutParams(imgParams);
++        deleteView.setImageResource(android.R.drawable.ic_delete);
++        deleteView.setColorFilter(ContextCompat.getColor(ctx, R.color.delete), PorterDuff.Mode.SRC_IN);
++
++
++
++        // ─────────────────────────────────────────────────────────────────
++        // Assemble Card
++        // ─────────────────────────────────────────────────────────────────
++        innerLayout.addView(textView);
++        innerLayout.addView(deleteView);
++        cardView.addView(innerLayout);
++
++        // ─────────────────────────────────────────────────────────────────
++        // Card Click Handler - Navigate to provider Dashboard
++        // ─────────────────────────────────────────────────────────────────
++//        cardView.setOnClickListener(v -> {
++//            Bundle args = new Bundle();
++//            args.putString("providerUname", providerKey);
++//            args.putString("providerName", providerName);
++//
++//            ParentSideproviderDashboardFragment providerFrag = new ParentSideproviderDashboardFragment();
++//            providerFrag.setArguments(args);
++//            loadFragment(providerFrag);
++//        });
++
++        // ─────────────────────────────────────────────────────────────────
++        // Delete Icon Click Handler - Unlink provider
++        // ─────────────────────────────────────────────────────────────────
++        deleteView.setOnClickListener(v -> {
++            if (!isAdded()) return;
++
++            new AlertDialog.Builder(requireContext())
++                    .setTitle("Remove provider")
++                    .setMessage("Are you sure you want to unlink " + providerKey + "?")
++                    .setPositiveButton("Yes", (d, w) -> {
++                        removeLink(providerKey, uname);
++                        loadProviderFromDatabase();
++                    })
++                    .setNegativeButton("No", null)
++                    .show();
++        });
++
++        // ─────────────────────────────────────────────────────────────────
++        // Add Card to Container
++        // ─────────────────────────────────────────────────────────────────
++        if (cardView.getParent() == null)
++            contentContainer.addView(cardView);
++    }
++
++    /**
++     * Main function to remove the bidirectional link between a Parent and a Provider.
++     * * @param providerUname The username of the provider to unlink.
++     * @param parentUname The username of the currently logged-in parent.
++     */
++    private void removeLink(String providerUname, String parentUname) {
++
++        // Validate input fields (assuming providerUname is the target to remove)
++        if (providerUname == null || providerUname.trim().isEmpty()) {
++            Toast.makeText(getContext(), "Please select a provider to unlink.", Toast.LENGTH_SHORT).show();
++            return;
++        }
++        if (parentUname == null || parentUname.isEmpty()) {
++            Toast.makeText(getContext(), "Error: Current parent username not found.", Toast.LENGTH_LONG).show();
++            return;
++        }
++
++        Task<Void> task1 = removeParentDB(providerUname, parentUname);
++        Task<Void> task2 = removeProviderDB(providerUname, parentUname);
++
++        Tasks.whenAll(task1, task2)
++                .addOnSuccessListener(aVoid -> {
++                    Toast.makeText(getContext(), "Successfully removed link with: " + providerUname, Toast.LENGTH_LONG).show();
++                })
++                .addOnFailureListener(e -> {
++                    // If either deletion failed, notify the user.
++                    Toast.makeText(getContext(), "Error removing link. Please check connectivity: " + e.getMessage(), Toast.LENGTH_LONG).show();
++                });
++    }
++
++    /**
++     * 1. Removes the Provider's reference from the Parent's database entry.
++     * Path: categories/users/parents/{parentUname}/providers/{providerUname}
++     */
++    private Task<Void> removeParentDB(String providerUname, String parentUname) {
++        // Reference to the specific provider key under the parent's providers list
++        DatabaseReference parentRef = FirebaseDatabase.getInstance()
++                .getReference("categories/users/parents/" + parentUname + "/providers");
++
++        // Use removeValue() to delete the provider's username node
++        return parentRef.child(providerUname).removeValue();
++    }
++
++    /**
++     * 2. Removes the Parent's reference from the Provider's database entry.
++     * Path: categories/users/provider/{providerUname}/parents/{parentUname}
++     */
++    private Task<Void> removeProviderDB(String providerUname, String parentUname) {
++        // Reference to the specific parent key under the provider's parents list
++        DatabaseReference providerRef = FirebaseDatabase.getInstance()
++                .getReference("categories/users/provider/" + providerUname + "/parents");
++
++        // Use removeValue() to delete the parent's username node
++        return providerRef.child(parentUname).removeValue();
++    }
++
++    /**
++     * Converts density-independent pixels (dp) to actual pixels (px).
++     * Ensures consistent UI spacing across different screen densities.
++     *
++     * @param dp Value in density-independent pixels
++     * @return   Equivalent value in pixels for the current device
++     */
++    private int dpToPx(int dp) {
++        float density = getResources().getDisplayMetrics().density;
++        return Math.round(dp * density);
++    }
++
++    // ═══════════════════════════════════════════════════════════════════════
++    // MENU HANDLING
++    // ═══════════════════════════════════════════════════════════════════════
++
++    /**
++     * Inflates the toolbar menu using MenuHelper.
++     * Called by the Android framework when the menu is being created.
++     *
++     * @param menu     Menu object to be populated
++     * @param inflater MenuInflater to use for inflating menu resources
++     */
++    @Override
++    public void onCreateOptionsMenu(@NonNull Menu menu, @NonNull MenuInflater inflater) {
++        super.onCreateOptionsMenu(menu, inflater);
++
++        MenuHelper.setupMenu(menu, inflater, requireContext());
++        MenuHelper.setupNotification(this,menu,inflater);
++    }
++
++
++
++    /**
++         * Handles menu item selection events.
++         * Delegates to MenuHelper for consistent menu behavior across the app.
++         *
++         * @param item The menu item that was selected
++         * @return     true if the event was handled, false otherwise
++         */
++    @Override
++    public boolean onOptionsItemSelected(@NonNull MenuItem item) {
++        if (MenuHelper.handleMenuSelection(item, this)) {
++            return true;
++        }
++        return super.onOptionsItemSelected(item);
++    }
++
++    // ═══════════════════════════════════════════════════════════════════════
++    // FRAGMENT NAVIGATION
++    // ═══════════════════════════════════════════════════════════════════════
++
++    /**
++     * Navigates to another fragment within the same activity.
++     * Adds the transaction to the back stack for back button support.
++     *
++     * @param fragment The fragment to navigate to
++     */
++    private void loadFragment(Fragment fragment) {
++        FragmentTransaction transaction = getParentFragmentManager().beginTransaction();
++        transaction.replace(R.id.fragment_container, fragment);
++        transaction.addToBackStack(null);
++        transaction.commit();
++    }
++}
+Index: app/src/main/java/com/example/SmartAirGroup2/ChildDashboardFragment.java
+IDEA additional info:
+Subsystem: com.intellij.openapi.diff.impl.patch.BaseRevisionTextPatchEP
+<+>package com.example.SmartAirGroup2;\r\n\r\nimport android.os.Bundle;\r\nimport android.util.Log;\r\nimport android.view.LayoutInflater;\r\nimport android.view.Menu;\r\nimport android.view.MenuInflater;\r\nimport android.view.MenuItem;\r\nimport android.view.View;\r\nimport android.view.ViewGroup;\r\n\r\nimport androidx.annotation.NonNull;\r\nimport androidx.annotation.Nullable;\r\nimport androidx.appcompat.app.AppCompatActivity;\r\nimport androidx.appcompat.widget.Toolbar;\r\nimport androidx.cardview.widget.CardView;\r\nimport androidx.fragment.app.Fragment;\r\nimport androidx.fragment.app.FragmentTransaction;\r\n\r\nimport com.google.firebase.database.DataSnapshot;\r\nimport com.google.firebase.database.DatabaseError;\r\nimport com.google.firebase.database.DatabaseReference;\r\nimport com.google.firebase.database.FirebaseDatabase;\r\nimport com.google.firebase.database.ValueEventListener;\r\n\r\n\r\n/**\r\n * ChildDashboardFragment (Parent-Side View)\r\n * ------------------------------------------\r\n * This fragment provides a comprehensive overview of a single child's health status from the\r\n * parent's perspective. It serves as a navigation hub for accessing detailed child information\r\n * across three main categories: Inventory, PEF (Peak Expiratory Flow), and Symptoms.\r\n *\r\n * Purpose:\r\n *   Enables parents to monitor their child's asthma management by providing:\r\n *   • Visual status indicators for medication inventory levels\r\n *   • PEF zone monitoring (Green/Yellow/Red zones)\r\n *   • Symptom tracking overview\r\n *   • Quick navigation to detailed views for each category\r\n *\r\n * Core Features:\r\n *   • Color-coded status cards that reflect real-time child health metrics\r\n *   • Three primary navigation cards:\r\n *       → Inventory Card: Medicine stock levels and usage\r\n *       → PEF Card: Breathing function measurements and zones\r\n *       → Symptom Card: Logged symptoms and patterns\r\n *   • Dynamic status updates from Firebase\r\n *   • Back navigation to parent dashboard\r\n *\r\n * UI Behavior:\r\n *   - Displays child's name in the toolbar title\r\n *   - Three large CardViews with color-coded backgrounds:\r\n *       • Inventory: Red (alert) if any medicine is low/critical, Green (good) otherwise\r\n *       • PEF: Red (zone 2), Yellow (zone 1), or Green (zone 0) based on breathing status\r\n *       • Symptom: Currently static, may be extended for symptom status\r\n *   - Each card navigates to its respective detailed fragment on click\r\n *\r\n * Firebase Structure (Relevant Paths):\r\n * └── categories/\r\n *     └── users/\r\n *         └── children/{childUname}/\r\n *             └── status/\r\n *                 ├── pefZone: Integer (0=green, 1=yellow, 2=red)\r\n *                 └── inventory/\r\n *                     └── {medicineName}/\r\n *                         └── {timestamp: Integer (0=good, 1=warning, 2=alert)}\r\n *\r\n * Status Logic:\r\n *   - Inventory Status:\r\n *       • 2 (Alert/Red): Any medicine has critical low stock - HIGHEST PRIORITY\r\n *       • 1 (Warning/Yellow): Any medicine approaching low stock\r\n *       • 0 (Good/Green): All medicines adequately stocked\r\n *   - PEF Status:\r\n *       • 2 (Red Zone): Severe breathing difficulty, immediate action needed\r\n *       • 1 (Yellow Zone): Caution, medication may be needed\r\n *       • 0 (Green Zone): Breathing is normal\r\n *\r\n * Navigation Flow:\r\n *   ParentDashboardFragment → ChildDashboardFragment → [Inventory/PEF/Symptom]Fragment\r\n *\r\n * Fragment Arguments (Required):\r\n *   • childName (String): Display name of the child\r\n *   • childUname (String): Unique username/identifier for the child in Firebase\r\n *\r\n * Dependencies:\r\n *   • Firebase Realtime Database for status data\r\n *   • MenuHelper for toolbar menu operations\r\n *   • Three destination fragments: InventoryFragment, ParentPEF, SymptomDashboardFragment\r\n *\r\n * Color Resources Used:\r\n *   • R.color.alert (Red): Critical status requiring immediate attention\r\n *   • R.color.warning (Yellow): Caution status requiring monitoring\r\n *   • R.color.good (Green): Normal/healthy status\r\n *\r\n * Author: Kevin Li\r\n * Last Updated: November 2025\r\n */\r\npublic class ChildDashboardFragment extends Fragment {\r\n\r\n    // ═══════════════════════════════════════════════════════════════════════\r\n    // UI COMPONENTS\r\n    // ═══════════════════════════════════════════════════════════════════════\r\n\r\n    /**\r\n     * Toolbar component displayed at the top of the fragment.\r\n     * Shows the child's name and provides back navigation to parent dashboard.\r\n     */\r\n    private Toolbar toolbar;\r\n\r\n    /**\r\n     * CardView for accessing the child's status .\r\n     * Color-coded based on medicine stock levels:\r\n     *   - Red (alert)\r\n     *   - Green (good)\r\n     */\r\n    private CardView cardInventory, cardPEF, cardSymptom, cardIncident;\r\n\r\n\r\n    // ═══════════════════════════════════════════════════════════════════════\r\n    // CHILD IDENTITY\r\n    // ═══════════════════════════════════════════════════════════════════════\r\n\r\n    /**\r\n     * Display name of the child.\r\n     * Retrieved from fragment arguments, passed from ParentDashboardFragment.\r\n     * Used in toolbar title to personalize the view.\r\n     */\r\n    private String name;\r\n\r\n    /**\r\n     * Unique username/identifier of the child in Firebase.\r\n     * Retrieved from fragment arguments, used to query child-specific data.\r\n     */\r\n    private String uname;\r\n\r\n    // ═══════════════════════════════════════════════════════════════════════\r\n    // LIFECYCLE METHODS\r\n    // ═══════════════════════════════════════════════════════════════════════\r\n\r\n    /**\r\n     * Called when the fragment is first created.\r\n     * Retrieves child identity from fragment arguments passed by parent fragment.\r\n     *\r\n     * Expected Arguments:\r\n     *   - childName: Display name of the child\r\n     *   - childUname: Firebase username/key for the child\r\n     *\r\n     * @param savedInstanceState Previously saved state, if any\r\n     */\r\n    @Override\r\n    public void onCreate(Bundle savedInstanceState) {\r\n        super.onCreate(savedInstanceState);\r\n\r\n        // Retrieve child identity passed as arguments\r\n        if (getArguments() != null) {\r\n            name = getArguments().getString(\"childName\");\r\n            uname = getArguments().getString(\"childUname\");\r\n        }\r\n    }\r\n\r\n    /**\r\n     * Creates and initializes the view hierarchy for this fragment.\r\n     *\r\n     * Responsibilities:\r\n     *   - Inflates the child dashboard layout\r\n     *   - Sets up toolbar with child's name and back navigation\r\n     *   - Initializes status card references\r\n     *   - Loads current status from Firebase to color-code cards\r\n     *   - Configures click handlers for navigation to detail fragments\r\n     *\r\n     * @param inflater           LayoutInflater to inflate the view\r\n     * @param container          Parent view that this fragment's UI will be attached to\r\n     * @param savedInstanceState Previously saved state, if any\r\n     * @return                   The root view for this fragment\r\n     */\r\n    @Nullable\r\n    @Override\r\n    public View onCreateView(@NonNull LayoutInflater inflater, @Nullable ViewGroup container, @Nullable Bundle savedInstanceState) {\r\n        View view = inflater.inflate(R.layout.activity_child_dashboard, container, false);\r\n\r\n        // ─────────────────────────────────────────────────────────────────\r\n        // Toolbar Configuration\r\n        // ─────────────────────────────────────────────────────────────────\r\n        toolbar = view.findViewById(R.id.toolbar);\r\n        ((AppCompatActivity) getActivity()).setSupportActionBar(toolbar);\r\n        setHasOptionsMenu(true);\r\n\r\n        // Set personalized title with child's name\r\n        toolbar.setTitle(name + \"'s Dashboard\");\r\n\r\n        // Enable back navigation to parent dashboard\r\n        ((AppCompatActivity) getActivity()).getSupportActionBar().setDisplayHomeAsUpEnabled(true);\r\n        toolbar.setNavigationOnClickListener(v -> getParentFragmentManager().popBackStack());\r\n\r\n        // ─────────────────────────────────────────────────────────────────\r\n        // UI Component Initialization\r\n        // ─────────────────────────────────────────────────────────────────\r\n        cardInventory = view.findViewById(R.id.cardInventory);\r\n        cardPEF = view.findViewById(R.id.cardPEF);\r\n        cardSymptom = view.findViewById(R.id.cardSymptom);\r\n        cardIncident = view.findViewById(R.id.cardIncident);\r\n\r\n        // ─────────────────────────────────────────────────────────────────\r\n        // Load and Apply Status Colors\r\n        // ─────────────────────────────────────────────────────────────────\r\n        loadChildStatus();\r\n\r\n        // ─────────────────────────────────────────────────────────────────\r\n        // Inventory Card Click Handler\r\n        // ─────────────────────────────────────────────────────────────────\r\n        // Navigate to detailed medicine inventory view\r\n        cardInventory.setOnClickListener(v -> {\r\n            InventoryFragment invFrag = new InventoryFragment();\r\n            Bundle args = new Bundle();\r\n            args.putString(\"childUname\", uname);\r\n            args.putString(\"childName\", name);\r\n            invFrag.setArguments(args);\r\n            loadFragment(invFrag);\r\n        });\r\n\r\n        // ─────────────────────────────────────────────────────────────────\r\n        // PEF Card Click Handler\r\n        // ─────────────────────────────────────────────────────────────────\r\n        // Navigate to Peak Expiratory Flow measurement view\r\n        cardPEF.setOnClickListener(v -> {\r\n            PEFZone pefFrag = new PEFZone();\r\n            Bundle args = new Bundle();\r\n            args.putString(\"childUname\", uname);\r\n            args.putString(\"childName\", name);\r\n            pefFrag.setArguments(args);\r\n            loadFragment(pefFrag);\r\n        });\r\n\r\n        // ─────────────────────────────────────────────────────────────────\r\n        // Symptom Card Click Handler\r\n        // ─────────────────────────────────────────────────────────────────\r\n        // Navigate to symptom tracking and history view\r\n        cardSymptom.setOnClickListener(v -> {\r\n            SymptomDashboardFragment sympFrag = new SymptomDashboardFragment();\r\n            Bundle args = new Bundle();\r\n            args.putString(\"childUname\", uname);\r\n            args.putString(\"childName\", name);\r\n            sympFrag.setArguments(args);\r\n            loadFragment(sympFrag);\r\n        });\r\n\r\n        cardIncident.setOnClickListener(v -> {\r\n            //todo link\r\n        });\r\n\r\n        return view;\r\n    }\r\n\r\n    // ═══════════════════════════════════════════════════════════════════════\r\n    // FIREBASE STATUS LOADING\r\n    // ═══════════════════════════════════════════════════════════════════════\r\n\r\n    /**\r\n     * Loads the child's current health status from Firebase and applies color-coding to cards.\r\n     *\r\n     * Status Categories:\r\n     *   1. Inventory Status (Medicine Stock Levels):\r\n     *      - Scans all medicines under status/inventory\r\n     *      - Priority system: Alert (2) > Warning (1) > Good (0)\r\n     *      - If ANY medicine shows alert, entire card becomes red\r\n     *      - If ANY medicine shows warning (and no alerts), card becomes yellow\r\n     *      - Otherwise, card remains green\r\n     *\r\n     *   2. PEF Status (Breathing Zones):\r\n     *      - Reads pefZone value directly from status node\r\n     *      - Zone 2 (Red): Severe breathing difficulty\r\n     *      - Zone 1 (Yellow): Caution zone\r\n     *      - Zone 0 (Green): Normal breathing\r\n     *\r\n     *   3. Symptom Status:\r\n     *      - Currently not implemented (future enhancement)\r\n     *      - Card remains at default color\r\n     *\r\n     * Firebase Query Path:\r\n     *   categories/users/children/{childUname}/status\r\n     *\r\n     * Threading:\r\n     *   - Uses Firebase's asynchronous listener\r\n     *   - Updates UI on callback thread (safe as Firebase handles this)\r\n     *\r\n     * Error Handling:\r\n     *   - Logs errors to console with \"STATUS\" tag\r\n     *   - Cards remain at default colors if data fetch fails\r\n     */\r\n    private void loadChildStatus() {\r\n        DatabaseReference statusRef = FirebaseDatabase.getInstance()\r\n                .getReference(\"categories/users/children\")\r\n                .child(uname)\r\n                .child(\"status\");\r\n\r\n        statusRef.addListenerForSingleValueEvent(new ValueEventListener() {\r\n            @Override\r\n            public void onDataChange(@NonNull DataSnapshot snapshot) {\r\n                if (!snapshot.exists()) return;\r\n\r\n                // ─────────────────────────────────────────────────────────\r\n                // Read PEF Zone Status\r\n                // ─────────────────────────────────────────────────────────\r\n                Long pefZoneVal = snapshot.child(\"pefZone\").getValue(Long.class);\r\n                int pefZone = pefZoneVal != null ? pefZoneVal.intValue() : 0;\r\n\r\n                // ─────────────────────────────────────────────────────────\r\n                // Read Inventory Status Array\r\n                // ─────────────────────────────────────────────────────────\r\n                // Default to good status\r\n                int inventoryStatus = 0;\r\n\r\n                if (snapshot.child(\"inventory\").exists()) {\r\n                    // Iterate through each medicine\r\n                    for (DataSnapshot medSnapshot : snapshot.child(\"inventory\").getChildren()) {\r\n                        // Each medicine has timestamped status entries\r\n                        for (DataSnapshot statusNode : medSnapshot.getChildren()) {\r\n                            Integer val = statusNode.getValue(Integer.class);\r\n\r\n                            if (val != null) {\r\n                                if (val == 2) {\r\n                                    // ALERT overrides all other statuses\r\n                                    inventoryStatus = 2;\r\n                                    break;\r\n                                } else if (val == 1 && inventoryStatus != 2) {\r\n                                    // WARNING only if no alert found yet\r\n                                    inventoryStatus = 1;\r\n                                }\r\n                            }\r\n                        }\r\n\r\n                        // Stop scanning if alert already found\r\n                        if (inventoryStatus == 2) break;\r\n                    }\r\n                }\r\n\r\n                // ─────────────────────────────────────────────────────────\r\n                // Apply Colors to Cards\r\n                // ─────────────────────────────────────────────────────────\r\n\r\n                // Inventory Card Color\r\n                if (inventoryStatus > 0) {\r\n                    // Any warning or alert -> Red\r\n                    cardInventory.setCardBackgroundColor(getResources().getColor(R.color.alert));\r\n                } else {\r\n                    // All good -> Green\r\n                    cardInventory.setCardBackgroundColor(getResources().getColor(R.color.good));\r\n                }\r\n\r\n                // PEF Card Color\r\n                if (pefZone == 2) {\r\n                    // Red Zone: Severe\r\n                    cardPEF.setCardBackgroundColor(getResources().getColor(R.color.alert));\r\n                } else if (pefZone == 1) {\r\n                    // Yellow Zone: Caution\r\n                    cardPEF.setCardBackgroundColor(getResources().getColor(R.color.warning));\r\n                } else {\r\n                    // Green Zone: Normal\r\n                    cardPEF.setCardBackgroundColor(getResources().getColor(R.color.good));\r\n                }\r\n\r\n                // Symptom Card Color\r\n                // Currently uses default color (future enhancement)\r\n            }\r\n\r\n            @Override\r\n            public void onCancelled(@NonNull DatabaseError error) {\r\n                Log.e(\"STATUS\", \"Failed to read status: \" + error.getMessage());\r\n            }\r\n        });\r\n    }\r\n\r\n    // ═══════════════════════════════════════════════════════════════════════\r\n    // MENU HANDLING\r\n    // ═══════════════════════════════════════════════════════════════════════\r\n\r\n    /**\r\n     * Inflates the toolbar menu using MenuHelper.\r\n     * Called by the Android framework when the menu is being created.\r\n     *\r\n     * @param menu     Menu object to be populated\r\n     * @param inflater MenuInflater to use for inflating menu resources\r\n     */\r\n    @Override\r\n    public void onCreateOptionsMenu(@NonNull Menu menu, @NonNull MenuInflater inflater) {\r\n        MenuHelper.setupMenu(menu, inflater, requireContext());\r\n        super.onCreateOptionsMenu(menu, inflater);\r\n    }\r\n\r\n    /**\r\n     * Handles menu item selection events.\r\n     * Delegates to MenuHelper for consistent menu behavior across the app.\r\n     *\r\n     * @param item The menu item that was selected\r\n     * @return     true if the event was handled, false otherwise\r\n     */\r\n    @Override\r\n    public boolean onOptionsItemSelected(@NonNull MenuItem item) {\r\n        if (MenuHelper.handleMenuSelection(item, this)) {\r\n            return true;\r\n        }\r\n        return super.onOptionsItemSelected(item);\r\n    }\r\n\r\n    // ═══════════════════════════════════════════════════════════════════════\r\n    // FRAGMENT NAVIGATION\r\n    // ═══════════════════════════════════════════════════════════════════════\r\n\r\n    /**\r\n     * Navigates to another fragment within the same activity.\r\n     * Adds the transaction to the back stack for back button support.\r\n     *\r\n     * @param fragment The fragment to navigate to\r\n     */\r\n    private void loadFragment(Fragment fragment) {\r\n        FragmentTransaction transaction = getParentFragmentManager().beginTransaction();\r\n        transaction.replace(R.id.fragment_container, fragment);\r\n        transaction.addToBackStack(null);\r\n        transaction.commit();\r\n    }\r\n}
+===================================================================
+diff --git a/app/src/main/java/com/example/SmartAirGroup2/ChildDashboardFragment.java b/app/src/main/java/com/example/SmartAirGroup2/ChildDashboardFragment.java
+--- a/app/src/main/java/com/example/SmartAirGroup2/ChildDashboardFragment.java	(revision d673f0b962688344b24fe28ee01a2d21cbe4a845)
++++ b/app/src/main/java/com/example/SmartAirGroup2/ChildDashboardFragment.java	(date 1764296194632)
+@@ -384,6 +384,7 @@
+     @Override
+     public void onCreateOptionsMenu(@NonNull Menu menu, @NonNull MenuInflater inflater) {
+         MenuHelper.setupMenu(menu, inflater, requireContext());
++        MenuHelper.setupNotification(this,menu,inflater);
+         super.onCreateOptionsMenu(menu, inflater);
+     }
+ 
