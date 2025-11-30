@@ -19,6 +19,7 @@ import androidx.appcompat.widget.Toolbar;
 import androidx.fragment.app.Fragment;
 
 
+import com.example.SmartAirGroup2.auth.data.repo.newUserAuth;
 import com.google.android.gms.tasks.Task;
 import com.google.android.gms.tasks.Tasks;
 import com.google.firebase.database.DataSnapshot;
@@ -147,8 +148,8 @@ public class AddChildFragment extends Fragment {
             return;
         }
 
-        if (password.length() < 8) {
-            Toast.makeText(getContext(), "Password must be at least 8 characters long", Toast.LENGTH_SHORT).show();
+        if (!newUserAuth.CheckPassword(password)){
+            Toast.makeText(getContext(), "Requires more complex password", Toast.LENGTH_SHORT).show();
             return;
         }
 
@@ -157,11 +158,18 @@ public class AddChildFragment extends Fragment {
             return;
         }
 
+
+
         // Check if username already exists before creating
         checkIfUsernameExists(uname,
                 () -> {
-                    // Username is available
-                    User user = new User(uname, name, email, password, "child");
+                    User user;
+                    if (!email.isEmpty()){
+                        user = new User(uname, name, email, password, "child");
+                    }else{
+                        user = new User(uname, name, CurrentUser.get().getEmail(), password, "child");
+                    }
+
                     addUserToDatabase(user);
                 },
                 () -> {
