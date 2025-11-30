@@ -152,7 +152,6 @@ public class ParentDashboardFragment extends Fragment {
                             DataSnapshot statusSnap = snapshot.child("status");
                             Integer pefZone = statusSnap.child("pefZone").getValue(Integer.class);
 
-                            // 一旦发现有 red zone，就弹窗，只弹一次
                             if (pefZone != null && pefZone == 2 && !safetyAlertShown) {
                                 safetyAlertShown = true;
                                 showSafetyAlertDialog(childUname, show_name);
