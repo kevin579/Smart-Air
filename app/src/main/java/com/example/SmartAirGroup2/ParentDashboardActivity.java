@@ -38,12 +38,6 @@ public class ParentDashboardActivity extends BaseActivity{
                         .replace(R.id.fragment_container, fragment)
                         .commit();
             }
-        } else {
-            ParentDashboardFragment fragment = ParentDashboardFragment.newInstance(username);
-            getSupportFragmentManager().beginTransaction()
-                    .replace(R.id.fragment_container, fragment)
-                    .commit();
-        }
-
+    }
     }
 }

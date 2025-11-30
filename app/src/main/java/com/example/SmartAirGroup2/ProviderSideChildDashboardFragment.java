@@ -1,5 +1,6 @@
 package com.example.SmartAirGroup2;
 
+import android.content.Intent;
 import android.os.Bundle;
 import android.util.Log;
 import android.view.LayoutInflater;
@@ -290,26 +291,25 @@ public class ProviderSideChildDashboardFragment extends Fragment {
                 loadFragment(pefFrag);
             });
         }
+        // ─────────────────────────────────────────────────────────────────
+        // Adherence Card Click Handler (Provider)
+        // ─────────────────────────────────────────────────────────────────
 
-        // ─────────────────────────────────────────────────────────────────
-        // Logs Card Click Handler
-        // ─────────────────────────────────────────────────────────────────
-        // Navigate to Peak Expiratory Flow measurement view
         if (!permissions.contains("controllerAdherence")) {
             cardAdherence.setVisibility(View.GONE);
             cardAdherence.setOnClickListener(null);
         } else {
-            // PEF Card Click Handler
             cardAdherence.setOnClickListener(v -> {
-                PEFZone pefFrag = new PEFZone();
-                Bundle args = new Bundle();
-                args.putString("childUname", uname);
-                args.putString("childName", name);
-                args.putString("user", "provider");
-                pefFrag.setArguments(args);
-                loadFragment(pefFrag);
+                if (getActivity() == null) return;
+
+                Intent intent = new Intent(getActivity(), ProviderAdherenceActivity.class);
+                intent.putExtra("childUname", uname);
+                intent.putExtra("childName", name);
+                intent.putExtra("user", "provider");
+                startActivity(intent);
             });
         }
+
 
         // ─────────────────────────────────────────────────────────────────
         // Logs Card Click Handler
