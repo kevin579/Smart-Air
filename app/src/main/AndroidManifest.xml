@@ -16,6 +16,9 @@
             android:name=".Parent_Provider_Dashboard"
             android:exported="false" />
         <activity
+            android:name=".ParentAdherenceActivity"
+            android:exported="false" />
+        <activity
             android:name=".ChildLogsActivity"
             android:exported="true" />
         <activity
