@@ -262,9 +262,9 @@ public class ProviderSideChildDashboardFragment extends Fragment {
                 args.putString("childName", name);
                 args.putString("user", "provider");
                 if (!permissions.contains("triggers")) {
-                    args.putString("triggers", "yes");
-                }else{
                     args.putString("triggers", "no");
+                }else{
+                    args.putString("triggers", "yes");
                 }
                 sympFrag.setArguments(args);
                 loadFragment(sympFrag);
