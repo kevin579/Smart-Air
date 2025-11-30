@@ -1,7 +1,7 @@
 package com.example.SmartAirGroup2;
 
-import android.content.SharedPreferences;
 import android.os.Bundle;
+import android.content.SharedPreferences;
 
 public class ParentDashboardActivity extends BaseActivity{
     @Override
@@ -19,6 +19,7 @@ public class ParentDashboardActivity extends BaseActivity{
                     .putString("type", "parent")
                     .apply();
         }
+
         boolean openAlertCenter = getIntent().getBooleanExtra("open_alert_center", false);
 
         if (savedInstanceState == null) {
@@ -34,10 +35,12 @@ public class ParentDashboardActivity extends BaseActivity{
                         .commit();
             } else {
                 ParentDashboardFragment fragment = ParentDashboardFragment.newInstance(username);
-                getSupportFragmentManager().beginTransaction()
+                getSupportFragmentManager()
+                        .beginTransaction()
                         .replace(R.id.fragment_container, fragment)
                         .commit();
             }
-    }
+        }
+
     }
 }
