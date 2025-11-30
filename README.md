@@ -1,4 +1,4 @@
-# Smart Air - Asthma Management for Kids & Parents
+# Smart Air
 
 Smart Air is a kid-friendly Android application designed to help children (ages 6–16) manage their asthma effectively. It empowers families to track symptoms, practice good inhaler techniques, and safely share data with healthcare providers.
 
@@ -84,12 +84,6 @@ This project follows the Model-View-Presenter (MVP) architectural pattern to ens
 | **IDE** | Android Studio |
 | **Backend** | Firebase Realtime Database (User data, Sync) |
 | **Auth** | Firebase Authentication |
-
-### Code Structure Highlights
-* **Contracts (\*`Contract.java`):** Define the interface between View and Presenter.
-* **Presenters (\*`Presenter.java`):** Handle business logic (e.g., `LoginPresenter` handles validation and async auth calls).
-* **Views (Fragments/Activities):** Handle UI rendering and user input (e.g., `LoginFragment`, `ParentDashboardFragment`).
-* **Utilities:** `SessionTimeoutManager` (Singleton handling inactivity timers), `MenuHelper` (Standardized menu handling).
 
 ---
 
