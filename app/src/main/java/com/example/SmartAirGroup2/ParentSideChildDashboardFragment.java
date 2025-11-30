@@ -119,15 +119,12 @@ public class ParentSideChildDashboardFragment extends Fragment {
      */
     private CardView cardInventory, cardPEF, cardSymptom, cardPrivacy;
 
-    private CardView cardPEF;
 
     /**
      * CardView for accessing symptom tracking and history.
      * Allows parents to view logged symptoms and patterns.
      */
-    private CardView cardSymptom;
     private CardView cardTriage;
-    private CardView cardTriageButton;
 
     // ═══════════════════════════════════════════════════════════════════════
     // CHILD IDENTITY
@@ -212,7 +209,6 @@ public class ParentSideChildDashboardFragment extends Fragment {
         cardPEF = view.findViewById(R.id.cardPEF);
         cardSymptom = view.findViewById(R.id.cardSymptom);
         cardTriage = view.findViewById(R.id.cardTriage);
-        cardTriageButton = view.findViewById(R.id.cardTriageButton);
         cardPrivacy = view.findViewById(R.id.cardPrivacy);
 
         // ─────────────────────────────────────────────────────────────────
@@ -284,36 +280,7 @@ public class ParentSideChildDashboardFragment extends Fragment {
             loadFragment(TriageFrag);
         });
 
-        // ─────────────────────────────────────────────────────────────────
-        // START TRIAGE Button Click Handler
-        // ─────────────────────────────────────────────────────────────────
-        cardTriageButton.setOnClickListener(v -> { // <-- 3. SET the click listener
-            // This is the bridge that starts your data collection flow.
-            launchTriageOnboarding();
-        });
-
         return view;
-    }
-
-    private void launchTriageOnboarding() {
-        // CRITICAL: Check that we have the username before proceeding.
-        if (uname == null || uname.isEmpty()) {
-            Toast.makeText(getContext(), "Error: Child information not found.", Toast.LENGTH_SHORT).show();
-            return;
-        }
-
-        // 1. Create an Intent to start your OnboardingActivity
-        Intent intent = new Intent(requireActivity(), OnboardingActivity.class);
-
-        // 2. Set the flag to "help" to trigger the triage data collection flow
-        intent.putExtra("onboardingType", "help");
-
-        // 3. Pass the child's username to the OnboardingActivity
-        //    The 'childUname' variable already holds the correct child's username from getArguments().
-        intent.putExtra("username", uname);
-
-        // 4. Start the activity
-        startActivity(intent);
     }
 
     // ═══════════════════════════════════════════════════════════════════════
