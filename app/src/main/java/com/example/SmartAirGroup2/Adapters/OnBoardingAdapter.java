@@ -53,6 +53,7 @@ public class OnBoardingAdapter extends PagerAdapter{
         this.incidentData = incidentData;
 
         switch (type) {
+            case "technique":
             case "child":
                 this.titles = child_titles;
                 this.subtitles = child_subtitles;

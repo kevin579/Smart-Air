@@ -38,7 +38,6 @@ public class ChildDashboard extends AppCompatActivity {
 
         Button btnStartTriage = findViewById(R.id.btnTriage);
 
-        // 2. Set its click listener.
         btnStartTriage.setOnClickListener(new View.OnClickListener() {
             @Override
             public void onClick(View v) {
@@ -47,6 +46,15 @@ public class ChildDashboard extends AppCompatActivity {
             }
         });
 
+        Button btnTechniqueHelper = findViewById(R.id.btnTechnique);
+
+        btnTechniqueHelper.setOnClickListener(new View.OnClickListener() {
+            @Override
+            public void onClick(View v) {
+                // This is the bridge that starts your technique helper slides.
+                launchTechniqueOnboarding();
+            }
+        });
     }
 
     private void launchTriageOnboarding() {
@@ -61,6 +69,19 @@ public class ChildDashboard extends AppCompatActivity {
         intent.putExtra("username", currentChildId);
 
         // 4. Start the activity.
+        startActivity(intent);
+    }
+
+    private void launchTechniqueOnboarding() {
+        // 1. Create an Intent to start your OnboardingActivity.
+        Intent intent = new Intent(ChildDashboard.this, OnboardingActivity.class);
+
+        // 2. Set the flag to "technique" to trigger the correct set of slides.
+        intent.putExtra("onboardingType", "technique");
+
+        // Note: We don't need to pass the username here as this flow doesn't save data.
+
+        // 3. Start the activity.
         startActivity(intent);
     }
 }
