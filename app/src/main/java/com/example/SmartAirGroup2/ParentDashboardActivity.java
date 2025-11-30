@@ -1,5 +1,6 @@
 package com.example.SmartAirGroup2;
 
+import android.content.SharedPreferences;
 import android.os.Bundle;
 
 public class ParentDashboardActivity extends BaseActivity{
@@ -11,11 +12,38 @@ public class ParentDashboardActivity extends BaseActivity{
         // Get username sent from login
         String username = getIntent().getStringExtra("username");
 
-        // Load fragment and pass username
-        ParentDashboardFragment fragment = ParentDashboardFragment.newInstance(username);
+        if (username != null && !username.trim().isEmpty()) {
+            SharedPreferences appPrefs = getSharedPreferences("APP_DATA", MODE_PRIVATE);
+            appPrefs.edit()
+                    .putString("parentUname", username)
+                    .putString("type", "parent")
+                    .apply();
+        }
+        boolean openAlertCenter = getIntent().getBooleanExtra("open_alert_center", false);
 
-        getSupportFragmentManager().beginTransaction()
-                .replace(R.id.fragment_container, fragment)
-                .commit();
+        if (savedInstanceState == null) {
+            if (openAlertCenter) {
+                AlertCenterFragment alertFrag = new AlertCenterFragment();
+                Bundle args = new Bundle();
+                args.putString("parentUname", username);
+                alertFrag.setArguments(args);
+
+                getSupportFragmentManager()
+                        .beginTransaction()
+                        .replace(R.id.fragment_container, alertFrag)
+                        .commit();
+            } else {
+                ParentDashboardFragment fragment = ParentDashboardFragment.newInstance(username);
+                getSupportFragmentManager().beginTransaction()
+                        .replace(R.id.fragment_container, fragment)
+                        .commit();
+            }
+        } else {
+            ParentDashboardFragment fragment = ParentDashboardFragment.newInstance(username);
+            getSupportFragmentManager().beginTransaction()
+                    .replace(R.id.fragment_container, fragment)
+                    .commit();
+        }
+
     }
 }
