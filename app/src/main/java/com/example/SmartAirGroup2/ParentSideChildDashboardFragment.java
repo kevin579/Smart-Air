@@ -23,6 +23,10 @@ import com.google.firebase.database.DatabaseReference;
 import com.google.firebase.database.FirebaseDatabase;
 import com.google.firebase.database.ValueEventListener;
 
+import android.content.Intent;
+import android.widget.Toast;
+
+import com.example.SmartAirGroup2.OnboardingActivity;
 
 /**
  * ChildDashboardFragment (Parent-Side View)
@@ -95,7 +99,7 @@ import com.google.firebase.database.ValueEventListener;
  * Author: Kevin Li
  * Last Updated: November 2025
  */
-public class ChildDashboardFragment extends Fragment {
+public class ParentSideChildDashboardFragment extends Fragment {
 
     // ═══════════════════════════════════════════════════════════════════════
     // UI COMPONENTS
@@ -108,29 +112,19 @@ public class ChildDashboardFragment extends Fragment {
     private Toolbar toolbar;
 
     /**
-     * CardView for accessing the child's medication inventory.
+     * CardView for accessing the child's status .
      * Color-coded based on medicine stock levels:
-     *   - Red (alert): Critical low stock
-     *   - Green (good): Adequate stock
+     *   - Red (alert)
+     *   - Green (good)
      */
-    private CardView cardInventory;
+    private CardView cardInventory, cardPEF, cardSymptom, cardPrivacy;
 
-    /**
-     * CardView for accessing Peak Expiratory Flow (PEF) measurements.
-     * Color-coded based on breathing zones:
-     *   - Red (zone 2): Severe difficulty
-     *   - Yellow (zone 1): Caution
-     *   - Green (zone 0): Normal
-     */
-    private CardView cardPEF;
 
     /**
      * CardView for accessing symptom tracking and history.
      * Allows parents to view logged symptoms and patterns.
      */
-    private CardView cardSymptom;
     private CardView cardTriage;
-
 
     // ═══════════════════════════════════════════════════════════════════════
     // CHILD IDENTITY
@@ -192,7 +186,7 @@ public class ChildDashboardFragment extends Fragment {
     @Nullable
     @Override
     public View onCreateView(@NonNull LayoutInflater inflater, @Nullable ViewGroup container, @Nullable Bundle savedInstanceState) {
-        View view = inflater.inflate(R.layout.activity_child_dashboard, container, false);
+        View view = inflater.inflate(R.layout.fragment_parent_side_child_dashboard, container, false);
 
         // ─────────────────────────────────────────────────────────────────
         // Toolbar Configuration
@@ -215,6 +209,7 @@ public class ChildDashboardFragment extends Fragment {
         cardPEF = view.findViewById(R.id.cardPEF);
         cardSymptom = view.findViewById(R.id.cardSymptom);
         cardTriage = view.findViewById(R.id.cardTriage);
+        cardPrivacy = view.findViewById(R.id.cardPrivacy);
 
         // ─────────────────────────────────────────────────────────────────
         // Load and Apply Status Colors
@@ -230,6 +225,7 @@ public class ChildDashboardFragment extends Fragment {
             Bundle args = new Bundle();
             args.putString("childUname", uname);
             args.putString("childName", name);
+            args.putString("user", "parent");
             invFrag.setArguments(args);
             loadFragment(invFrag);
         });
@@ -243,6 +239,7 @@ public class ChildDashboardFragment extends Fragment {
             Bundle args = new Bundle();
             args.putString("childUname", uname);
             args.putString("childName", name);
+            args.putString("user", "parent");
             pefFrag.setArguments(args);
             loadFragment(pefFrag);
         });
@@ -256,8 +253,18 @@ public class ChildDashboardFragment extends Fragment {
             Bundle args = new Bundle();
             args.putString("childUname", uname);
             args.putString("childName", name);
+            args.putString("user", "parent");
             sympFrag.setArguments(args);
             loadFragment(sympFrag);
+        });
+
+        cardPrivacy.setOnClickListener(v -> {
+            SharingPermissionsFragment privacyFrag = new SharingPermissionsFragment();
+            Bundle args = new Bundle();
+            args.putString("childName", name);
+            args.putString("childUname", uname);
+            privacyFrag.setArguments(args);
+            loadFragment(privacyFrag);
         });
 
         // ─────────────────────────────────────────────────────────────────

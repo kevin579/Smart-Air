@@ -17,4 +17,10 @@
     <color name="red_light">#FD5E63</color>
     <color name="red_dark">#F24646</color>
     <color name="teal">#FF018786</color>
+    <color name="delete">#FFFF6F6F</color>
+    <color name="alert_warning_border">#FFC107</color>
+    <color name="alert_warning_text">#F9A825</color>
+    <color name="alert_error_border">#EF5350</color>
+    <color name="alert_error_text">#D32F2F</color>
+
 </resources>

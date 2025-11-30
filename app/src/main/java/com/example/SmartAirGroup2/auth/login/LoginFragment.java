@@ -16,18 +16,25 @@ import androidx.annotation.Nullable;
 import androidx.fragment.app.Fragment;
 
 import com.example.SmartAirGroup2.ChildDashboard;
-import com.example.SmartAirGroup2.Parent_Provider_Dahsboard;
+import com.example.SmartAirGroup2.CurrentUser;
+import com.example.SmartAirGroup2.OnboardingActivity;
+import com.example.SmartAirGroup2.ParentDashboardActivity;
+//import com.example.SmartAirGroup2.Parent_Provider_Dahsboard;
+import com.example.SmartAirGroup2.ProviderDashboardActivity;
 import com.example.SmartAirGroup2.R;
+import com.example.SmartAirGroup2.User;
 import com.example.SmartAirGroup2.auth.data.repo.AuthRepository;
 import com.example.SmartAirGroup2.auth.data.repo.FirebaseRtdbAuthRepository;
 import com.example.SmartAirGroup2.create_account;
 import com.example.SmartAirGroup2.password_recover;
+import com.google.firebase.database.DatabaseReference;
+import com.google.firebase.database.FirebaseDatabase;
 
 public class LoginFragment extends Fragment implements LoginContract.View {
     private LoginPresenter presenter;
     private EditText  emailInput, passwordInput,usernameInput ;
     private Spinner roleSpinner;
-    private String selectedRole;
+    private String field, username, selectedRole, email, password;
 
 
     @Nullable
@@ -92,15 +99,73 @@ public class LoginFragment extends Fragment implements LoginContract.View {
     public void showLoginSuccess(String role) {
         if (emailInput != null)    emailInput.setError(null);
         if (passwordInput != null) passwordInput.setError(null);
-        Toast.makeText(getContext(), "Login success", Toast.LENGTH_SHORT).show();
+
+        username = usernameInput.getText().toString().trim();
+        email = emailInput.getText().toString();
+        password = passwordInput.getText().toString();
+
+
+        User user = new User(username, username, email, password, role);
+        CurrentUser.set(user);
+
+        if (usernameInput != null) usernameInput.setText("");
+        if (emailInput != null)    emailInput.setText("");
+        if (passwordInput != null) passwordInput.setText("");
+        if (roleSpinner != null)   roleSpinner.setSelection(0);
+
+
+//        String username = usernameInput.getText().toString();
+
+//        Toast.makeText(getContext(), "Login success", Toast.LENGTH_SHORT).show();
+
+
         if(role.equals("Child")){
-            Intent intent = new Intent(getActivity(), ChildDashboard.class);
-            startActivity(intent);
+            field = "children";
+        }else if(role.equals("Parent")){
+            field = "parents";
         }
         else{
-            Intent intent = new Intent(getActivity(), Parent_Provider_Dahsboard.class);
-            startActivity(intent);
+            field = "provider";
         }
+
+
+        DatabaseReference stateRef = FirebaseDatabase.getInstance()
+                .getReference("categories/users")
+                .child(field)
+                .child(username);
+
+        stateRef.child("onboarded").get()
+                .addOnSuccessListener(snapshot -> {
+                    boolean onboarded = snapshot.exists() && Boolean.TRUE.equals(snapshot.getValue(Boolean.class));
+
+                    if (!onboarded) {
+                        Intent intent = new Intent(getActivity(), OnboardingActivity.class);
+                        intent.putExtra("username", username);
+                        intent.putExtra("type", field);
+                        startActivity(intent);
+                    } else {
+
+                        if(role.equals("Child")){
+                            Intent intent = new Intent(getActivity(), ChildDashboard.class);
+                            startActivity(intent);
+                        }else if(role.equals("Parent")){
+                            Intent intent = new Intent(getActivity(), ParentDashboardActivity.class);
+                            intent.putExtra("username", username);
+                            startActivity(intent);
+                        }
+                        else{
+                            Intent intent = new Intent(getActivity(), ProviderDashboardActivity.class);
+                            intent.putExtra("username", username);
+                            startActivity(intent);
+                        }
+                    }
+                })
+                .addOnFailureListener(e -> {
+                    Intent intent = new Intent(getActivity(), OnboardingActivity.class);
+                    intent.putExtra("username", username);
+                    intent.putExtra("type", field);
+                    startActivity(intent);
+                });
 
     }
 

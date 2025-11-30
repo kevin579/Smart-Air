@@ -13,20 +13,25 @@
         android:theme="@style/Theme.SmartAir"
         tools:targetApi="31">
         <activity
-            android:name=".Parent_Provider_Dahsboard"
+            android:name=".Parent_Provider_Dashboard"
             android:exported="false" />
         <activity
             android:name=".ChildLogsActivity"
             android:exported="true" />
         <activity
             android:name=".ChildDashboard"
-            android:exported="false" />
+            android:exported="true" />
         <activity
             android:name=".password_recover"
             android:exported="false" />
         <activity
             android:name=".create_account"
             android:exported="false" />
+        <activity android:name=".ParentDashboardActivity" />
+        <activity android:name=".ProviderDashboardActivity" />
+        <activity android:name=".auth.login.LoginFragment"
+            tools:ignore="Instantiatable" />
+        <activity android:name=".OnboardingActivity" />
         <activity
             android:name=".MainActivity"
             android:exported="true"
@@ -37,6 +42,7 @@
                 <category android:name="android.intent.category.LAUNCHER" />
             </intent-filter>
         </activity>
+
         <activity
             android:name=".LoginPage"
             android:exported="false"
