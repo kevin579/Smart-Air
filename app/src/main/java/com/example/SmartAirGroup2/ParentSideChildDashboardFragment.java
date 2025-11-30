@@ -1,5 +1,6 @@
 package com.example.SmartAirGroup2;
 
+import android.content.Intent;
 import android.os.Bundle;
 import android.util.Log;
 import android.view.LayoutInflater;
@@ -113,7 +114,7 @@ public class ParentSideChildDashboardFragment extends Fragment {
      *   - Red (alert)
      *   - Green (good)
      */
-    private CardView cardInventory, cardPEF, cardSymptom, cardPrivacy;
+    private CardView cardInventory, cardPEF, cardSymptom, cardPrivacy,cardAdherence ;
 
 
     // ═══════════════════════════════════════════════════════════════════════
@@ -199,6 +200,8 @@ public class ParentSideChildDashboardFragment extends Fragment {
         cardPEF = view.findViewById(R.id.cardPEF);
         cardSymptom = view.findViewById(R.id.cardSymptom);
         cardPrivacy = view.findViewById(R.id.cardPrivacy);
+        cardAdherence = view.findViewById(R.id.card_controller_adherence);
+
 
         // ─────────────────────────────────────────────────────────────────
         // Load and Apply Status Colors
@@ -255,6 +258,18 @@ public class ParentSideChildDashboardFragment extends Fragment {
             privacyFrag.setArguments(args);
             loadFragment(privacyFrag);
         });
+
+        cardAdherence.setOnClickListener(new View.OnClickListener() {
+            @Override
+            public void onClick(View v) {
+
+                Intent intent = new Intent(getActivity(), ParentAdherenceActivity.class);
+                intent.putExtra("childUsername", uname);
+                intent.putExtra("childName", name);
+                startActivity(intent);
+            }
+        });
+
 
         return view;
     }
