@@ -115,7 +115,7 @@
 
     <string name="triage_subtitle1">This is guidance, not a diagnosis. If in doubt, call emergency. Use a peak flow meter to measure your peak expiratory flow (PEF) and input it below.</string>
     <string name="triage_subtitle2">This is guidance, not a diagnosis. If in doubt, call emergency. Are you experiencing any of the below symptoms? If so, fill them in and continue.</string>
-    <string name="triage_subtitle3">This is guidance, not a diagnosis. If in doubt, call emergency. If the flags/symptoms are critical, press the Emergency Now button, otherwise, press the Start Home Steps button. Return afterwards to complete the triage.</string>
+    <string name="triage_subtitle3">This is guidance, not a diagnosis. If in doubt, call emergency. If the flags/symptoms are critical, dial the emergency number, otherwise, continue.</string>
     <string name="triage_subtitle4">This is guidance, not a diagnosis. If in doubt, call emergency. Continue by pressing the bottom right arrow button to submit your triage report.</string>
 
     <string name="technique_title1">Technique Helper</string>
