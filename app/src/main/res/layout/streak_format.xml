@@ -36,152 +36,131 @@
             android:layout_height="wrap_content"
             android:gravity="center_horizontal"
             android:orientation="vertical"
-            android:paddingTop="16dp"
-            android:spacing="16dp">
+            android:paddingTop="16dp">
 
-            <FrameLayout
-                android:id="@+id/day5_badge"
-                android:layout_width="100dp"
-                android:layout_height="100dp"
-                android:layout_margin="10dp"
-                android:background="@drawable/badge_bg"
-                android:padding="10dp">
+            <!-- Badge 1：Perfect Controller Week -->
+            <LinearLayout
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:orientation="vertical"
+                android:gravity="center_horizontal"
+                android:layout_margin="10dp">
 
-                <TextView
-                    android:layout_width="match_parent"
-                    android:layout_height="match_parent"
-                    android:background="@drawable/day5_badge"
-                    android:gravity="bottom|center_horizontal"
-                    android:shadowColor="#FFFFFF"
-                    android:shadowDx="0"
-                    android:shadowDy="0"
-                    android:shadowRadius="5"
-                    android:text="5"
-                    android:textColor="#FFFFE3"
-                    android:textSize="25sp"
-                    android:textStyle="bold" />
-            </FrameLayout>
+                <FrameLayout
+                    android:id="@+id/day20_badge"
+                    android:layout_width="100dp"
+                    android:layout_height="100dp"
+                    android:background="@drawable/badge_bg"
+                    android:padding="10dp">
 
-
-            <FrameLayout
-                android:id="@+id/day10_badge"
-                android:layout_width="100dp"
-                android:layout_height="100dp"
-                android:layout_margin="10dp"
-                android:background="@drawable/badge_bg"
-                android:padding="10dp">
+                    <TextView
+                        android:layout_width="match_parent"
+                        android:layout_height="match_parent"
+                        android:background="@drawable/day20_badge"
+                        android:gravity="bottom|center_horizontal"
+                        android:shadowColor="#FFFFFF"
+                        android:shadowDx="0"
+                        android:shadowDy="0"
+                        android:shadowRadius="5"
+                        android:textColor="#FFFFE3"
+                        android:textSize="25sp"
+                        android:textStyle="bold" />
+                </FrameLayout>
 
                 <TextView
-                    android:layout_width="match_parent"
-                    android:layout_height="match_parent"
-                    android:background="@drawable/day10_badge"
-                    android:gravity="bottom|center_horizontal"
-                    android:shadowColor="#FFFFFF"
-                    android:shadowDx="0"
-                    android:shadowDy="0"
-                    android:shadowRadius="5"
-                    android:text="10"
-                    android:textColor="#FFFFE3"
-                    android:textSize="25sp"
+                    android:id="@+id/tv_badge_perfect_week"
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:layout_marginTop="6dp"
+                    android:text="Perfect Controller Week"
+                    android:textColor="@android:color/white"
+                    android:textSize="14sp"
                     android:textStyle="bold" />
-            </FrameLayout>
+            </LinearLayout>
 
-            <FrameLayout
-                android:id="@+id/day15_badge"
-                android:layout_width="100dp"
-                android:layout_height="100dp"
-                android:layout_margin="10dp"
-                android:background="@drawable/badge_bg"
-                android:padding="10dp">
+            <!-- Badge 2：10 High-quality Technique Sessions -->
+            <LinearLayout
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:orientation="vertical"
+                android:gravity="center_horizontal"
+                android:layout_margin="10dp">
+
+                <FrameLayout
+                    android:id="@+id/day25_badge"
+                    android:layout_width="100dp"
+                    android:layout_height="100dp"
+                    android:background="@drawable/badge_bg"
+                    android:padding="10dp">
+
+                    <TextView
+                        android:layout_width="match_parent"
+                        android:layout_height="match_parent"
+                        android:background="@drawable/day25_badge"
+                        android:gravity="bottom|center_horizontal"
+                        android:shadowColor="#FFFFFF"
+                        android:shadowDx="0"
+                        android:shadowDy="0"
+                        android:shadowRadius="5"
+                        android:textColor="#FFFFE3"
+                        android:textSize="25sp"
+                        android:textStyle="bold" />
+                </FrameLayout>
 
                 <TextView
-                    android:layout_width="match_parent"
-                    android:layout_height="match_parent"
-                    android:background="@drawable/day15_badge"
-                    android:gravity="bottom|center_horizontal"
-                    android:shadowColor="#FFFFFF"
-                    android:shadowDx="0"
-                    android:shadowDy="0"
-                    android:shadowRadius="5"
-                    android:text="15"
-                    android:textColor="#FFFFE3"
-                    android:textSize="25sp"
+                    android:id="@+id/tv_badge_ten_tech"
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:layout_marginTop="6dp"
+                    android:text="10 High-quality Technique Sessions"
+                    android:textColor="@android:color/white"
+                    android:textSize="14sp"
+                    android:gravity="center"
                     android:textStyle="bold" />
-            </FrameLayout>
+            </LinearLayout>
 
-            <FrameLayout
-                android:id="@+id/day20_badge"
-                android:layout_width="100dp"
-                android:layout_height="100dp"
+            <!-- Badge 3：Low Rescue Month -->
+            <LinearLayout
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:orientation="vertical"
+                android:gravity="center_horizontal"
                 android:layout_margin="10dp"
-                android:background="@drawable/badge_bg"
-                android:padding="10dp">
+                android:layout_marginBottom="30dp">
+
+                <FrameLayout
+                    android:id="@+id/day30_badge"
+                    android:layout_width="100dp"
+                    android:layout_height="100dp"
+                    android:background="@drawable/badge_bg"
+                    android:padding="10dp">
+
+                    <TextView
+                        android:layout_width="match_parent"
+                        android:layout_height="match_parent"
+                        android:background="@drawable/day30_badge"
+                        android:gravity="bottom|center_horizontal"
+                        android:shadowColor="#FFFFFF"
+                        android:shadowDx="0"
+                        android:shadowDy="0"
+                        android:shadowRadius="5"
+                        android:textColor="#FFFFE3"
+                        android:textSize="25sp"
+                        android:textStyle="bold" />
+                </FrameLayout>
 
                 <TextView
-                    android:layout_width="match_parent"
-                    android:layout_height="match_parent"
-                    android:background="@drawable/day20_badge"
-                    android:gravity="bottom|center_horizontal"
-                    android:shadowColor="#FFFFFF"
-                    android:shadowDx="0"
-                    android:shadowDy="0"
-                    android:shadowRadius="5"
-                    android:text="20"
-                    android:textColor="#FFFFE3"
-                    android:textSize="25sp"
+                    android:id="@+id/tv_badge_low_rescue"
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:layout_marginTop="6dp"
+                    android:text="Low Rescue Month"
+                    android:textColor="@android:color/white"
+                    android:textSize="14sp"
                     android:textStyle="bold" />
-            </FrameLayout>
-
-            <FrameLayout
-                android:id="@+id/day25_badge"
-                android:layout_width="100dp"
-                android:layout_height="100dp"
-                android:layout_margin="10dp"
-                android:background="@drawable/badge_bg"
-                android:padding="10dp">
-
-                <TextView
-                    android:layout_width="match_parent"
-                    android:layout_height="match_parent"
-                    android:background="@drawable/day25_badge"
-                    android:gravity="bottom|center_horizontal"
-                    android:shadowColor="#FFFFFF"
-                    android:shadowDx="0"
-                    android:shadowDy="0"
-                    android:shadowRadius="5"
-                    android:text="25"
-                    android:textColor="#FFFFE3"
-                    android:textSize="25sp"
-                    android:textStyle="bold" />
-            </FrameLayout>
-
-            <FrameLayout
-                android:id="@+id/day30_badge"
-                android:layout_width="100dp"
-                android:layout_height="100dp"
-                android:layout_margin="10dp"
-                android:layout_marginBottom="30dp"
-                android:background="@drawable/badge_bg"
-                android:padding="10dp">
-
-                <TextView
-                    android:layout_width="match_parent"
-                    android:layout_height="match_parent"
-                    android:background="@drawable/day30_badge"
-                    android:gravity="bottom|center_horizontal"
-                    android:shadowColor="#FFFFFF"
-                    android:shadowDx="0"
-                    android:shadowDy="0"
-                    android:shadowRadius="5"
-                    android:text="30"
-                    android:textColor="#FFFFE3"
-                    android:textSize="25sp"
-                    android:textStyle="bold" />
-            </FrameLayout>
-
+            </LinearLayout>
 
         </LinearLayout>
     </ScrollView>
 
 </androidx.constraintlayout.widget.ConstraintLayout>
-
