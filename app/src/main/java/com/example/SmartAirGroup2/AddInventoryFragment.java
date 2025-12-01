@@ -5,7 +5,6 @@ import android.os.Bundle;
 import android.view.LayoutInflater;
 import android.view.Menu;
 import android.view.MenuInflater;
-import android.view.MenuItem;
 import android.view.View;
 import android.view.ViewGroup;
 import android.widget.Button;
@@ -18,9 +17,6 @@ import androidx.appcompat.app.AppCompatActivity;
 import androidx.appcompat.widget.Toolbar;
 import androidx.fragment.app.Fragment;
 
-import com.google.android.gms.tasks.Task;
-import com.google.android.gms.tasks.Tasks;
-import com.google.firebase.database.DataSnapshot;
 import com.google.firebase.database.DatabaseReference;
 import com.google.firebase.database.FirebaseDatabase;
 
@@ -134,7 +130,7 @@ public class AddInventoryFragment extends Fragment {
             ((AppCompatActivity) requireActivity()).setSupportActionBar(toolbar);
             toolbar.setTitle("Update Medicine");
         } else {
-            view = inflater.inflate(R.layout.activity_add_medicine_fragment, container, false);
+            view = inflater.inflate(R.layout.fragment_add_medicine_fragment, container, false);
             toolbar = view.findViewById(R.id.toolbar);
             ((AppCompatActivity) requireActivity()).setSupportActionBar(toolbar);
             toolbar.setTitle("Add Medicine");

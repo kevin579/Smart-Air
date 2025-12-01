@@ -11,7 +11,6 @@ import android.view.View;
 import android.view.ViewGroup;
 import android.widget.Button;
 import android.widget.EditText;
-import android.widget.Spinner;
 import android.widget.Toast;
 
 import androidx.annotation.NonNull;
@@ -89,7 +88,7 @@ public class AddChildFragment extends Fragment {
                              @Nullable Bundle savedInstanceState) {
 
         // Inflate layout for this fragment
-        View view = inflater.inflate(R.layout.activity_add_child_fragment, container, false);
+        View view = inflater.inflate(R.layout.fragment_add_child_fragment, container, false);
 
         // Initialize toolbar
         toolbar = view.findViewById(R.id.toolbar);

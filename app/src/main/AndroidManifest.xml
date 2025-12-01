@@ -21,11 +21,9 @@
         <activity
             android:name=".ParentAdherenceActivity"
             android:exported="false" />
+
         <activity
-            android:name=".ChildLogsActivity"
-            android:exported="true" />
-        <activity
-            android:name=".ChildDashboard"
+            android:name=".ChildDashboardActivity"
             android:exported="true" />
         <activity
             android:name=".password_recover"

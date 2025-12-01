@@ -1,9 +1,6 @@
 package com.example.SmartAirGroup2;
 
-import android.app.DatePickerDialog;
 import android.app.TimePickerDialog;
-import android.content.Context;
-import android.content.SharedPreferences;
 import android.os.Bundle;
 import android.text.TextUtils;
 import android.view.LayoutInflater;
@@ -22,18 +19,13 @@ import androidx.annotation.Nullable;
 import androidx.appcompat.app.AppCompatActivity;
 import androidx.appcompat.widget.Toolbar;
 import androidx.fragment.app.Fragment;
-import androidx.fragment.app.FragmentTransaction;
 
-import com.google.android.gms.tasks.Task;
-import com.google.android.gms.tasks.Tasks;
-import com.google.firebase.database.DataSnapshot;
 import com.google.firebase.database.DatabaseReference;
 import com.google.firebase.database.FirebaseDatabase;
 
 import java.text.SimpleDateFormat;
 import java.util.ArrayList;
 import java.util.Calendar;
-import java.util.Date;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Locale;
@@ -129,7 +121,7 @@ public class AddSymptomFragment extends Fragment {
                              @Nullable Bundle savedInstanceState) {
 
         // Inflate layout for this fragment
-        View view = inflater.inflate(R.layout.activity_add_symptom_fragment, container, false);
+        View view = inflater.inflate(R.layout.fragment_add_symptom_fragment, container, false);
 
         // Initialize toolbar
         toolbar = view.findViewById(R.id.toolbar);

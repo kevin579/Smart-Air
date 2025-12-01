@@ -27,4 +27,15 @@
 
     </style>
 
+    <style name="ShapeAppearance.SmallCornerRadius" parent="ShapeAppearance.MaterialComponents.SmallComponent">
+        <item name="cornerFamily">rounded</item>
+        <item name="cornerSize">4dp</item>
+    </style>
+
+    <style name="Button.BlueSmallRadius" parent="Widget.MaterialComponents.Button">
+        <item name="android:backgroundTint">#1565C0</item>
+        <item name="shapeAppearanceOverlay">@style/ShapeAppearance.SmallCornerRadius</item>
+        <item name="android:textColor">@android:color/white</item>
+    </style>
+
 </resources>
