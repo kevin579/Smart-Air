@@ -10,8 +10,11 @@ import android.view.MenuItem;
 import android.view.View;
 import android.view.ViewGroup;
 
+import androidx.activity.result.ActivityResultLauncher;
+import androidx.activity.result.contract.ActivityResultContracts;
 import androidx.annotation.NonNull;
 import androidx.annotation.Nullable;
+import androidx.appcompat.app.AlertDialog;
 import androidx.appcompat.app.AppCompatActivity;
 import androidx.appcompat.widget.Toolbar;
 import androidx.cardview.widget.CardView;
@@ -114,8 +117,8 @@ public class ParentSideChildDashboardFragment extends Fragment {
      *   - Red (alert)
      *   - Green (good)
      */
-    private CardView cardInventory, cardPEF, cardSymptom, cardPrivacy,cardAdherence ;
-
+    private CardView cardInventory, cardPEF, cardSymptom, cardPrivacy, cardProviderReport, cardAdherence;
+    private ActivityResultLauncher<Intent> createPdfLauncher;
 
     // ═══════════════════════════════════════════════════════════════════════
     // CHILD IDENTITY
@@ -200,8 +203,8 @@ public class ParentSideChildDashboardFragment extends Fragment {
         cardPEF = view.findViewById(R.id.cardPEF);
         cardSymptom = view.findViewById(R.id.cardSymptom);
         cardPrivacy = view.findViewById(R.id.cardPrivacy);
+        cardProviderReport = view.findViewById(R.id.cardProviderReport);
         cardAdherence = view.findViewById(R.id.card_controller_adherence);
-
 
         // ─────────────────────────────────────────────────────────────────
         // Load and Apply Status Colors
@@ -259,6 +262,16 @@ public class ParentSideChildDashboardFragment extends Fragment {
             loadFragment(privacyFrag);
         });
 
+        cardProviderReport.setOnClickListener(v -> {
+            ProviderReport providerRepFrag = new ProviderReport();
+            Bundle args = new Bundle();
+            args.putString("childUname", uname);
+            args.putString("childName", name);
+            args.putString("user", "parent");
+            providerRepFrag.setArguments(args);
+            loadFragment(providerRepFrag);
+        });
+
         cardAdherence.setOnClickListener(new View.OnClickListener() {
             @Override
             public void onClick(View v) {
@@ -273,7 +286,6 @@ public class ParentSideChildDashboardFragment extends Fragment {
 
         return view;
     }
-
     // ═══════════════════════════════════════════════════════════════════════
     // FIREBASE STATUS LOADING
     // ═══════════════════════════════════════════════════════════════════════
