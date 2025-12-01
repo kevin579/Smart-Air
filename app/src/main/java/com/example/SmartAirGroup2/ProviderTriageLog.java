@@ -313,36 +313,8 @@ public class ProviderTriageLog extends Fragment {
             return;
         }
 
-        ImageView deleteIcon = new ImageView(ctx);
-        deleteIcon.setLayoutParams(new LinearLayout.LayoutParams(dpToPx(24), dpToPx(24)));
-        deleteIcon.setImageResource(android.R.drawable.ic_delete);
-
-        deleteIcon.setOnClickListener(v -> {
-            new AlertDialog.Builder(ctx)
-                    .setTitle("Delete Triage")
-                    .setMessage("Are you sure you want to delete this triage entry?")
-                    .setPositiveButton("Delete", (dialog, which) -> {
-                        DatabaseReference triageRef = FirebaseDatabase.getInstance()
-                                .getReference("categories/users/children")
-                                .child(uname)
-                                .child("data/triages") // 🔹 updated path
-                                .child(triageId);
-
-                        triageRef.removeValue()
-                                .addOnSuccessListener(a -> {
-                                    Toast.makeText(ctx, "Triage removed", Toast.LENGTH_SHORT).show();
-                                    loadTriages(); // 🔹 reload triages
-                                })
-                                .addOnFailureListener(e ->
-                                        Toast.makeText(ctx, "Delete failed: " + e.getMessage(), Toast.LENGTH_SHORT).show()
-                                );
-                    })
-                    .setNegativeButton("Cancel", null)
-                    .show();
-        });
 
         topRow.addView(titleView);
-        topRow.addView(deleteIcon);
 
         TextView timeView = buildInfoText("Time: " + time);
         TextView guidanceView = buildInfoText("Guidance: " + guidance);
