@@ -104,6 +104,7 @@ public class OnboardingActivity extends AppCompatActivity {
 
                     if (field.equals("children")) {
                         intent = new Intent(OnboardingActivity.this, ChildDashboard.class);
+                        intent.putExtra("childId", username);
                     } else if (field.equals("parents")) {
                         intent = new Intent(OnboardingActivity.this, ParentDashboardActivity.class);
                         intent.putExtra("username", username);

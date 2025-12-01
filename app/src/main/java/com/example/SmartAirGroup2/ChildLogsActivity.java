@@ -33,7 +33,7 @@ import java.util.Map;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
-public class ChildLogsActivity extends AppCompatActivity {
+public class ChildLogsActivity extends BaseActivity {
 
     private String currentChildId = "andy6688";
     private FirebaseDatabase db;
