@@ -1,21 +1,24 @@
 package com.example.SmartAirGroup2;
 
 import android.content.Context;
-import android.content.Intent;
 import android.content.SharedPreferences;
 import android.os.Bundle;
 import android.view.LayoutInflater;
+import android.view.Menu;
+import android.view.MenuInflater;
+import android.view.MenuItem;
 import android.view.View;
 import android.view.ViewGroup;
 import android.widget.Button;
 import android.widget.TextView;
-import android.widget.Toast;
 
 import androidx.annotation.NonNull;
 import androidx.annotation.Nullable;
 import androidx.appcompat.app.AppCompatActivity;
 import androidx.fragment.app.Fragment;
 import androidx.fragment.app.FragmentTransaction;
+import androidx.appcompat.widget.Toolbar;
+
 
 /**
  * ChildDashboard (Child-side view)
@@ -70,6 +73,7 @@ public class ChildDashboardFragment extends Fragment {
      */
     private String currentChildId;
 
+    private Toolbar toolbar;
     // ─────────────────────────────────────────────────────────────────
     // FACTORY METHOD (Replaces Intent usage for Fragments)
     // ─────────────────────────────────────────────────────────────────
@@ -124,12 +128,14 @@ public class ChildDashboardFragment extends Fragment {
     @Nullable
     @Override
     public View onCreateView(@NonNull LayoutInflater inflater, @Nullable ViewGroup container, @Nullable Bundle savedInstanceState) {
-        // 1. Inflate Layout
-        View view = inflater.inflate(R.layout.activity_child_dashboard, container, false); // Assuming the layout is appropriate for a Fragment
+        View view = inflater.inflate(R.layout.fragment_child_dashboard, container, false); // Assuming the layout is appropriate for a Fragment
 
-        // 2. Welcome text personalization
-        TextView welcome = view.findViewById(R.id.welcomeMessage);
-        welcome.setText("Welcome, " + currentChildId + "!");
+        toolbar = view.findViewById(R.id.toolbar);
+        ((AppCompatActivity) getActivity()).setSupportActionBar(toolbar);
+        setHasOptionsMenu(true);
+
+        toolbar.setTitle("Welcome, " + currentChildId + "!");
+
 
         // -----------------------------------------------------------------
         // START: Terms Acceptance Check
@@ -180,6 +186,21 @@ public class ChildDashboardFragment extends Fragment {
         });
 
         return view;
+    }
+
+    // ───────────────────────────────
+    // MENU HANDLING
+    // ───────────────────────────────
+    @Override
+    public void onCreateOptionsMenu(@NonNull Menu menu, @NonNull MenuInflater inflater) {
+        MenuHelper.setupMenu(menu, inflater, requireContext());
+        MenuHelper.setupNotification(this,menu,inflater);
+        super.onCreateOptionsMenu(menu, inflater);
+    }
+
+    @Override
+    public boolean onOptionsItemSelected(@NonNull MenuItem item) {
+        return MenuHelper.handleMenuSelection(item, this) || super.onOptionsItemSelected(item);
     }
 
 

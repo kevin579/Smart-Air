@@ -2,15 +2,14 @@ package com.example.SmartAirGroup2;
 
 import android.app.AlertDialog;
 import android.app.DatePickerDialog;
-import android.app.Dialog;
 import android.app.TimePickerDialog;
-import android.content.Context;
-import android.content.Intent;
-import android.content.SharedPreferences;
 import android.os.Bundle;
 import android.text.InputType;
 import android.view.Gravity;
 import android.view.LayoutInflater;
+import android.view.Menu;
+import android.view.MenuInflater;
+import android.view.MenuItem;
 import android.view.View;
 import android.view.ViewGroup;
 import android.widget.Button;
@@ -21,7 +20,8 @@ import android.widget.Toast;
 
 import androidx.annotation.NonNull;
 import androidx.annotation.Nullable;
-import androidx.fragment.app.DialogFragment;
+import androidx.appcompat.app.AppCompatActivity;
+import androidx.appcompat.widget.Toolbar;
 import androidx.fragment.app.Fragment;
 import androidx.fragment.app.FragmentTransaction;
 
@@ -87,6 +87,7 @@ public class ChildLogsFragment extends Fragment {
      * Defaults to "all".
      */
     private String currentFilter = "all";
+    private Toolbar toolbar;
 
 
     // ─────────────────────────────────────────────────────────────────
@@ -145,6 +146,7 @@ public class ChildLogsFragment extends Fragment {
         public String groupKey;
         public String nodeKey;
 
+
         public Map<String, Object> data;
 
         // Placeholder constructor
@@ -192,7 +194,16 @@ public class ChildLogsFragment extends Fragment {
     @Override
     public View onCreateView(@NonNull LayoutInflater inflater, @Nullable ViewGroup container, @Nullable Bundle savedInstanceState) {
         // 1. Inflate Layout (Replaces setContentView)
-        View view = inflater.inflate(R.layout.activity_child_logs, container, false); // Assuming layout works for fragment
+        View view = inflater.inflate(R.layout.fragment_child_logs, container, false); // Assuming layout works for fragment
+
+        toolbar = view.findViewById(R.id.toolbar);
+        ((AppCompatActivity) getActivity()).setSupportActionBar(toolbar);
+        setHasOptionsMenu(true);
+        toolbar.setTitle("My logs");
+        // Handle back navigation (up button)
+        ((AppCompatActivity) getActivity()).getSupportActionBar().setDisplayHomeAsUpEnabled(true);
+        toolbar.setNavigationOnClickListener(v -> getParentFragmentManager().popBackStack());
+
 
 
         if (currentChildId == null) {
@@ -230,11 +241,11 @@ public class ChildLogsFragment extends Fragment {
             loadLogs();
         });
         filterController.setOnClickListener(v -> {
-            currentFilter = "controller";
+            currentFilter = "medication";
             loadLogs();
         });
         filterRescue.setOnClickListener(v -> {
-            currentFilter = "rescue";
+            currentFilter = "inhaler";
             loadLogs();
         });
 
@@ -965,9 +976,19 @@ public class ChildLogsFragment extends Fragment {
 
 
 
+    // ───────────────────────────────
+    // MENU HANDLING
+    // ───────────────────────────────
+    @Override
+    public void onCreateOptionsMenu(@NonNull Menu menu, @NonNull MenuInflater inflater) {
+        MenuHelper.setupMenu(menu, inflater, requireContext());
+        MenuHelper.setupNotification(this,menu,inflater);
+        super.onCreateOptionsMenu(menu, inflater);
+    }
 
-    /**
-     * Placeholder DialogFragment class for Terms and Conditions.
-     */
+    @Override
+    public boolean onOptionsItemSelected(@NonNull MenuItem item) {
+        return MenuHelper.handleMenuSelection(item, this) || super.onOptionsItemSelected(item);
+    }
 
 }

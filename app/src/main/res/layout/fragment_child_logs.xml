@@ -5,20 +5,20 @@
     android:id="@+id/main"
     android:layout_width="match_parent"
     android:layout_height="match_parent"
-    tools:context=".ChildLogsActivity">
+    tools:context=".ChildLogsFragment">
 
-    <TextView
-        android:id="@+id/logsTitle"
-        android:layout_width="wrap_content"
-        android:layout_height="wrap_content"
-        android:layout_marginTop="16dp"
-        android:text="Child Logs"
-        android:textSize="20sp"
-        android:textStyle="bold"
-        app:layout_constraintEnd_toEndOf="parent"
-        app:layout_constraintHorizontal_bias="0.498"
+    <androidx.appcompat.widget.Toolbar
+        android:id="@+id/toolbar"
+        android:layout_width="match_parent"
+        android:layout_height="?attr/actionBarSize"
+        android:background="#1565C0"
+        android:theme="@style/ThemeOverlay.AppCompat.Dark.ActionBar"
+        app:popupTheme="@style/ThemeOverlay.AppCompat.Light"
+        app:title="My Dashboard"
+        app:titleTextColor="@android:color/white"
+        app:layout_constraintTop_toTopOf="parent"
         app:layout_constraintStart_toStartOf="parent"
-        app:layout_constraintTop_toTopOf="parent" />
+        app:layout_constraintEnd_toEndOf="parent" />
 
     <LinearLayout
         android:id="@+id/filterRow"
@@ -26,7 +26,7 @@
         android:layout_height="wrap_content"
         android:orientation="horizontal"
         android:layout_marginTop="12dp"
-        app:layout_constraintTop_toBottomOf="@id/logsTitle"
+        app:layout_constraintTop_toBottomOf="@id/toolbar"
         app:layout_constraintStart_toStartOf="parent"
         app:layout_constraintEnd_toEndOf="parent"
         android:gravity="center">
@@ -35,28 +35,32 @@
             android:id="@+id/filterAll"
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
-            android:text="All" />
+            android:text="All"
+            style="@style/Button.BlueSmallRadius" />/>
 
         <Button
             android:id="@+id/filterPEF"
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
             android:layout_marginStart="8dp"
-            android:text="PEF" />
+            android:text="PEF"
+            style="@style/Button.BlueSmallRadius" />
 
         <Button
             android:id="@+id/filterController"
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
             android:layout_marginStart="8dp"
-            android:text="Medicine" />
+            android:text="Medicine"
+            style="@style/Button.BlueSmallRadius" />
 
         <Button
             android:id="@+id/filterRescue"
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
             android:layout_marginStart="8dp"
-            android:text="Rescue/Inhaler" />
+            android:text="Inhaler"
+            style="@style/Button.BlueSmallRadius" />
     </LinearLayout>
 
     <ScrollView
@@ -95,7 +99,8 @@
             android:layout_height="wrap_content"
             android:paddingLeft="10dp"
             android:paddingRight="10dp"
-            android:text="+ Rescue/Inhaler" />
+            android:text="+ Rescue/Inhaler"
+            style="@style/Button.BlueSmallRadius" />
 
         <Button
             android:id="@+id/addPEF"
@@ -104,7 +109,8 @@
             android:layout_marginStart="8dp"
             android:paddingLeft="10dp"
             android:paddingRight="10dp"
-            android:text="+ PEF" />
+            android:text="+ PEF"
+            style="@style/Button.BlueSmallRadius" />
 
         <Button
             android:id="@+id/addMedicine"
@@ -113,7 +119,8 @@
             android:layout_marginStart="8dp"
             android:paddingLeft="10dp"
             android:paddingRight="10dp"
-            android:text="+ Medicine" />
+            android:text="+ Medicine"
+            style="@style/Button.BlueSmallRadius" />
     </LinearLayout>
 
 </androidx.constraintlayout.widget.ConstraintLayout>
