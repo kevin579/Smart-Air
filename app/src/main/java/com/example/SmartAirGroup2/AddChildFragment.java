@@ -1,5 +1,7 @@
 package com.example.SmartAirGroup2;
 
+import android.content.Context;
+import android.content.SharedPreferences;
 import android.os.Bundle;
 import android.view.LayoutInflater;
 import android.view.Menu;
@@ -198,6 +200,10 @@ public class AddChildFragment extends Fragment {
                         .addOnCompleteListener(linkTask -> {
                             if (linkTask.isSuccessful()) {
                                 Toast.makeText(getContext(), "Linked child to parent", Toast.LENGTH_SHORT).show();
+                                SharedPreferences prefs = requireActivity().getSharedPreferences("AppPrefs", Context.MODE_PRIVATE);
+                                SharedPreferences.Editor editor = prefs.edit();
+                                editor.putString("current_child_username", user.getUname());
+                                editor.apply();
                                 requireActivity().getSupportFragmentManager().popBackStack();
                             } else {
                                 Toast.makeText(getContext(), "Failed to link child", Toast.LENGTH_SHORT).show();

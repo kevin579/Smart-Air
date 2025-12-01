@@ -6,6 +6,7 @@ import static java.security.AccessController.getContext;
 
 import android.content.Context;
 import android.content.Intent;
+import android.content.Intent;
 import android.content.SharedPreferences;
 import android.view.Gravity;
 import android.content.SharedPreferences;

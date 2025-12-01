@@ -108,4 +108,15 @@
     <string name="subtitle4">You can invite a provider to view your child\'s data by pressing the \" \" button and sharing the generated link with your provider</string>
 
 
+    <string name="triage_title1">One-Tap Triage</string>
+    <string name="triage_title2">Check #1</string>
+    <string name="triage_title3">Check #2</string>
+    <string name="triage_title4">Check #3</string>
+
+    <string name="triage_subtitle1">Follow these assessments to dictate whether the emergency is manageable or to seek help.</string>
+    <string name="triage_subtitle2">Triage check #1 text goes here</string>
+    <string name="triage_subtitle3">Triage check #2 text goes here</string>
+    <string name="triage_subtitle4">Triage check #3 text goes here</string>
+
+
 </resources>

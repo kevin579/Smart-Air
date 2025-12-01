@@ -106,6 +106,14 @@ public class ChildDashboard extends BaseActivity {
             }
         });
 
+        Button btnStartTriage = findViewById(R.id.btnTriage);
+        btnStartTriage.setOnClickListener(new View.OnClickListener() {
+            @Override
+            public void onClick(View v) {
+                launchTriageOnboarding();
+            }
+        });
+
         // Symptoms button -> loads SymptomDashboardFragment into fragment container
         Button btnSymptoms = findViewById(R.id.btnSymptoms);
         btnSymptoms.setOnClickListener(v -> {
@@ -122,6 +130,13 @@ public class ChildDashboard extends BaseActivity {
     // ─────────────────────────────────────────────────────────────────
     // NAVIGATION HELPERS
     // ─────────────────────────────────────────────────────────────────
+
+    private void launchTriageOnboarding() {
+        Intent intent = new Intent(ChildDashboard.this, OnboardingActivity.class);
+        intent.putExtra("onboardingType", "help");
+        intent.putExtra("username", currentChildId);
+        startActivity(intent);
+    }
 
     /**
      * Replace the fragment_container with the provided fragment and add the transaction
