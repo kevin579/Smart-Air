@@ -321,13 +321,13 @@ public class ProviderSideChildDashboardFragment extends Fragment {
         } else {
             // PEF Card Click Handler
             cardTriage.setOnClickListener(v -> {
-                PEFZone pefFrag = new PEFZone();
+                ProviderTriageLog triageLog = new ProviderTriageLog();
                 Bundle args = new Bundle();
                 args.putString("childUname", uname);
                 args.putString("childName", name);
                 args.putString("user", "provider");
-                pefFrag.setArguments(args);
-                loadFragment(pefFrag);
+                triageLog.setArguments(args);
+                loadFragment(triageLog);
             });
         }
 
