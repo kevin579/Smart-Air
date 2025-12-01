@@ -1,0 +1,122 @@
+Index: app/src/main/java/com/example/SmartAirGroup2/MenuHelper.java
+IDEA additional info:
+Subsystem: com.intellij.openapi.diff.impl.patch.BaseRevisionTextPatchEP
+<+>package com.example.SmartAirGroup2;\r\n\r\nimport android.content.Context;\r\nimport android.content.Intent;\r\nimport android.content.SharedPreferences;\r\nimport android.view.Gravity;\r\nimport android.content.SharedPreferences;\r\nimport android.os.Bundle;\r\nimport android.view.Menu;\r\nimport android.view.MenuInflater;\r\nimport android.view.MenuItem;\r\nimport android.view.View;\r\nimport android.widget.PopupMenu;\r\nimport android.widget.Toast;\r\n\r\nimport androidx.annotation.NonNull;\r\nimport androidx.appcompat.app.AlertDialog;\r\nimport androidx.appcompat.widget.Toolbar;\r\nimport androidx.fragment.app.Fragment;\r\nimport com.example.SmartAirGroup2.AlertCenterFragment;\r\n\r\nimport com.example.SmartAirGroup2.auth.login.LoginFragment;\r\n\r\npublic class MenuHelper {\r\n    public static void setupMenu(@NonNull Menu menu, @NonNull MenuInflater inflater, @NonNull Context context) {\r\n        menu.clear();\r\n        inflater.inflate(R.menu.menu, menu);\r\n\r\n        // Tint icons white for visibility\r\n        for (int i = 0; i < menu.size(); i++) {\r\n            MenuItem item = menu.getItem(i);\r\n            if (item.getIcon() != null) {\r\n                item.getIcon().setTint(context.getResources().getColor(android.R.color.white));\r\n            }\r\n        }\r\n    }\r\n\r\n    // Handle menu item clicks\r\n    public static boolean handleMenuSelection(@NonNull MenuItem item, @NonNull Fragment fragment) {\r\n\r\n        int id = item.getItemId();\r\n        if (id == R.id.action_notifications) {\r\n            Context ctx = fragment.requireContext();\r\n            SharedPreferences prefs =\r\n                    ctx.getSharedPreferences(\"APP_DATA\", Context.MODE_PRIVATE);\r\n            String parentUname = prefs.getString(\"parentUname\", null);\r\n\r\n            AlertCenterFragment alertFrag = new AlertCenterFragment();\r\n            if (parentUname != null && !parentUname.trim().isEmpty()) {\r\n                Bundle args = new Bundle();\r\n                args.putString(\"parentUname\", parentUname);\r\n                alertFrag.setArguments(args);\r\n            }\r\n\r\n            fragment.requireActivity()\r\n                    .getSupportFragmentManager()\r\n                    .beginTransaction()\r\n                    .replace(R.id.fragment_container, alertFrag)\r\n                    .addToBackStack(null)\r\n                    .commit();\r\n            return true;\r\n        } else if (id == R.id.action_settings) {\r\n            View settingsIconView = findMenuItemView(fragment, item);\r\n            showSettingsPopupMenu(fragment, settingsIconView);\r\n            return true;\r\n        }\r\n        return false;\r\n    }\r\n\r\n    private static View findMenuItemView(@NonNull Fragment fragment, @NonNull MenuItem item) {\r\n\r\n        Toolbar toolbar = fragment.requireActivity().findViewById(R.id.toolbar);\r\n\r\n        if (toolbar != null) {\r\n            if (item.getActionView() != null) {\r\n                return item.getActionView();\r\n            }\r\n\r\n            return toolbar;\r\n        }\r\n\r\n        // If we can't find the Toolbar, return the Fragment's root view as a fallback anchor\r\n        return fragment.getView();\r\n    }\r\n\r\n    private static void showSettingsPopupMenu(@NonNull Fragment fragment, @NonNull View anchorView) {\r\n        // 1. Create the PopupMenu, anchored to the settings icon View\r\n        PopupMenu popup = new PopupMenu(fragment.requireContext(), anchorView, Gravity.END);\r\n\r\n        // 2. Inflate the menu XML we created\r\n        popup.getMenuInflater().inflate(R.menu.dropdown, popup.getMenu());\r\n\r\n        // 3. Set the listener for when an item in the popup is clicked\r\n        popup.setOnMenuItemClickListener(new PopupMenu.OnMenuItemClickListener() {\r\n            @Override\r\n            public boolean onMenuItemClick(MenuItem item) {\r\n                int itemId = item.getItemId();\r\n\r\n                if (itemId == R.id.action_logout) {\r\n                    new AlertDialog.Builder(fragment.requireContext())\r\n                            .setTitle(\"Logout\")\r\n                            .setMessage(\"Are you sure you want to logout?\")\r\n                            .setPositiveButton(\"Yes\", (d, w) -> {\r\n                                logoutUser(fragment.requireContext());\r\n                            })\r\n                            .setNegativeButton(\"No\", null)\r\n                            .show();\r\n\r\n                    return true;\r\n                } else if (itemId == R.id.action_set_privacy) {\r\n                    // Navigate to a PrivacySettingsFragment\r\n                    return true;\r\n                } else if (itemId == R.id.action_more) {\r\n                    // Navigate to a MoreSettingsFragment\r\n                    return true;\r\n                }\r\n                return false;\r\n            }\r\n        });\r\n\r\n        // 4. Show the menu\r\n        popup.show();\r\n    }\r\n\r\n    public static void logoutUser(@NonNull Context context) {\r\n\r\n        SessionTimeoutManager.getInstance(context).stopTimer();\r\n\r\n        // 1. Clear SharedPreferences\r\n        SharedPreferences prefs = context.getSharedPreferences(\"APP_DATA\", Context.MODE_PRIVATE);\r\n        SharedPreferences.Editor editor = prefs.edit();\r\n\r\n        // Clear everything\r\n        editor.clear();\r\n        editor.apply();\r\n\r\n        // 3. Navigate to Login Activity\r\n        Intent intent = new Intent(context, LoginFragment.class);\r\n\r\n        // Set the flags to clear the activity stack!\r\n        intent.setFlags(Intent.FLAG_ACTIVITY_NEW_TASK | Intent.FLAG_ACTIVITY_CLEAR_TASK);\r\n\r\n        // Start the Login Activity\r\n        context.startActivity(intent);\r\n    }\r\n}\r\n
+Subsystem: com.intellij.openapi.diff.impl.patch.CharsetEP
+<+>UTF-8
+===================================================================
+diff --git a/app/src/main/java/com/example/SmartAirGroup2/MenuHelper.java b/app/src/main/java/com/example/SmartAirGroup2/MenuHelper.java
+--- a/app/src/main/java/com/example/SmartAirGroup2/MenuHelper.java	(revision d673f0b962688344b24fe28ee01a2d21cbe4a845)
++++ b/app/src/main/java/com/example/SmartAirGroup2/MenuHelper.java	(date 1764017896433)
+@@ -4,20 +4,18 @@
+ import android.content.Intent;
+ import android.content.SharedPreferences;
+ import android.view.Gravity;
+-import android.content.SharedPreferences;
+ import android.os.Bundle;
+ import android.view.Menu;
+ import android.view.MenuInflater;
+ import android.view.MenuItem;
+ import android.view.View;
+ import android.widget.PopupMenu;
+-import android.widget.Toast;
+ 
+ import androidx.annotation.NonNull;
+ import androidx.appcompat.app.AlertDialog;
+ import androidx.appcompat.widget.Toolbar;
+ import androidx.fragment.app.Fragment;
+-import com.example.SmartAirGroup2.AlertCenterFragment;
++import com.example.SmartAirGroup2.AlertCenter.AlertCenterFragment;
+ 
+ import com.example.SmartAirGroup2.auth.login.LoginFragment;
+ 
+Index: app/src/main/java/com/example/SmartAirGroup2/MainActivity.java
+IDEA additional info:
+Subsystem: com.intellij.openapi.diff.impl.patch.BaseRevisionTextPatchEP
+<+>package com.example.SmartAirGroup2;\r\n\r\nimport android.content.SharedPreferences;\r\nimport android.os.Bundle;\r\nimport android.view.WindowManager;\r\nimport android.widget.Toast;\r\n\r\nimport androidx.appcompat.app.AppCompatActivity;\r\nimport androidx.fragment.app.Fragment;\r\nimport androidx.fragment.app.FragmentTransaction;\r\n\r\nimport com.google.firebase.database.DatabaseReference;\r\nimport com.google.firebase.database.FirebaseDatabase;\r\nimport com.example.SmartAirGroup2.AlertCenterFragment;\r\n\r\n\r\npublic class MainActivity extends AppCompatActivity {\r\n\r\n    FirebaseDatabase db;\r\n\r\n    @Override\r\n    protected void onCreate(Bundle savedInstanceState) {\r\n\r\n        getWindow().setFlags(WindowManager.LayoutParams.FLAG_TRANSLUCENT_STATUS, WindowManager.LayoutParams.FLAG_TRANSLUCENT_STATUS);\r\n    \r\n        super.onCreate(savedInstanceState);\r\n        setContentView(R.layout.activity_main);\r\n\r\n        if (savedInstanceState == null) {\r\n            getSupportFragmentManager()\r\n                    .beginTransaction()\r\n                    .replace(R.id.fragment_container,\r\n                            new com.example.SmartAirGroup2.auth.login.LoginFragment())\r\n                    .commit();\r\n        }\r\n\r\n    }\r\n\r\n    private void loadFragment(Fragment fragment) {\r\n        FragmentTransaction transaction = getSupportFragmentManager().beginTransaction();\r\n        transaction.replace(R.id.fragment_container, fragment);\r\n        transaction.addToBackStack(null);\r\n        transaction.commit();\r\n    }\r\n\r\n    @Override\r\n    public void onBackPressed() {\r\n        if (getSupportFragmentManager().getBackStackEntryCount() > 1) {\r\n            getSupportFragmentManager().popBackStack();\r\n        } else {\r\n            super.onBackPressed();\r\n        }\r\n    }\r\n}
+Subsystem: com.intellij.openapi.diff.impl.patch.CharsetEP
+<+>UTF-8
+===================================================================
+diff --git a/app/src/main/java/com/example/SmartAirGroup2/MainActivity.java b/app/src/main/java/com/example/SmartAirGroup2/MainActivity.java
+--- a/app/src/main/java/com/example/SmartAirGroup2/MainActivity.java	(revision d673f0b962688344b24fe28ee01a2d21cbe4a845)
++++ b/app/src/main/java/com/example/SmartAirGroup2/MainActivity.java	(date 1764017896419)
+@@ -1,17 +1,13 @@
+ package com.example.SmartAirGroup2;
+ 
+-import android.content.SharedPreferences;
+ import android.os.Bundle;
+ import android.view.WindowManager;
+-import android.widget.Toast;
+ 
+ import androidx.appcompat.app.AppCompatActivity;
+ import androidx.fragment.app.Fragment;
+ import androidx.fragment.app.FragmentTransaction;
+ 
+-import com.google.firebase.database.DatabaseReference;
+ import com.google.firebase.database.FirebaseDatabase;
+-import com.example.SmartAirGroup2.AlertCenterFragment;
+ 
+ 
+ public class MainActivity extends AppCompatActivity {
+Index: app/src/main/java/com/example/SmartAirGroup2/AlertCenterFragment.java
+===================================================================
+diff --git a/app/src/main/java/com/example/SmartAirGroup2/AlertCenterFragment.java b/app/src/main/java/com/example/SmartAirGroup2/AlertCenter/AlertCenterFragment.java
+rename from app/src/main/java/com/example/SmartAirGroup2/AlertCenterFragment.java
+rename to app/src/main/java/com/example/SmartAirGroup2/AlertCenter/AlertCenterFragment.java
+--- a/app/src/main/java/com/example/SmartAirGroup2/AlertCenterFragment.java	(revision d673f0b962688344b24fe28ee01a2d21cbe4a845)
++++ b/app/src/main/java/com/example/SmartAirGroup2/AlertCenter/AlertCenterFragment.java	(date 1764017896393)
+@@ -1,4 +1,4 @@
+-package com.example.SmartAirGroup2;
++package com.example.SmartAirGroup2.AlertCenter;
+ 
+ import android.content.Context;
+ import android.content.SharedPreferences;
+@@ -15,6 +15,8 @@
+ import androidx.recyclerview.widget.RecyclerView;
+ import java.util.ArrayList;
+ import java.util.List;
++
++import com.example.SmartAirGroup2.R;
+ import com.google.firebase.database.DataSnapshot;
+ import com.google.firebase.database.DatabaseError;
+ import com.google.firebase.database.DatabaseReference;
+Index: app/src/main/java/com/example/SmartAirGroup2/Alert.java
+===================================================================
+diff --git a/app/src/main/java/com/example/SmartAirGroup2/Alert.java b/app/src/main/java/com/example/SmartAirGroup2/AlertCenter/Alert.java
+rename from app/src/main/java/com/example/SmartAirGroup2/Alert.java
+rename to app/src/main/java/com/example/SmartAirGroup2/AlertCenter/Alert.java
+--- a/app/src/main/java/com/example/SmartAirGroup2/Alert.java	(revision d673f0b962688344b24fe28ee01a2d21cbe4a845)
++++ b/app/src/main/java/com/example/SmartAirGroup2/AlertCenter/Alert.java	(date 1764017896425)
+@@ -1,4 +1,4 @@
+-package com.example.SmartAirGroup2;
++package com.example.SmartAirGroup2.AlertCenter;
+ 
+ 
+ public class Alert {
+Index: app/src/main/java/com/example/SmartAirGroup2/AlertAdapter.java
+===================================================================
+diff --git a/app/src/main/java/com/example/SmartAirGroup2/AlertAdapter.java b/app/src/main/java/com/example/SmartAirGroup2/AlertCenter/AlertAdapter.java
+rename from app/src/main/java/com/example/SmartAirGroup2/AlertAdapter.java
+rename to app/src/main/java/com/example/SmartAirGroup2/AlertCenter/AlertAdapter.java
+--- a/app/src/main/java/com/example/SmartAirGroup2/AlertAdapter.java	(revision d673f0b962688344b24fe28ee01a2d21cbe4a845)
++++ b/app/src/main/java/com/example/SmartAirGroup2/AlertCenter/AlertAdapter.java	(date 1764017896413)
+@@ -1,4 +1,4 @@
+-package com.example.SmartAirGroup2;
++package com.example.SmartAirGroup2.AlertCenter;
+ 
+ import android.content.Context;
+ import android.view.LayoutInflater;
+@@ -7,10 +7,10 @@
+ import android.widget.TextView;
+ import androidx.annotation.NonNull;
+ import androidx.recyclerview.widget.RecyclerView;
+-import java.text.SimpleDateFormat;
+-import java.util.Date;
++
+ import java.util.List;
+-import java.util.Locale;
++
++import com.example.SmartAirGroup2.R;
+ import com.google.android.material.card.MaterialCardView;
+ import androidx.core.content.ContextCompat;
+ 

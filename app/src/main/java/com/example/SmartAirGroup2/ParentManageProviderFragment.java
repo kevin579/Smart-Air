@@ -526,6 +526,8 @@ public class ParentManageProviderFragment extends Fragment {
         super.onCreateOptionsMenu(menu, inflater);
 
         MenuHelper.setupMenu(menu, inflater, requireContext());
+        MenuHelper.setupNotification(this,menu,inflater);
+
     }
 
 

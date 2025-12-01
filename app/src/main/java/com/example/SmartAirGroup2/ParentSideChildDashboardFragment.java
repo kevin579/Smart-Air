@@ -1,5 +1,6 @@
 package com.example.SmartAirGroup2;
 
+import android.content.Intent;
 import android.os.Bundle;
 import android.util.Log;
 import android.view.LayoutInflater;
@@ -9,8 +10,11 @@ import android.view.MenuItem;
 import android.view.View;
 import android.view.ViewGroup;
 
+import androidx.activity.result.ActivityResultLauncher;
+import androidx.activity.result.contract.ActivityResultContracts;
 import androidx.annotation.NonNull;
 import androidx.annotation.Nullable;
+import androidx.appcompat.app.AlertDialog;
 import androidx.appcompat.app.AppCompatActivity;
 import androidx.appcompat.widget.Toolbar;
 import androidx.cardview.widget.CardView;
@@ -117,8 +121,8 @@ public class ParentSideChildDashboardFragment extends Fragment {
      *   - Red (alert)
      *   - Green (good)
      */
-    private CardView cardInventory, cardPEF, cardSymptom, cardPrivacy;
-
+    private CardView cardInventory, cardPEF, cardSymptom, cardPrivacy, cardProviderReport, cardAdherence;
+    private ActivityResultLauncher<Intent> createPdfLauncher;
 
     /**
      * CardView for accessing symptom tracking and history.
@@ -210,6 +214,8 @@ public class ParentSideChildDashboardFragment extends Fragment {
         cardSymptom = view.findViewById(R.id.cardSymptom);
         cardTriage = view.findViewById(R.id.cardTriage);
         cardPrivacy = view.findViewById(R.id.cardPrivacy);
+        cardProviderReport = view.findViewById(R.id.cardProviderReport);
+        cardAdherence = view.findViewById(R.id.card_controller_adherence);
 
         // ─────────────────────────────────────────────────────────────────
         // Load and Apply Status Colors
@@ -280,9 +286,30 @@ public class ParentSideChildDashboardFragment extends Fragment {
             loadFragment(TriageFrag);
         });
 
+        cardProviderReport.setOnClickListener(v -> {
+            ProviderReport providerRepFrag = new ProviderReport();
+            Bundle args = new Bundle();
+            args.putString("childUname", uname);
+            args.putString("childName", name);
+            args.putString("user", "parent");
+            providerRepFrag.setArguments(args);
+            loadFragment(providerRepFrag);
+        });
+
+        cardAdherence.setOnClickListener(new View.OnClickListener() {
+            @Override
+            public void onClick(View v) {
+
+                Intent intent = new Intent(getActivity(), ParentAdherenceActivity.class);
+                intent.putExtra("childUsername", uname);
+                intent.putExtra("childName", name);
+                startActivity(intent);
+            }
+        });
+
+
         return view;
     }
-
     // ═══════════════════════════════════════════════════════════════════════
     // FIREBASE STATUS LOADING
     // ═══════════════════════════════════════════════════════════════════════
@@ -416,6 +443,7 @@ public class ParentSideChildDashboardFragment extends Fragment {
     @Override
     public void onCreateOptionsMenu(@NonNull Menu menu, @NonNull MenuInflater inflater) {
         MenuHelper.setupMenu(menu, inflater, requireContext());
+        MenuHelper.setupNotification(this,menu,inflater);
         super.onCreateOptionsMenu(menu, inflater);
     }
 
