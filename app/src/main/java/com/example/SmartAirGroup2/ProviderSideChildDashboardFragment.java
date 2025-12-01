@@ -1,5 +1,6 @@
 package com.example.SmartAirGroup2;
 
+import android.content.Intent;
 import android.os.Bundle;
 import android.util.Log;
 import android.view.LayoutInflater;
@@ -262,9 +263,9 @@ public class ProviderSideChildDashboardFragment extends Fragment {
                 args.putString("childName", name);
                 args.putString("user", "provider");
                 if (!permissions.contains("triggers")) {
-                    args.putString("triggers", "yes");
-                }else{
                     args.putString("triggers", "no");
+                }else{
+                    args.putString("triggers", "yes");
                 }
                 sympFrag.setArguments(args);
                 loadFragment(sympFrag);
@@ -290,26 +291,25 @@ public class ProviderSideChildDashboardFragment extends Fragment {
                 loadFragment(pefFrag);
             });
         }
+        // ─────────────────────────────────────────────────────────────────
+        // Adherence Card Click Handler (Provider)
+        // ─────────────────────────────────────────────────────────────────
 
-        // ─────────────────────────────────────────────────────────────────
-        // Logs Card Click Handler
-        // ─────────────────────────────────────────────────────────────────
-        // Navigate to Peak Expiratory Flow measurement view
         if (!permissions.contains("controllerAdherence")) {
             cardAdherence.setVisibility(View.GONE);
             cardAdherence.setOnClickListener(null);
         } else {
-            // PEF Card Click Handler
             cardAdherence.setOnClickListener(v -> {
-                PEFZone pefFrag = new PEFZone();
-                Bundle args = new Bundle();
-                args.putString("childUname", uname);
-                args.putString("childName", name);
-                args.putString("user", "provider");
-                pefFrag.setArguments(args);
-                loadFragment(pefFrag);
+                if (getActivity() == null) return;
+
+                Intent intent = new Intent(getActivity(), ProviderAdherenceActivity.class);
+                intent.putExtra("childUname", uname);
+                intent.putExtra("childName", name);
+                intent.putExtra("user", "provider");
+                startActivity(intent);
             });
         }
+
 
         // ─────────────────────────────────────────────────────────────────
         // Logs Card Click Handler
@@ -321,13 +321,13 @@ public class ProviderSideChildDashboardFragment extends Fragment {
         } else {
             // PEF Card Click Handler
             cardTriage.setOnClickListener(v -> {
-                PEFZone pefFrag = new PEFZone();
+                ProviderTriageLog triageLog = new ProviderTriageLog();
                 Bundle args = new Bundle();
                 args.putString("childUname", uname);
                 args.putString("childName", name);
                 args.putString("user", "provider");
-                pefFrag.setArguments(args);
-                loadFragment(pefFrag);
+                triageLog.setArguments(args);
+                loadFragment(triageLog);
             });
         }
 
@@ -370,6 +370,8 @@ public class ProviderSideChildDashboardFragment extends Fragment {
     @Override
     public void onCreateOptionsMenu(@NonNull Menu menu, @NonNull MenuInflater inflater) {
         MenuHelper.setupMenu(menu, inflater, requireContext());
+        MenuHelper.setupNotification(this,menu,inflater);
+
         super.onCreateOptionsMenu(menu, inflater);
     }
 

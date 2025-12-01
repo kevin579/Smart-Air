@@ -1,5 +1,9 @@
 package com.example.SmartAirGroup2;
 
+import static androidx.core.content.ContentProviderCompat.requireContext;
+
+import static java.security.AccessController.getContext;
+
 import android.content.Context;
 import android.content.Intent;
 import android.content.Intent;
@@ -20,7 +24,13 @@ import androidx.appcompat.widget.Toolbar;
 import androidx.fragment.app.Fragment;
 import com.example.SmartAirGroup2.AlertCenterFragment;
 
+import com.example.SmartAirGroup2.auth.data.repo.FirebaseRtdbAuthRepository;
 import com.example.SmartAirGroup2.auth.login.LoginFragment;
+import com.google.firebase.database.DataSnapshot;
+import com.google.firebase.database.DatabaseError;
+import com.google.firebase.database.DatabaseReference;
+import com.google.firebase.database.FirebaseDatabase;
+import com.google.firebase.database.ValueEventListener;
 
 public class MenuHelper {
     public static void setupMenu(@NonNull Menu menu, @NonNull MenuInflater inflater, @NonNull Context context) {
@@ -144,4 +154,125 @@ public class MenuHelper {
         // Start the Login Activity
         context.startActivity(intent);
     }
+
+    public static void setupNotification(@NonNull Fragment fragment, @NonNull Menu menu, @NonNull MenuInflater inflater){
+        setupMenu(menu,inflater,fragment.requireContext());
+
+        MenuItem bellItem = menu.findItem(R.id.action_notifications);
+        if(bellItem == null){
+            return;
+        }
+        View actionView = bellItem.getActionView();
+        if (actionView == null){
+            return;
+        }
+
+        View badgeView = actionView.findViewById(R.id.viewBadge);
+
+        actionView.setOnClickListener(v -> fragment.onOptionsItemSelected(bellItem));
+        updateNotificationBadge(fragment.requireContext(), badgeView);
+    }
+
+    private static void updateNotificationBadge(Context ctx, View badgeView){
+        if(badgeView == null){
+            return;
+        }
+
+        badgeView.setVisibility(View.GONE);
+
+        SharedPreferences prefs = ctx.getSharedPreferences("APP_DATA", Context.MODE_PRIVATE);
+        String parentUname = prefs.getString("parentUname", null);
+
+        if(parentUname == null|| parentUname.trim().isEmpty()){
+            return;
+        }
+
+        FirebaseDatabase db = FirebaseDatabase.getInstance("https://smart-air-group2-default-rtdb.firebaseio.com/");
+
+        DatabaseReference childRef = db.getReference("categories/users/parents")
+                .child(parentUname)
+                .child("children");
+
+        childRef.addListenerForSingleValueEvent(new ValueEventListener() {
+            @Override
+            public void onDataChange(@NonNull DataSnapshot snapshot) {
+                if(!snapshot.exists() || snapshot.getChildrenCount()==0){
+                    return;
+                }
+                int childrenCount = (int)snapshot.getChildrenCount();
+                final int[] finished = {0};
+                final boolean[] hasAlerts = {false};
+                for (DataSnapshot childSnap : snapshot.getChildren()) {
+                    String childUname = childSnap.getValue(String.class);
+
+                    if (childUname == null || childUname.trim().isEmpty()) {
+                        if (++finished[0] == childrenCount && !hasAlerts[0]) {
+                            badgeView.setVisibility(View.GONE);
+                        }
+                        continue;
+                    }
+
+                    DatabaseReference statusRef = db.getReference("categories/users/children")
+                            .child(childUname)
+                            .child("status");
+
+                    statusRef.addListenerForSingleValueEvent(new ValueEventListener() {
+                        @Override
+                        public void onDataChange(@NonNull DataSnapshot statusSnap) {
+                            if (!hasAlerts[0] && statusHasAlert(statusSnap)) {
+                                hasAlerts[0] = true;
+                                badgeView.setVisibility(View.VISIBLE);   // find alert: show red badge
+                            }
+
+                            if (++finished[0] == childrenCount && !hasAlerts[0]) {
+                                badgeView.setVisibility(View.GONE);      // no alert: do not show red badge
+                            }
+                        }
+
+                        @Override
+                        public void onCancelled(@NonNull DatabaseError error) {
+                            if (++finished[0] == childrenCount && !hasAlerts[0]) {
+                                badgeView.setVisibility(View.GONE);
+                            }
+                        }
+                    });
+                }
+            }
+
+            @Override
+            public void onCancelled(@NonNull DatabaseError error) {
+                badgeView.setVisibility(View.GONE);
+            }
+        });
+    }
+
+    private static boolean statusHasAlert(DataSnapshot statusSnap) {
+        if (statusSnap == null || !statusSnap.exists()) {
+            return false;
+        }
+
+        // 1. pefZone == 2 : red zone
+        Integer pefZone = statusSnap.child("pefZone").getValue(Integer.class);
+        if (pefZone != null && pefZone == 2) {
+            return true;
+        }
+
+        DataSnapshot invSnap = statusSnap.child("inventory");
+        if (invSnap != null && invSnap.exists()) {
+            for (DataSnapshot medSnap : invSnap.getChildren()) {
+                for (DataSnapshot snapIndex : medSnap.getChildren()) {
+                    Integer code = snapIndex.getValue(Integer.class);
+                    if (code != null && (code == 1 || code == 2)) {
+                        return true;
+                    }
+                }
+            }
+        }
+
+        return false;
+    }
+
+
+
+
 }

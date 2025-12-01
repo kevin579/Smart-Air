@@ -138,6 +138,7 @@ public class SymptomDashboardFragment extends Fragment {
     @Override
     public void onCreateOptionsMenu(@NonNull Menu menu, @NonNull MenuInflater inflater) {
         MenuHelper.setupMenu(menu, inflater, requireContext());
+        MenuHelper.setupNotification(this,menu,inflater);
         super.onCreateOptionsMenu(menu, inflater);
     }
 
