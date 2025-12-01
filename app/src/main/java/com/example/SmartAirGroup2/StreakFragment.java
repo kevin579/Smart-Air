@@ -29,6 +29,10 @@ import java.util.Map;
 
 public class StreakFragment extends Fragment {
 
+    // 配置阈值（默认值），启动时从 settings/streakConfig 覆盖
+    private long controllerWeekLength = 7;        // 默认 7 天
+    private long highQualityTarget = 10;          // 默认 10 次高质量练习
+
     // Controller streak
     private TextView tvCurrentStreak;
     private TextView tvLongestStreak;
@@ -76,6 +80,7 @@ public class StreakFragment extends Fragment {
         btnBadges = view.findViewById(R.id.btn_view_badges);
         ImageButton btnBack = view.findViewById(R.id.btn_back);
 
+        // badges
         badgePerfectWeek = view.findViewById(R.id.badge_perfect_week);
         badgeTenTech = view.findViewById(R.id.badge_ten_tech);
         badgeLowRescue = view.findViewById(R.id.badge_low_rescue);
@@ -88,9 +93,7 @@ public class StreakFragment extends Fragment {
                         .popBackStack()
         );
 
-        // Controller check-in
         btnControllerCheckIn.setOnClickListener(v -> onControllerCheckInClicked());
-
         btnTechniqueCheckIn.setOnClickListener(v -> onTechniqueCheckInClicked(true));
 
         btnBadges.setOnClickListener(v ->
@@ -102,11 +105,16 @@ public class StreakFragment extends Fragment {
                         .commit()
         );
 
+        // 1. 先读配置阈值
+        loadStreakConfig();
+        // 2. 再读 streak 和 badges 显示
         getStreakData();
         updateBusinessBadges();
 
         return view;
     }
+
+    // ──────────────────── 公共引用 ────────────────────
 
     private DatabaseReference getChildRef() {
         return FirebaseDatabase.getInstance()
@@ -116,6 +124,44 @@ public class StreakFragment extends Fragment {
                 .child("children")
                 .child(uname);
     }
+
+    private DatabaseReference getConfigRef() {
+        return FirebaseDatabase.getInstance()
+                .getReference()
+                .child("categories")
+                .child("settings")
+                .child("streakConfig");
+    }
+
+    // ──────────────────── 读取配置阈值 ────────────────────
+
+    private void loadStreakConfig() {
+        getConfigRef().addListenerForSingleValueEvent(new ValueEventListener() {
+            @Override
+            public void onDataChange(@NonNull DataSnapshot snapshot) {
+                Long weekLenVal = snapshot.child("controllerWeekLength").getValue(Long.class);
+                Long targetVal = snapshot.child("highQualityTechniqueTarget").getValue(Long.class);
+
+                if (weekLenVal != null) {
+                    controllerWeekLength = weekLenVal;
+                }
+                if (targetVal != null) {
+                    highQualityTarget = targetVal;
+                }
+
+                // 调试用：确认路径对不对
+                // Toast.makeText(getContext(),
+                //         "Config week=" + controllerWeekLength +
+                //                 " techTarget=" + highQualityTarget,
+                //         Toast.LENGTH_LONG).show();
+            }
+
+            @Override
+            public void onCancelled(@NonNull DatabaseError error) { }
+        });
+    }
+
+    // ──────────────────── 读取并显示两个 streak ────────────────────
 
     private void getStreakData() {
         DatabaseReference streaksRef = getChildRef().child("streaks");
@@ -160,9 +206,8 @@ public class StreakFragment extends Fragment {
         tvTechLongest.setText(String.valueOf(tLongest));
     }
 
-    /**
-     * Controller Medication Check in
-     */
+    // ──────────────────── Controller Check in + 按阈值解锁 Perfect Week ────────────────────
+
     private void onControllerCheckInClicked() {
         DatabaseReference ref = getChildRef()
                 .child("streaks")
@@ -187,7 +232,6 @@ public class StreakFragment extends Fragment {
                     return;
                 }
 
-                long oldCurrent = currentStreak;
                 long newCurrent = updateStreakForToday(lastCompletedDate, currentStreak);
                 long newLongest = Math.max(newCurrent, longestStreak);
 
@@ -202,13 +246,11 @@ public class StreakFragment extends Fragment {
                                     "Controller check-in success!",
                                     Toast.LENGTH_SHORT).show();
 
-                            // 更新 UI（controller 部分）
                             tvCurrentStreak.setText(String.valueOf(newCurrent));
                             tvLongestStreak.setText(String.valueOf(newLongest));
 
-                            // 这里如果你有 perfect week badge 的解锁逻辑，
-                            // 可以在成功后调用相应检查函数，然后再 updateBusinessBadges()
-                            updateBusinessBadges();
+                            // 按阈值解锁
+                            checkPerfectControllerWeek(newCurrent);
                         })
                         .addOnFailureListener(e ->
                                 Toast.makeText(getContext(),
@@ -225,6 +267,46 @@ public class StreakFragment extends Fragment {
         });
     }
 
+    private void checkPerfectControllerWeek(long newCurrent) {
+        if (newCurrent < controllerWeekLength) {
+            return;
+        }
+
+        DatabaseReference badgeRef = getChildRef()
+                .child("badges")
+                .child("perfectControllerWeek");
+
+        // 已经解锁过就不用再写
+        badgeRef.addListenerForSingleValueEvent(new ValueEventListener() {
+            @Override
+            public void onDataChange(@NonNull DataSnapshot snapshot) {
+                Boolean already = snapshot.getValue(Boolean.class);
+                if (Boolean.TRUE.equals(already)) return;
+
+                badgeRef.setValue(true)
+                        .addOnSuccessListener(v -> {
+                            if (getContext() != null) {
+                                Toast.makeText(getContext(),
+                                        "Perfect controller week badge unlocked!",
+                                        Toast.LENGTH_SHORT).show();
+                            }
+                            updateBusinessBadges();
+                        })
+                        .addOnFailureListener(e -> {
+                            if (getContext() != null) {
+                                Toast.makeText(getContext(),
+                                        "Failed to write perfectControllerWeek: " + e.getMessage(),
+                                        Toast.LENGTH_LONG).show();
+                            }
+                        });
+            }
+
+            @Override
+            public void onCancelled(@NonNull DatabaseError error) { }
+        });
+    }
+
+    // ──────────────────── Technique Check in + 按阈值解锁 Ten Tech ────────────────────
 
     private void onTechniqueCheckInClicked(boolean isHighQuality) {
         DatabaseReference ref = getChildRef()
@@ -266,13 +348,12 @@ public class StreakFragment extends Fragment {
                                     "Technique check-in success!",
                                     Toast.LENGTH_SHORT).show();
 
-                            // 更新 UI（technique 部分）
                             tvTechCurrent.setText(String.valueOf(newCurrent));
                             tvTechLongest.setText(String.valueOf(newLongest));
 
-                            // 如果是高质量练习，你可以在这里更新 highQualityTechCount
-                            // 并在成功后调用 updateBusinessBadges() 刷新徽章
-                            updateBusinessBadges();
+                            if (isHighQuality) {
+                                incrementHighQualityTechCountAndCheck();
+                            }
                         })
                         .addOnFailureListener(e ->
                                 Toast.makeText(getContext(),
@@ -281,11 +362,69 @@ public class StreakFragment extends Fragment {
             }
 
             @Override
-            public void onCancelled(@NonNull DatabaseError error) {
-            }
+            public void onCancelled(@NonNull DatabaseError error) { }
         });
     }
 
+    private void incrementHighQualityTechCountAndCheck() {
+        DatabaseReference counterRef = getChildRef()
+                .child("counters")
+                .child("highQualityTechCount");
+
+        counterRef.addListenerForSingleValueEvent(new ValueEventListener() {
+            @Override
+            public void onDataChange(@NonNull DataSnapshot snapshot) {
+                Long val = snapshot.getValue(Long.class);
+                long newCount = (val != null ? val : 0L) + 1;
+
+                counterRef.setValue(newCount)
+                        .addOnSuccessListener(aVoid -> checkTenHighQualitySessions(newCount));
+            }
+
+            @Override
+            public void onCancelled(@NonNull DatabaseError error) { }
+        });
+    }
+
+    private void checkTenHighQualitySessions(long count) {
+        if (count < highQualityTarget) {
+            return;
+        }
+
+        DatabaseReference badgeRef = getChildRef()
+                .child("badges")
+                .child("tenHighQualitySessions");
+
+        badgeRef.addListenerForSingleValueEvent(new ValueEventListener() {
+            @Override
+            public void onDataChange(@NonNull DataSnapshot snapshot) {
+                Boolean already = snapshot.getValue(Boolean.class);
+                if (Boolean.TRUE.equals(already)) return;
+
+                badgeRef.setValue(true)
+                        .addOnSuccessListener(v -> {
+                            if (getContext() != null) {
+                                Toast.makeText(getContext(),
+                                        "10 high-quality technique sessions badge unlocked!",
+                                        Toast.LENGTH_SHORT).show();
+                            }
+                            updateBusinessBadges();
+                        })
+                        .addOnFailureListener(e -> {
+                            if (getContext() != null) {
+                                Toast.makeText(getContext(),
+                                        "Failed to write tenHighQualitySessions: " + e.getMessage(),
+                                        Toast.LENGTH_LONG).show();
+                            }
+                        });
+            }
+
+            @Override
+            public void onCancelled(@NonNull DatabaseError error) { }
+        });
+    }
+
+    // ──────────────────── 徽章显示 ────────────────────
 
     private void updateBusinessBadges() {
         DatabaseReference badgeRef = getChildRef().child("badges");
@@ -297,7 +436,6 @@ public class StreakFragment extends Fragment {
                 Boolean tenTech = snapshot.child("tenHighQualitySessions").getValue(Boolean.class);
                 Boolean lowRescue = snapshot.child("lowRescueMonth").getValue(Boolean.class);
 
-                // 每个 ImageView 的 parent 是包着图和文字的 LinearLayout
                 View perfectContainer = (View) badgePerfectWeek.getParent();
                 View tenTechContainer = (View) badgeTenTech.getParent();
                 View lowRescueContainer = (View) badgeLowRescue.getParent();
@@ -311,29 +449,24 @@ public class StreakFragment extends Fragment {
             }
 
             @Override
-            public void onCancelled(@NonNull DatabaseError error) {
-            }
+            public void onCancelled(@NonNull DatabaseError error) { }
         });
     }
 
     private void hideAllBadgeContainers() {
         if (badgePerfectWeek != null) {
-            View p = (View) badgePerfectWeek.getParent();
-            p.setVisibility(View.GONE);
+            ((View) badgePerfectWeek.getParent()).setVisibility(View.GONE);
         }
         if (badgeTenTech != null) {
-            View p = (View) badgeTenTech.getParent();
-            p.setVisibility(View.GONE);
+            ((View) badgeTenTech.getParent()).setVisibility(View.GONE);
         }
         if (badgeLowRescue != null) {
-            View p = (View) badgeLowRescue.getParent();
-            p.setVisibility(View.GONE);
+            ((View) badgeLowRescue.getParent()).setVisibility(View.GONE);
         }
     }
 
-    /**
-     * format: "yyyy-MM-dd"
-     */
+    // ──────────────────── 日期 & streak 计算 ────────────────────
+
     private String getTodayString() {
         Calendar calendar = Calendar.getInstance();
         SimpleDateFormat sdf = new SimpleDateFormat("yyyy-MM-dd", Locale.getDefault());
