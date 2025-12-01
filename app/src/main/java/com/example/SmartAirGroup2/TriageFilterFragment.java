@@ -52,7 +52,7 @@ public class TriageFilterFragment extends Fragment {
                              @Nullable Bundle savedInstanceState) {
 
         // Inflate layout for this fragment
-        View view = inflater.inflate(R.layout.fragment_triage_filter, container, false);
+        View view = inflater.inflate(R.layout.activity_triage_filter, container, false);
 
         // Initialize toolbar
         toolbar = view.findViewById(R.id.toolbar);

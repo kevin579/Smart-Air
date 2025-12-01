@@ -1,0 +1,42 @@
+<?xml version="1.0" encoding="utf-8"?>
+<LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    android:layout_width="match_parent"
+    android:layout_height="wrap_content"
+    android:orientation="vertical"
+    android:padding="16dp">
+
+    <CheckBox
+        android:id="@+id/checkbox_chest_pulling"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:text="Chest Pulling or Retraction"
+        android:textColor="@color/white"/>
+
+    <CheckBox
+        android:id="@+id/checkbox_blue_lips"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:text="Grey or Blue lips"
+        android:textColor="@color/white"/>
+
+    <CheckBox
+        android:id="@+id/checkbox_blue_nails"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:text="Grey or Blue nails"
+        android:textColor="@color/white"/>
+
+    <CheckBox
+        android:id="@+id/checkbox_breathing"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:text="Trouble breathing"
+        android:textColor="@color/white"/>
+
+    <CheckBox
+        android:id="@+id/checkbox_speaking"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:text="Trouble speaking"
+        android:textColor="@color/white"/>
+</LinearLayout>

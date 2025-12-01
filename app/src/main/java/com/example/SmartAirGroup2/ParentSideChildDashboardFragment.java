@@ -10,8 +10,11 @@ import android.view.MenuItem;
 import android.view.View;
 import android.view.ViewGroup;
 
+import androidx.activity.result.ActivityResultLauncher;
+import androidx.activity.result.contract.ActivityResultContracts;
 import androidx.annotation.NonNull;
 import androidx.annotation.Nullable;
+import androidx.appcompat.app.AlertDialog;
 import androidx.appcompat.app.AppCompatActivity;
 import androidx.appcompat.widget.Toolbar;
 import androidx.cardview.widget.CardView;
@@ -24,6 +27,10 @@ import com.google.firebase.database.DatabaseReference;
 import com.google.firebase.database.FirebaseDatabase;
 import com.google.firebase.database.ValueEventListener;
 
+import android.content.Intent;
+import android.widget.Toast;
+
+import com.example.SmartAirGroup2.OnboardingActivity;
 
 /**
  * ChildDashboardFragment (Parent-Side View)
@@ -114,8 +121,14 @@ public class ParentSideChildDashboardFragment extends Fragment {
      *   - Red (alert)
      *   - Green (good)
      */
-    private CardView cardInventory, cardPEF, cardSymptom, cardPrivacy,cardAdherence ;
+    private CardView cardInventory, cardPEF, cardSymptom, cardPrivacy, cardProviderReport, cardAdherence;
+    private ActivityResultLauncher<Intent> createPdfLauncher;
 
+    /**
+     * CardView for accessing symptom tracking and history.
+     * Allows parents to view logged symptoms and patterns.
+     */
+    private CardView cardTriage;
 
     // ═══════════════════════════════════════════════════════════════════════
     // CHILD IDENTITY
@@ -199,9 +212,10 @@ public class ParentSideChildDashboardFragment extends Fragment {
         cardInventory = view.findViewById(R.id.cardInventory);
         cardPEF = view.findViewById(R.id.cardPEF);
         cardSymptom = view.findViewById(R.id.cardSymptom);
+        cardTriage = view.findViewById(R.id.cardTriage);
         cardPrivacy = view.findViewById(R.id.cardPrivacy);
+        cardProviderReport = view.findViewById(R.id.cardProviderReport);
         cardAdherence = view.findViewById(R.id.card_controller_adherence);
-
 
         // ─────────────────────────────────────────────────────────────────
         // Load and Apply Status Colors
@@ -259,6 +273,29 @@ public class ParentSideChildDashboardFragment extends Fragment {
             loadFragment(privacyFrag);
         });
 
+        // ─────────────────────────────────────────────────────────────────
+        // triage Card Click Handler
+        // ─────────────────────────────────────────────────────────────────
+        // Navigate to symptom tracking and history view
+        cardTriage.setOnClickListener(v -> {
+            TriagelogDashboardFragment TriageFrag = new TriagelogDashboardFragment();
+            Bundle args = new Bundle();
+            args.putString("childUname", uname);
+            args.putString("childName", name);
+            TriageFrag.setArguments(args);
+            loadFragment(TriageFrag);
+        });
+
+        cardProviderReport.setOnClickListener(v -> {
+            ProviderReport providerRepFrag = new ProviderReport();
+            Bundle args = new Bundle();
+            args.putString("childUname", uname);
+            args.putString("childName", name);
+            args.putString("user", "parent");
+            providerRepFrag.setArguments(args);
+            loadFragment(providerRepFrag);
+        });
+
         cardAdherence.setOnClickListener(new View.OnClickListener() {
             @Override
             public void onClick(View v) {
@@ -273,7 +310,6 @@ public class ParentSideChildDashboardFragment extends Fragment {
 
         return view;
     }
-
     // ═══════════════════════════════════════════════════════════════════════
     // FIREBASE STATUS LOADING
     // ═══════════════════════════════════════════════════════════════════════
