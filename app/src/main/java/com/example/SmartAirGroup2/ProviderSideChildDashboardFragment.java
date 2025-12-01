@@ -1,5 +1,6 @@
 package com.example.SmartAirGroup2;
 
+import android.content.Intent;
 import android.os.Bundle;
 import android.util.Log;
 import android.view.LayoutInflater;
@@ -116,7 +117,7 @@ public class ProviderSideChildDashboardFragment extends Fragment {
      *   - Red (alert)
      *   - Green (good)
      */
-    private CardView cardInventory, cardPEF, cardSymptom;
+    private CardView cardInventory, cardPEF, cardSymptom, cardLog, cardSummary, cardAdherence, cardTriage;
 
 
     // ═══════════════════════════════════════════════════════════════════════
@@ -197,6 +198,10 @@ public class ProviderSideChildDashboardFragment extends Fragment {
         cardInventory = view.findViewById(R.id.cardInventory);
         cardPEF = view.findViewById(R.id.cardPEF);
         cardSymptom = view.findViewById(R.id.cardSymptom);
+        cardLog = view.findViewById(R.id.cardLog);
+        cardAdherence = view.findViewById(R.id.cardAdherence);
+        cardTriage = view.findViewById(R.id.cardTriage);
+        cardSummary = view.findViewById(R.id.cardSummary);
 
         //get permissions
 //        for (String permission:permissions){
@@ -258,12 +263,91 @@ public class ProviderSideChildDashboardFragment extends Fragment {
                 args.putString("childName", name);
                 args.putString("user", "provider");
                 if (!permissions.contains("triggers")) {
-                    args.putString("triggers", "yes");
-                }else{
                     args.putString("triggers", "no");
+                }else{
+                    args.putString("triggers", "yes");
                 }
                 sympFrag.setArguments(args);
                 loadFragment(sympFrag);
+            });
+        }
+
+        // ─────────────────────────────────────────────────────────────────
+        // Logs Card Click Handler
+        // ─────────────────────────────────────────────────────────────────
+        // Navigate to Peak Expiratory Flow measurement view
+        if (!permissions.contains("rescueLog")) {
+            cardLog.setVisibility(View.GONE);
+            cardLog.setOnClickListener(null);
+        } else {
+            // PEF Card Click Handler
+            cardLog.setOnClickListener(v -> {
+                PEFZone pefFrag = new PEFZone();
+                Bundle args = new Bundle();
+                args.putString("childUname", uname);
+                args.putString("childName", name);
+                args.putString("user", "provider");
+                pefFrag.setArguments(args);
+                loadFragment(pefFrag);
+            });
+        }
+        // ─────────────────────────────────────────────────────────────────
+        // Adherence Card Click Handler (Provider)
+        // ─────────────────────────────────────────────────────────────────
+
+        if (!permissions.contains("controllerAdherence")) {
+            cardAdherence.setVisibility(View.GONE);
+            cardAdherence.setOnClickListener(null);
+        } else {
+            cardAdherence.setOnClickListener(v -> {
+                if (getActivity() == null) return;
+
+                Intent intent = new Intent(getActivity(), ProviderAdherenceActivity.class);
+                intent.putExtra("childUname", uname);
+                intent.putExtra("childName", name);
+                intent.putExtra("user", "provider");
+                startActivity(intent);
+            });
+        }
+
+
+        // ─────────────────────────────────────────────────────────────────
+        // Logs Card Click Handler
+        // ─────────────────────────────────────────────────────────────────
+        // Navigate to Peak Expiratory Flow measurement view
+        if (!permissions.contains("triage")) {
+            cardTriage.setVisibility(View.GONE);
+            cardTriage.setOnClickListener(null);
+        } else {
+            // PEF Card Click Handler
+            cardTriage.setOnClickListener(v -> {
+                ProviderTriageLog triageLog = new ProviderTriageLog();
+                Bundle args = new Bundle();
+                args.putString("childUname", uname);
+                args.putString("childName", name);
+                args.putString("user", "provider");
+                triageLog.setArguments(args);
+                loadFragment(triageLog);
+            });
+        }
+
+
+        // ─────────────────────────────────────────────────────────────────
+        // Rescue History Card Click Handler
+        // ─────────────────────────────────────────────────────────────────
+        // Navigate to Peak Expiratory Flow measurement view
+        if (!permissions.contains("charts")) {
+            cardSummary.setVisibility(View.GONE);
+            cardSummary.setOnClickListener(null);
+        } else {
+            // PEF Card Click Handler
+            cardSummary.setOnClickListener(v -> {
+                ProviderSideChildRescueSummary summaryFrag = new ProviderSideChildRescueSummary();
+                Bundle args = new Bundle();
+                args.putString("childUname", uname);
+                args.putString("childName", name);
+                summaryFrag.setArguments(args);
+                loadFragment(summaryFrag);
             });
         }
 
@@ -286,6 +370,8 @@ public class ProviderSideChildDashboardFragment extends Fragment {
     @Override
     public void onCreateOptionsMenu(@NonNull Menu menu, @NonNull MenuInflater inflater) {
         MenuHelper.setupMenu(menu, inflater, requireContext());
+        MenuHelper.setupNotification(this,menu,inflater);
+
         super.onCreateOptionsMenu(menu, inflater);
     }
 

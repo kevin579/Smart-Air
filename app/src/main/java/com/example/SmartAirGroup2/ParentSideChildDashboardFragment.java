@@ -117,10 +117,8 @@ public class ParentSideChildDashboardFragment extends Fragment {
      *   - Red (alert)
      *   - Green (good)
      */
-    private CardView cardInventory, cardPEF, cardSymptom, cardPrivacy, cardProviderReport;
+    private CardView cardInventory, cardPEF, cardSymptom, cardPrivacy, cardProviderReport, cardAdherence;
     private ActivityResultLauncher<Intent> createPdfLauncher;
-
-
 
     // ═══════════════════════════════════════════════════════════════════════
     // CHILD IDENTITY
@@ -206,6 +204,7 @@ public class ParentSideChildDashboardFragment extends Fragment {
         cardSymptom = view.findViewById(R.id.cardSymptom);
         cardPrivacy = view.findViewById(R.id.cardPrivacy);
         cardProviderReport = view.findViewById(R.id.cardProviderReport);
+        cardAdherence = view.findViewById(R.id.card_controller_adherence);
 
         // ─────────────────────────────────────────────────────────────────
         // Load and Apply Status Colors
@@ -272,6 +271,18 @@ public class ParentSideChildDashboardFragment extends Fragment {
             providerRepFrag.setArguments(args);
             loadFragment(providerRepFrag);
         });
+
+        cardAdherence.setOnClickListener(new View.OnClickListener() {
+            @Override
+            public void onClick(View v) {
+
+                Intent intent = new Intent(getActivity(), ParentAdherenceActivity.class);
+                intent.putExtra("childUsername", uname);
+                intent.putExtra("childName", name);
+                startActivity(intent);
+            }
+        });
+
 
         return view;
     }
@@ -408,6 +419,7 @@ public class ParentSideChildDashboardFragment extends Fragment {
     @Override
     public void onCreateOptionsMenu(@NonNull Menu menu, @NonNull MenuInflater inflater) {
         MenuHelper.setupMenu(menu, inflater, requireContext());
+        MenuHelper.setupNotification(this,menu,inflater);
         super.onCreateOptionsMenu(menu, inflater);
     }
 
