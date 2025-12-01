@@ -109,14 +109,24 @@
 
 
     <string name="triage_title1">One-Tap Triage</string>
-    <string name="triage_title2">Check #1</string>
-    <string name="triage_title3">Check #2</string>
-    <string name="triage_title4">Check #3</string>
+    <string name="triage_title2">Symptoms</string>
+    <string name="triage_title3">Decision Card</string>
+    <string name="triage_title4">Submit Triage Report</string>
 
-    <string name="triage_subtitle1">Follow these assessments to dictate whether the emergency is manageable or to seek help.</string>
-    <string name="triage_subtitle2">Triage check #1 text goes here</string>
-    <string name="triage_subtitle3">Triage check #2 text goes here</string>
-    <string name="triage_subtitle4">Triage check #3 text goes here</string>
+    <string name="triage_subtitle1">This is guidance, not a diagnosis. If in doubt, call emergency. Use a peak flow meter to measure your peak expiratory flow (PEF) and input it below.</string>
+    <string name="triage_subtitle2">This is guidance, not a diagnosis. If in doubt, call emergency. Are you experiencing any of the below symptoms? If so, fill them in and continue.</string>
+    <string name="triage_subtitle3">This is guidance, not a diagnosis. If in doubt, call emergency. If the flags/symptoms are critical, dial the emergency number, otherwise, continue.</string>
+    <string name="triage_subtitle4">This is guidance, not a diagnosis. If in doubt, call emergency. Continue by pressing the bottom right arrow button to submit your triage report.</string>
+
+    <string name="technique_title1">Technique Helper</string>
+    <string name="technique_title2">Step 1: Get Ready</string>
+    <string name="technique_title3">Step 2: Inhale</string>
+    <string name="technique_title4">Step 3: Hold It</string>
+
+    <string name="technique_subtitle1">Follow these steps to learn how to properly use an inhaler.</string>
+    <string name="technique_subtitle2">First, shake the inhaler for 10-15 seconds. Then, stand up straight, take a deep breath in, and exhale all the air out of your lungs</string>
+    <string name="technique_subtitle3">Put the inhaler in your mouth and close your lips tightly around it to make a seal. As you start to breathe in slowly and deeply, press down on the top of the inhaler one time. Keep breathing in until your lungs are full.</string>
+    <string name="technique_subtitle4">Remove the inhaler and hold your breath for a slow count to 10. This gives the medicine time to settle in your lungs. Afterwards, you can breathe out slowly.</string>
 
 
 </resources>

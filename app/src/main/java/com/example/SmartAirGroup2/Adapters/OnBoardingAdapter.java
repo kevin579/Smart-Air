@@ -14,6 +14,10 @@ import androidx.constraintlayout.widget.ConstraintLayout;
 import androidx.viewpager.widget.PagerAdapter;
 import com.example.SmartAirGroup2.R;
 import com.example.SmartAirGroup2.models.TriageIncident;
+import android.net.Uri;
+import android.widget.MediaController;
+import android.widget.VideoView;
+import android.view.ViewStub;
 
 
 import com.example.SmartAirGroup2.R;
@@ -32,12 +36,18 @@ public class OnBoardingAdapter extends PagerAdapter{
     int[] help_images = {R.drawable.triage_vector_1, R.drawable.triage_vector_2, R.drawable.triage_vector_3, R.drawable.triage_vector_4};
     int[] help_bg = {R.drawable.bg5, R.drawable.bg5, R.drawable.bg5, R.drawable.bg5};
 
-    int[] child_titles = {R.string.triage_title1, R.string.triage_title2, R.string.triage_title3, R.string.triage_title4};
-    int[] child_subtitles = {R.string.triage_subtitle1, R.string.triage_subtitle2, R.string.triage_subtitle3, R.string.triage_subtitle4};
+    int[] child_titles = {R.string.technique_title1, R.string.technique_title2, R.string.technique_title3, R.string.technique_title4};
+    int[] child_subtitles = {R.string.technique_subtitle1, R.string.technique_subtitle2, R.string.technique_subtitle3, R.string.technique_subtitle4};
     int[] child_images = {R.drawable.triage_vector_1, R.drawable.triage_vector_2, R.drawable.triage_vector_3, R.drawable.triage_vector_4};
-    int[] child_bg = {R.drawable.bg5, R.drawable.bg5, R.drawable.bg5, R.drawable.bg5}; // Re-use backgrounds
+    int[] child_bg = {R.drawable.bg1, R.drawable.bg2, R.drawable.bg3, R.drawable.bg4};
 
 
+    int[] technique_videos = {
+            0,
+            R.raw.technique_step_1,
+            R.raw.technique_step_2,
+            R.raw.technique_step_3
+    };
 
 
     int[] titles;
@@ -53,6 +63,7 @@ public class OnBoardingAdapter extends PagerAdapter{
         this.incidentData = incidentData;
 
         switch (type) {
+            case "technique":
             case "child":
                 this.titles = child_titles;
                 this.subtitles = child_subtitles;
@@ -68,7 +79,7 @@ public class OnBoardingAdapter extends PagerAdapter{
                 break;
 
             case "initial":
-            default: // Default to the initial onboarding
+            default:
                 this.titles = onboard_titles;
                 this.subtitles = onboard_subtitles;
                 this.images = onboard_images;
@@ -98,39 +109,73 @@ public class OnBoardingAdapter extends PagerAdapter{
         TextView title = v.findViewById(R.id.sliderTitle);
         TextView subtitle = v.findViewById(R.id.sliderSubtitle);
         ConstraintLayout layout = v.findViewById(R.id.sliderLayout);
+        ViewStub inputStub = v.findViewById(R.id.input_stub);
 
         image.setImageResource(images[position]);
         title.setText(titles[position]);
         subtitle.setText(subtitles[position]);
         layout.setBackgroundResource(bg[position]);
 
-        ViewStub inputStub = v.findViewById(R.id.input_stub);
 
+        String currentType = "initial";
+        if (this.titles == help_titles) {
+            currentType = "help";
+        } else if (this.titles == child_titles) {
+            currentType = "technique";
+        }
 
-        boolean isHelp = (this.titles == help_titles); // Simple check to see if it's the help tutorial
-        if (isHelp) {
-            switch (position) {
-                case 0:
-                    inputStub.setLayoutResource(R.layout.triage_input_pef);
-                    View inflatedPef = inputStub.inflate();
-                    if (incidentData != null && incidentData.PEF != null) {
-                        EditText pefText = inflatedPef.findViewById(R.id.edit_text_pef);
-                        pefText.setText(incidentData.PEF);
-                    }
-                    break;
-                case 1:
-                    inputStub.setLayoutResource(R.layout.triage_input_redflags);
-                    View inflatedRedFlags = inputStub.inflate();
-                    if (incidentData != null) {
-                        ((CheckBox) inflatedRedFlags.findViewById(R.id.checkbox_chest_pulling)).setChecked(incidentData.redflags.getOrDefault("Chest Pulling or Retraction", false));
-                        ((CheckBox) inflatedRedFlags.findViewById(R.id.checkbox_blue_lips)).setChecked(incidentData.redflags.getOrDefault("Grey or Blue lips", false));
-                        ((CheckBox) inflatedRedFlags.findViewById(R.id.checkbox_blue_nails)).setChecked(incidentData.redflags.getOrDefault("Grey or Blue nails", false));
-                        ((CheckBox) inflatedRedFlags.findViewById(R.id.checkbox_breathing)).setChecked(incidentData.redflags.getOrDefault("Trouble breathing", false));
-                        ((CheckBox) inflatedRedFlags.findViewById(R.id.checkbox_speaking)).setChecked(incidentData.redflags.getOrDefault("Trouble speaking", false));
-                    }
-                    break;
+        switch (currentType) {
+            case "technique":
+                image.setVisibility(View.GONE);
 
-            }
+                if (position > 0 && position < technique_videos.length && technique_videos[position] != 0) {
+                    inputStub.setLayoutResource(R.layout.slide_video_player);
+                    View inflatedVideoLayout = inputStub.inflate();
+
+                    VideoView videoView = inflatedVideoLayout.findViewById(R.id.onboard_video_player);
+
+                    String videoPath = "android.resource://" + context.getPackageName() + "/" + technique_videos[position];
+                    Uri uri = Uri.parse(videoPath);
+                    videoView.setVideoURI(uri);
+
+                    MediaController mediaController = new MediaController(context);
+                    videoView.setMediaController(mediaController);
+                    mediaController.setAnchorView(videoView);
+                }
+                break;
+
+            case "help":
+                image.setVisibility(View.VISIBLE);
+                image.setImageResource(images[position]);
+
+                switch (position) {
+                    case 0:
+                        inputStub.setLayoutResource(R.layout.triage_input_pef);
+                        View inflatedPef = inputStub.inflate();
+                        if (incidentData != null && incidentData.PEF != null) {
+                            EditText pefText = inflatedPef.findViewById(R.id.edit_text_pef);
+                            pefText.setText(incidentData.PEF);
+                        }
+                        break;
+                    case 1:
+                        inputStub.setLayoutResource(R.layout.triage_input_redflags);
+                        View inflatedRedFlags = inputStub.inflate();
+                        if (incidentData != null) {
+                            ((CheckBox) inflatedRedFlags.findViewById(R.id.checkbox_chest_pulling)).setChecked(incidentData.redflags.getOrDefault("Chest Pulling or Retraction", false));
+                            ((CheckBox) inflatedRedFlags.findViewById(R.id.checkbox_blue_lips)).setChecked(incidentData.redflags.getOrDefault("Grey or Blue lips", false));
+                            ((CheckBox) inflatedRedFlags.findViewById(R.id.checkbox_blue_nails)).setChecked(incidentData.redflags.getOrDefault("Grey or Blue nails", false));
+                            ((CheckBox) inflatedRedFlags.findViewById(R.id.checkbox_breathing)).setChecked(incidentData.redflags.getOrDefault("Trouble breathing", false));
+                            ((CheckBox) inflatedRedFlags.findViewById(R.id.checkbox_speaking)).setChecked(incidentData.redflags.getOrDefault("Trouble speaking", false));
+                        }
+                        break;
+                }
+                break;
+
+            case "initial":
+            default:
+                image.setVisibility(View.VISIBLE);
+                image.setImageResource(images[position]);
+                break;
         }
 
         container.addView(v);

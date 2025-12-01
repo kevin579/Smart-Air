@@ -114,6 +114,14 @@ public class ChildDashboard extends BaseActivity {
             }
         });
 
+        Button btnTechniqueHelper = findViewById(R.id.btnTechnique);
+        btnTechniqueHelper.setOnClickListener(new View.OnClickListener() {
+            @Override
+            public void onClick(View v) {
+                launchTechniqueOnboarding();
+            }
+        });
+
         // Symptoms button -> loads SymptomDashboardFragment into fragment container
         Button btnSymptoms = findViewById(R.id.btnSymptoms);
         btnSymptoms.setOnClickListener(v -> {
@@ -135,6 +143,12 @@ public class ChildDashboard extends BaseActivity {
         Intent intent = new Intent(ChildDashboard.this, OnboardingActivity.class);
         intent.putExtra("onboardingType", "help");
         intent.putExtra("username", currentChildId);
+        startActivity(intent);
+    }
+
+    private void launchTechniqueOnboarding() {
+        Intent intent = new Intent(ChildDashboard.this, OnboardingActivity.class);
+        intent.putExtra("onboardingType", "technique");
         startActivity(intent);
     }
 
