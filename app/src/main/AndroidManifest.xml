@@ -19,12 +19,11 @@
             android:name=".ProviderAdherenceActivity"
             android:exported="false" />
         <activity
-            android:name=".ParentAdherenceActivity"
-            android:exported="false" />
-
-        <activity
             android:name=".ChildDashboardActivity"
             android:exported="true" />
+        <activity
+            android:name=".ParentAdherenceActivity"
+            android:exported="false" />
         <activity
             android:name=".password_recover"
             android:exported="false" />
