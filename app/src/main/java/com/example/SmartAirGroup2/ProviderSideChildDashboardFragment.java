@@ -273,10 +273,10 @@ public class ProviderSideChildDashboardFragment extends Fragment {
         }
 
         // ─────────────────────────────────────────────────────────────────
-        // Logs Card Click Handler
+        // PEF Card Click Handler
         // ─────────────────────────────────────────────────────────────────
         // Navigate to Peak Expiratory Flow measurement view
-        if (!permissions.contains("rescueLog")) {
+        if (!permissions.contains("pef")) {
             cardLog.setVisibility(View.GONE);
             cardLog.setOnClickListener(null);
         } else {
@@ -309,10 +309,27 @@ public class ProviderSideChildDashboardFragment extends Fragment {
                 startActivity(intent);
             });
         }
-
-
         // ─────────────────────────────────────────────────────────────────
         // Logs Card Click Handler
+        // ─────────────────────────────────────────────────────────────────
+        if (!permissions.contains("rescueLog")) {
+            cardLog.setVisibility(View.GONE);
+            cardLog.setOnClickListener(null);
+        } else {
+            cardLog.setOnClickListener(v -> {
+                ProviderRescueLogsFragment logsFrag = new ProviderRescueLogsFragment();
+                Bundle args = new Bundle();
+                args.putString("childUname", uname);
+                args.putString("childName", name);
+                args.putString("user", "provider");
+                logsFrag.setArguments(args);
+
+                loadFragment(logsFrag);
+            });
+        }
+
+        // ─────────────────────────────────────────────────────────────────
+        // Triage Card Click Handler
         // ─────────────────────────────────────────────────────────────────
         // Navigate to Peak Expiratory Flow measurement view
         if (!permissions.contains("triage")) {
