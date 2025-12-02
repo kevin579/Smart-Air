@@ -22,11 +22,11 @@ import com.example.SmartAirGroup2.ParentDashboardActivity;
 //import com.example.SmartAirGroup2.Parent_Provider_Dahsboard;
 import com.example.SmartAirGroup2.ProviderDashboardActivity;
 import com.example.SmartAirGroup2.R;
-import com.example.SmartAirGroup2.User;
+import com.example.SmartAirGroup2.models.User;
 import com.example.SmartAirGroup2.auth.data.repo.AuthRepository;
 import com.example.SmartAirGroup2.auth.data.repo.FirebaseRtdbAuthRepository;
-import com.example.SmartAirGroup2.create_account;
-import com.example.SmartAirGroup2.password_recover;
+import com.example.SmartAirGroup2.CreateAccount;
+import com.example.SmartAirGroup2.PasswordRecovery;
 import com.google.firebase.database.DatabaseReference;
 import com.google.firebase.database.FirebaseDatabase;
 
@@ -68,12 +68,12 @@ public class LoginFragment extends Fragment implements LoginContract.View {
         });
 
         btnCreate.setOnClickListener(view -> {
-            Intent intent = new Intent(getActivity(), create_account.class);
+            Intent intent = new Intent(getActivity(), CreateAccount.class);
             startActivity(intent);
         });
 
         btnRecover.setOnClickListener(view -> {
-            Intent intent = new Intent(getActivity(), password_recover.class);
+            Intent intent = new Intent(getActivity(), PasswordRecovery.class);
             startActivity(intent);
         });
 

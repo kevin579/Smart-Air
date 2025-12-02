@@ -17,7 +17,7 @@ import androidx.fragment.app.Fragment;
 import com.google.firebase.database.DatabaseReference;
 import com.google.firebase.database.FirebaseDatabase;
 
-import com.example.SmartAirGroup2.User;
+import com.example.SmartAirGroup2.models.User;
 
 
 public class AddItemFragment extends Fragment {

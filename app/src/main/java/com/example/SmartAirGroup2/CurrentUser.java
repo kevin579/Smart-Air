@@ -1,5 +1,7 @@
 package com.example.SmartAirGroup2;
 
+import com.example.SmartAirGroup2.models.User;
+
 public class CurrentUser {
     private static User user;
 

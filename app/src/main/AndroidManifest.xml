@@ -25,10 +25,10 @@
             android:name=".ParentAdherenceActivity"
             android:exported="false" />
         <activity
-            android:name=".password_recover"
+            android:name=".PasswordRecovery"
             android:exported="false" />
         <activity
-            android:name=".create_account"
+            android:name=".CreateAccount"
             android:exported="false" />
         <activity android:name=".ParentDashboardActivity" />
         <activity android:name=".ProviderDashboardActivity" />

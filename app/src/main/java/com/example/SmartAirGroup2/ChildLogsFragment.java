@@ -981,8 +981,7 @@ public class ChildLogsFragment extends Fragment {
     // ───────────────────────────────
     @Override
     public void onCreateOptionsMenu(@NonNull Menu menu, @NonNull MenuInflater inflater) {
-        MenuHelper.setupMenu(menu, inflater, requireContext());
-        MenuHelper.setupNotification(this,menu,inflater);
+        MenuHelper.setupMenuWithoutAlerts(menu, inflater, requireContext());
         super.onCreateOptionsMenu(menu, inflater);
     }
 

@@ -1,6 +1,7 @@
-package com.example.SmartAirGroup2;
+package com.example.SmartAirGroup2.models;
+
 import java.util.ArrayList;
-public class Parent extends User{
+public class Parent extends User {
     private ArrayList<String> children = new ArrayList<String>();
 
 

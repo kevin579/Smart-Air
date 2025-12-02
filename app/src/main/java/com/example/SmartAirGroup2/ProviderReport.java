@@ -451,16 +451,13 @@ public class ProviderReport extends Fragment {
 
     @Override
     public void onCreateOptionsMenu(@NonNull Menu menu, @NonNull MenuInflater inflater) {
-        MenuHelper.setupMenu(menu, inflater, requireContext());
+        MenuHelper.setupMenuWithoutAlerts(menu, inflater, requireContext());
         super.onCreateOptionsMenu(menu, inflater);
     }
 
     @Override
     public boolean onOptionsItemSelected(@NonNull MenuItem item) {
-        if (MenuHelper.handleMenuSelection(item, this)) {
-            return true;
-        }
-        return super.onOptionsItemSelected(item);
+        return MenuHelper.handleMenuSelection(item, this) || super.onOptionsItemSelected(item);
     }
 
     // ───────────────────────────────

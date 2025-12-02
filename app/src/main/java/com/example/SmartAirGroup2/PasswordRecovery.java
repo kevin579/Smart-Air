@@ -11,18 +11,12 @@ import android.widget.ImageButton;
 import android.widget.Spinner;
 import android.widget.Toast;
 
-import androidx.activity.EdgeToEdge;
 import androidx.appcompat.app.AlertDialog;
 import androidx.appcompat.app.AppCompatActivity;
-import androidx.core.graphics.Insets;
-import androidx.core.view.ViewCompat;
-import androidx.core.view.WindowInsetsCompat;
 
-import com.example.SmartAirGroup2.auth.data.repo.PasswordRecovery;
-import com.example.SmartAirGroup2.auth.data.repo.newUserAuth;
 import com.google.firebase.database.FirebaseDatabase;
 
-public class password_recover extends AppCompatActivity {
+public class PasswordRecovery extends AppCompatActivity {
     private EditText username;
     private EditText email;
     private Button recoverButton;
@@ -32,7 +26,7 @@ public class password_recover extends AppCompatActivity {
     private ImageButton goBack;
 
     private void showPasswordDialog(String password) {
-        AlertDialog.Builder builder = new AlertDialog.Builder(password_recover.this);
+        AlertDialog.Builder builder = new AlertDialog.Builder(PasswordRecovery.this);
         builder.setTitle("Password Recovery");
         builder.setMessage("Your password is:\n\n" + password);
 
@@ -48,7 +42,7 @@ public class password_recover extends AppCompatActivity {
             clipboard.setPrimaryClip(clip);
 
             // Optional: show a toast
-            Toast.makeText(password_recover.this, "Password copied to clipboard", Toast.LENGTH_SHORT).show();
+            Toast.makeText(PasswordRecovery.this, "Password copied to clipboard", Toast.LENGTH_SHORT).show();
         });
 
         builder.show();
@@ -85,7 +79,7 @@ public class password_recover extends AppCompatActivity {
 
                 // Don't process if "Select a role" is chosen
                 if (position != 0) {
-                    Toast.makeText(password_recover.this,
+                    Toast.makeText(PasswordRecovery.this,
                             "Selected: " + selectedRole,
                             Toast.LENGTH_SHORT).show();
                 }
@@ -99,7 +93,7 @@ public class password_recover extends AppCompatActivity {
         goBack.setOnClickListener(new View.OnClickListener() {
             @Override
             public void onClick(View view) {
-                Intent intent = new Intent(password_recover.this, MainActivity.class);
+                Intent intent = new Intent(PasswordRecovery.this, MainActivity.class);
                 startActivity(intent);
             }
         });
@@ -112,20 +106,20 @@ public class password_recover extends AppCompatActivity {
                 String emailInput = email.getText().toString().trim();
                 String role = selectedRole;
 
-                PasswordRecovery.accountExists(userInput, emailInput, role, new PasswordRecovery.AccountCheckCallback() {
+                com.example.SmartAirGroup2.auth.data.repo.PasswordRecovery.accountExists(userInput, emailInput, role, new com.example.SmartAirGroup2.auth.data.repo.PasswordRecovery.AccountCheckCallback() {
                     @Override
                     public void onResult(String password) {
                         if (!password.equals("null")) {
-                            Toast.makeText(password_recover.this, "Email sent!", Toast.LENGTH_SHORT).show();
+                            Toast.makeText(PasswordRecovery.this, "Email sent!", Toast.LENGTH_SHORT).show();
                             showPasswordDialog(password);
                         } else {
-                            Toast.makeText(password_recover.this, "Account does not exist", Toast.LENGTH_SHORT).show();
+                            Toast.makeText(PasswordRecovery.this, "Account does not exist", Toast.LENGTH_SHORT).show();
                         }
                     }
 
                     @Override
                     public void onError(String errorMessage) {
-                        Toast.makeText(password_recover.this, "Error: " + errorMessage, Toast.LENGTH_SHORT).show();
+                        Toast.makeText(PasswordRecovery.this, "Error: " + errorMessage, Toast.LENGTH_SHORT).show();
                     }
                 });
             }

@@ -45,6 +45,21 @@ public class MenuHelper {
             }
         }
     }
+    public static void setupMenuWithoutAlerts(@NonNull Menu menu, @NonNull MenuInflater inflater, @NonNull Context context) {
+        menu.clear();
+        // 1. INFLATE THE NEW MENU RESOURCE
+        inflater.inflate(R.menu.menu_no_alert, menu);
+
+        // 2. Tint icons white for visibility (reuse existing logic)
+        for (int i = 0; i < menu.size(); i++) {
+            MenuItem item = menu.getItem(i);
+            if (item.getIcon() != null) {
+                item.getIcon().setTint(context.getResources().getColor(android.R.color.white));
+            }
+        }
+
+        // Optional: Log/Toast that alerts are disabled for this user type
+    }
 
     // Handle menu item clicks
     public static boolean handleMenuSelection(@NonNull MenuItem item, @NonNull Fragment fragment) {

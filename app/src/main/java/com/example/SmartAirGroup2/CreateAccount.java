@@ -19,7 +19,7 @@ import com.google.firebase.database.FirebaseDatabase;
 import com.example.SmartAirGroup2.auth.data.repo.AuthRepository;
 import com.example.SmartAirGroup2.auth.data.repo.FirebaseRtdbAuthRepository;
 
-public class create_account extends AppCompatActivity {
+public class CreateAccount extends AppCompatActivity {
 
     private EditText username;
     private EditText email;
@@ -64,7 +64,7 @@ public class create_account extends AppCompatActivity {
                 selectedRole = parent.getItemAtPosition(position).toString();
 
                 if (position != 0) {
-                    Toast.makeText(create_account.this,
+                    Toast.makeText(CreateAccount.this,
                             "Selected: " + selectedRole,
                             Toast.LENGTH_SHORT).show();
                 }
@@ -77,7 +77,7 @@ public class create_account extends AppCompatActivity {
         });
 
         goBack.setOnClickListener(view -> {
-            Intent intent = new Intent(create_account.this, MainActivity.class);
+            Intent intent = new Intent(CreateAccount.this, MainActivity.class);
             startActivity(intent);
         });
 
@@ -88,26 +88,26 @@ public class create_account extends AppCompatActivity {
             String confirmPassInput = confirmPassword.getText().toString().trim();
 
             if (selectedRole == null || selectedRole.equals("Select a role")) {
-                Toast.makeText(create_account.this,
+                Toast.makeText(CreateAccount.this,
                         "Please select a role", Toast.LENGTH_SHORT).show();
                 return;
             }
 
             if (userInput.isEmpty() || emailInput.isEmpty()
                     || passInput.isEmpty() || confirmPassInput.isEmpty()) {
-                Toast.makeText(create_account.this,
+                Toast.makeText(CreateAccount.this,
                         "All fields are required", Toast.LENGTH_SHORT).show();
                 return;
             }
 
             if (!passInput.equals(confirmPassInput)) {
-                Toast.makeText(create_account.this,
+                Toast.makeText(CreateAccount.this,
                         "passwords do not match!", Toast.LENGTH_SHORT).show();
                 return;
             }
 
             if (!newUserAuth.CheckPassword(passInput)) {
-                Toast.makeText(create_account.this,
+                Toast.makeText(CreateAccount.this,
                         "Password must be at least 8 characters with uppercase, lowercase, number, and special character",
                         Toast.LENGTH_LONG).show();
                 return;
@@ -126,7 +126,7 @@ public class create_account extends AppCompatActivity {
                     if (exists) {
                         // account exists
                         runOnUiThread(() -> Toast.makeText(
-                                create_account.this,
+                                CreateAccount.this,
                                 "account already exist",
                                 Toast.LENGTH_SHORT
                         ).show());
@@ -136,15 +136,15 @@ public class create_account extends AppCompatActivity {
                         newUserAuth.createUser(role, userInput, passInput, emailInput);
 
                         runOnUiThread(() -> {
-                            Toast.makeText(create_account.this,
+                            Toast.makeText(CreateAccount.this,
                                     "account registered!", Toast.LENGTH_SHORT).show();
-                            Intent intent = new Intent(create_account.this, MainActivity.class);
+                            Intent intent = new Intent(CreateAccount.this, MainActivity.class);
                             startActivity(intent);
                         });
                     }
                 } catch (Exception e) {
                     runOnUiThread(() -> Toast.makeText(
-                            create_account.this,
+                            CreateAccount.this,
                             "Error: " + e.getMessage(),
                             Toast.LENGTH_SHORT
                     ).show());
