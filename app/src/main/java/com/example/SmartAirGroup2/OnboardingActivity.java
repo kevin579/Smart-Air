@@ -89,12 +89,14 @@ public class OnboardingActivity extends AppCompatActivity {
                 break;
             case "initial":
             default:
+                String username = getIntent().getStringExtra("username");
+                String field = getIntent().getStringExtra("type");
                 incidentData = null; // No data collection for these types
                 skipButton.setText(onboardingType.equals("initial") ? "Skip" : "Close");
                 skipButton.setOnClickListener(v -> {
                     if (onboardingType.equals("initial")) {
                         saveState.setState(1);
-                        startMainActivity();
+                        startMainActivity(field,username);
                     } else {
                         finish();
                     }
@@ -171,7 +173,8 @@ public class OnboardingActivity extends AppCompatActivity {
         }
 
         // 2. Get the specific reference to the user's "triages" branch.
-        final DatabaseReference triagesRef = FirebaseDatabase.getInstance().getReference()
+        final DatabaseReference triagesRef = FirebaseDatabase.getInstance()
+                .getReference("categories/users/children")
                 .child(currentUserId) // This uses the username like "randy1122"
                 .child("data")
                 .child("triages");
@@ -216,9 +219,22 @@ public class OnboardingActivity extends AppCompatActivity {
         });
     }
 
-    private void startMainActivity() {
-        Intent i = new Intent(OnboardingActivity.this, MainActivity.class);
-        startActivity(i);
+    private void startMainActivity(String field, String username) {
+        Intent intent;
+
+        if (field.equals("children")) {
+            intent = new Intent(OnboardingActivity.this, ChildDashboardActivity.class);
+            intent.putExtra("username", username);
+        } else if (field.equals("parents")) {
+            intent = new Intent(OnboardingActivity.this, ParentDashboardActivity.class);
+            intent.putExtra("username", username);
+
+        } else {
+            intent = new Intent(OnboardingActivity.this, ProviderDashboardActivity.class);
+            intent.putExtra("username", username);
+        }
+
+        startActivity(intent);
         finish();
     }
 
@@ -263,6 +279,8 @@ public class OnboardingActivity extends AppCompatActivity {
                     String username = getIntent().getStringExtra("username");
                     String field = getIntent().getStringExtra("type");
 
+                    Log.d(":DB","The technique helper is here");
+
                     DatabaseReference stateRef = FirebaseDatabase.getInstance()
                             .getReference("categories/users")
                             .child(field)
@@ -272,21 +290,7 @@ public class OnboardingActivity extends AppCompatActivity {
                     Log.d(":DB",field);
 
 
-                    Intent intent;
 
-                    if (field.equals("children")) {
-                        intent = new Intent(OnboardingActivity.this, ChildDashboardActivity.class);
-                        intent.putExtra("username", username);
-                    } else if (field.equals("parents")) {
-                        intent = new Intent(OnboardingActivity.this, ParentDashboardActivity.class);
-                        intent.putExtra("username", username);
-
-                    } else {
-                        intent = new Intent(OnboardingActivity.this, Parent_Provider_Dashboard.class);
-                        intent.putExtra("username", username);
-                    }
-
-                    startActivity(intent);
                     finish();
                     switch (finalOnboardingType) {
                         case "help":
@@ -294,10 +298,11 @@ public class OnboardingActivity extends AppCompatActivity {
                             break;
                         case "initial":
                             saveState.setState(1);
-                            startMainActivity();
+                            startMainActivity(field,username);
                             break;
                         default:
-                            finish();
+//                            finish();
+
                             break;
                     }
                 });
