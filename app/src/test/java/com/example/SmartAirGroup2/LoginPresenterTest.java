@@ -97,6 +97,7 @@ public class LoginPresenterTest {
         presenter.detach();
 
         presenter.onLoginClicked("parent","perry","perry@gmail.com","!Abc12345");
+        Thread.sleep(50);
 
         verify(mockAuthRepository).CheckPassword(anyString(), anyString(), anyString(), anyString());
         verifyNoInteractions(mockView);
@@ -108,16 +109,21 @@ public class LoginPresenterTest {
         )).thenReturn(true);
 
         presenter.onLoginClicked("parent","perry","perry@gmail.com","!Abc12345");
+        Thread.sleep(50);
+
         verify(mockView).showLoginSuccess("parent");
+        verify(mockView, never()).showLoginFailed();
     }
-
     @Test
-    public void testLogin_loginFalied_repoFalse() throws Exception{
-        when(mockAuthRepository.CheckPassword("parent","perry","perry@gmail.com","!Abc12345"
-        )).thenReturn(true);
+    public void testLogin_invalidCredentials() throws Exception{
+    when(mockAuthRepository.CheckPassword(
+            anyString(), anyString(), anyString(), anyString())
+    ).thenReturn(false);
 
-        presenter.onLoginClicked("child","perry","perry@gmail.com","!Abc12345");
-        verify(mockView).showLoginFailed();
+    presenter.onLoginClicked("parent", "perry", "perry@gmail.com", "wrongPass");
+
+    verify(mockAuthRepository).CheckPassword("parent", "perry", "perry@gmail.com", "wrongPass");
+    verify(mockView).showLoginFailed();
     }
 
     @Test
@@ -126,6 +132,8 @@ public class LoginPresenterTest {
                 .thenThrow(new RuntimeException("Database connection failed"));
         presenter.detach();
         presenter.onLoginClicked("child","perry","perry@gmail.com","!Abc12345");
+        Thread.sleep(50);
+
         verifyNoInteractions(mockView);
     }
 
@@ -134,6 +142,7 @@ public class LoginPresenterTest {
         when(mockAuthRepository.CheckPassword(anyString(), anyString(), anyString(), anyString()))
                 .thenThrow(new RuntimeException("failed"));
         presenter.onLoginClicked("child","perry","perry@gmail.com","!Abc12345");
+        Thread.sleep(50);
 
         verify(mockView).showInputError("failed");
         verify(mockView).showLoginFailed();
