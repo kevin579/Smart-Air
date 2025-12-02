@@ -43,10 +43,9 @@ public class LoginPresenterTest {
     public void setUp() {
         MockitoAnnotations.openMocks(this);
 
-        // 关键：让 handler.post(runnable) 在测试里直接执行 runnable.run()
         doAnswer(invocation -> {
             Runnable r = invocation.getArgument(0);
-            r.run();           // 同步执行
+            r.run();
             return true;
         }).when(mockHandler).post(any(Runnable.class));
 
