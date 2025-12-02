@@ -369,25 +369,13 @@ public class ProviderSideChildDashboardFragment extends Fragment {
      */
     @Override
     public void onCreateOptionsMenu(@NonNull Menu menu, @NonNull MenuInflater inflater) {
-        MenuHelper.setupMenu(menu, inflater, requireContext());
-        MenuHelper.setupNotification(this,menu,inflater);
-
+        MenuHelper.setupMenuWithoutAlerts(menu, inflater, requireContext());
         super.onCreateOptionsMenu(menu, inflater);
     }
 
-    /**
-     * Handles menu item selection events.
-     * Delegates to MenuHelper for consistent menu behavior across the app.
-     *
-     * @param item The menu item that was selected
-     * @return     true if the event was handled, false otherwise
-     */
     @Override
     public boolean onOptionsItemSelected(@NonNull MenuItem item) {
-        if (MenuHelper.handleMenuSelection(item, this)) {
-            return true;
-        }
-        return super.onOptionsItemSelected(item);
+        return MenuHelper.handleMenuSelection(item, this) || super.onOptionsItemSelected(item);
     }
 
     // ═══════════════════════════════════════════════════════════════════════
