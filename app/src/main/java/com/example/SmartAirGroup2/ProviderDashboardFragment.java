@@ -512,144 +512,16 @@ public class ProviderDashboardFragment extends Fragment {
     // MENU HANDLING
     // ═══════════════════════════════════════════════════════════════════════
 
-    /**
-     * Inflates the toolbar menu using MenuHelper.
-     * Called by the Android framework when the menu is being created.
-     *
-     * @param menu     Menu object to be populated
-     * @param inflater MenuInflater to use for inflating menu resources
-     */
+
     @Override
     public void onCreateOptionsMenu(@NonNull Menu menu, @NonNull MenuInflater inflater) {
+        MenuHelper.setupMenuWithoutAlerts(menu, inflater, requireContext());
         super.onCreateOptionsMenu(menu, inflater);
-
-        MenuHelper.setupMenu(menu, inflater, requireContext());
-
-        MenuItem notifItem = menu.findItem(R.id.action_notifications);
-        if (notifItem != null) {
-            notificationActionView = notifItem.getActionView();
-            if (notificationActionView != null) {
-                notificationBadge = notificationActionView.findViewById(R.id.viewBadge);
-
-                notificationActionView.setOnClickListener(v -> onOptionsItemSelected(notifItem));
-            }
-        }
-//        checkAlertsAndUpdateBadge();
     }
-//    private void updateNotificationBadge(boolean hasAlerts) {
-//        if (notificationBadge == null) return;
-//        notificationBadge.setVisibility(hasAlerts ? View.VISIBLE : View.GONE);
-//    }
-//
-//    private void checkAlertsAndUpdateBadge() {
-//        if (db == null) {
-//            db = FirebaseDatabase.getInstance("https://smart-air-group2-default-rtdb.firebaseio.com/");
-//        }
-//
-//        DatabaseReference parentChildrenRef = db.getReference("categories/users/parents")
-//                .child(uname)
-//                .child("children");
-//
-//        parentChildrenRef.addListenerForSingleValueEvent(new ValueEventListener() {
-//            @Override
-//            public void onDataChange(@NonNull DataSnapshot snapshot) {
-//                if (!snapshot.exists() || snapshot.getChildrenCount() == 0) {
-//                    updateNotificationBadge(false);
-//                    return;
-//                }
-//
-//                int totalChildren = (int) snapshot.getChildrenCount();
-//                final int[] finished = {0};
-//                final boolean[] hasAlerts = {false};
-//
-//                for (DataSnapshot childSnap : snapshot.getChildren()) {
-//                    String childUname = childSnap.getValue(String.class);
-//
-//                    if (childUname == null || childUname.trim().isEmpty()) {
-//                        if (++finished[0] == totalChildren && !hasAlerts[0]) {
-//                            updateNotificationBadge(false);
-//                        }
-//                        continue;
-//                    }
-//
-//                    DatabaseReference statusRef = db.getReference("categories/users/children")
-//                            .child(childUname)
-//                            .child("status");
-//
-//                    statusRef.addListenerForSingleValueEvent(new ValueEventListener() {
-//                        @Override
-//                        public void onDataChange(@NonNull DataSnapshot statusSnap) {
-//                            if (!hasAlerts[0]) {
-//                                if (statusHasAlert(statusSnap)) {
-//                                    hasAlerts[0] = true;
-//                                    updateNotificationBadge(true);
-//                                }
-//                            }
-//
-//                            if (++finished[0] == totalChildren && !hasAlerts[0]) {
-//                                updateNotificationBadge(false);
-//                            }
-//                        }
-//
-//                        @Override
-//                        public void onCancelled(@NonNull DatabaseError error) {
-//                            if (++finished[0] == totalChildren && !hasAlerts[0]) {
-//                                updateNotificationBadge(false);
-//                            }
-//                        }
-//                    });
-//                }
-//            }
-//
-//            @Override
-//            public void onCancelled(@NonNull DatabaseError error) {
-//                updateNotificationBadge(false);
-//            }
-//        });
-//    }
-//
-//
-//    private boolean statusHasAlert(DataSnapshot statusSnap) {
-//        if (statusSnap == null || !statusSnap.exists()) {
-//            return false;
-//        }
-//
-//        // PEF red zone
-//        Integer pefZone = statusSnap.child("pefZone").getValue(Integer.class);
-//        if (pefZone != null && pefZone == 2) {
-//            return true;
-//        }
-//
-//        DataSnapshot invSnap = statusSnap.child("inventory");
-//        if (invSnap != null && invSnap.exists()) {
-//            for (DataSnapshot medSnap : invSnap.getChildren()) {
-//                for (DataSnapshot snapIndex : medSnap.getChildren()) {
-//                    Integer code = snapIndex.getValue(Integer.class);
-//                    if (code != null && (code == 1 || code == 2)) {
-//                        return true;
-//                    }
-//                }
-//            }
-//        }
-//
-//        return false;
-//    }
-//
 
-
-    /**
-         * Handles menu item selection events.
-         * Delegates to MenuHelper for consistent menu behavior across the app.
-         *
-         * @param item The menu item that was selected
-         * @return     true if the event was handled, false otherwise
-         */
     @Override
     public boolean onOptionsItemSelected(@NonNull MenuItem item) {
-        if (MenuHelper.handleMenuSelection(item, this)) {
-            return true;
-        }
-        return super.onOptionsItemSelected(item);
+        return MenuHelper.handleMenuSelection(item, this) || super.onOptionsItemSelected(item);
     }
 
     // ═══════════════════════════════════════════════════════════════════════

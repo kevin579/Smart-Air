@@ -42,9 +42,17 @@ public class StreakFragment extends Fragment {
     private Button btnCheckIn;
     private Button btnBadges;
 
-    private String childName = "parry6677";
+    private String childName;
 
-    public StreakFragment() { }
+    @Override
+    public void onCreate(Bundle savedInstanceState) {
+        super.onCreate(savedInstanceState);
+
+        // Retrieve identifying info passed from previous screen
+        if (getArguments() != null) {
+            childName = getArguments().getString("childUname");
+        }
+    }
 
     @Override
     public View onCreateView(@NonNull LayoutInflater inflater,

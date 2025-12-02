@@ -1,4 +1,4 @@
-package com.example.SmartAirGroup2;
+package com.example.SmartAirGroup2.models;
 
 public class User {
     private String uname;
