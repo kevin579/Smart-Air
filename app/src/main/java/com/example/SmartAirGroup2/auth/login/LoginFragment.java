@@ -15,18 +15,18 @@ import androidx.annotation.NonNull;
 import androidx.annotation.Nullable;
 import androidx.fragment.app.Fragment;
 
-import com.example.SmartAirGroup2.ChildDashboardActivity;
-import com.example.SmartAirGroup2.CurrentUser;
-import com.example.SmartAirGroup2.OnboardingActivity;
-import com.example.SmartAirGroup2.ParentDashboardActivity;
+import com.example.SmartAirGroup2.ChildDashboard.ChildDashboardActivity;
+import com.example.SmartAirGroup2.Main.CurrentUser;
+import com.example.SmartAirGroup2.Main.OnboardingActivity;
+import com.example.SmartAirGroup2.ParentDashboard.ParentDashboardActivity;
 //import com.example.SmartAirGroup2.Parent_Provider_Dahsboard;
-import com.example.SmartAirGroup2.ProviderDashboardActivity;
+import com.example.SmartAirGroup2.ProviderDashboard.ProviderDashboardActivity;
 import com.example.SmartAirGroup2.R;
-import com.example.SmartAirGroup2.models.User;
+import com.example.SmartAirGroup2.Helpers.User;
 import com.example.SmartAirGroup2.auth.data.repo.AuthRepository;
 import com.example.SmartAirGroup2.auth.data.repo.FirebaseRtdbAuthRepository;
-import com.example.SmartAirGroup2.CreateAccount;
-import com.example.SmartAirGroup2.PasswordRecovery;
+import com.example.SmartAirGroup2.Main.CreateAccount;
+import com.example.SmartAirGroup2.Main.PasswordRecovery;
 import com.google.firebase.database.DatabaseReference;
 import com.google.firebase.database.FirebaseDatabase;
 

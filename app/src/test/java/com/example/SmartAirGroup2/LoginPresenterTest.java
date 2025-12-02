@@ -19,7 +19,6 @@ import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.Mockito.*;
 
 import android.os.Handler;
-import android.os.Looper;
 
 /**
  * Unit tests for LoginPresenter

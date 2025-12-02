@@ -2,7 +2,6 @@ package com.example.SmartAirGroup2.auth.data.repo;
 
 import com.google.firebase.database.*;
 import com.google.android.gms.tasks.Tasks;
-import android.util.Log;
 
 public class FirebaseRtdbAuthRepository implements AuthRepository {
     private final DatabaseReference usersRoot =
