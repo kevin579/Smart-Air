@@ -1,6 +1,7 @@
 package com.example.SmartAirGroup2;
 
 import android.content.Context;
+import android.content.Intent;
 import android.content.SharedPreferences;
 import android.os.Bundle;
 import android.view.LayoutInflater;
@@ -172,6 +173,35 @@ public class ChildDashboardFragment extends Fragment {
             loadFragment(logFrag);
         });
 
+        Button btnHelper = view.findViewById(R.id.btnTechnique);
+        btnHelper.setOnClickListener(v -> {
+            launchTechniqueOnboarding();
+        });
+
+        Button btnTriage = view.findViewById(R.id.btnTriage);
+        btnTriage.setOnClickListener(new View.OnClickListener() {
+            @Override
+            public void onClick(View v) {
+                launchTriageOnboarding();
+            }
+        });
+
+
+
+        Button btnStreaks = view.findViewById(R.id.btnBadges);
+        btnStreaks.setOnClickListener(v -> {
+            // NOTE: Removed setContentView(R.layout.activity_base) as it belongs to the hosting Activity, not the Fragment
+            StreakFragment streakFrag = new StreakFragment();
+            Bundle args = new Bundle();
+            args.putString("childUname", currentChildId);
+            args.putString("childName", currentChildId);
+            args.putString("user", "parent");
+            streakFrag.setArguments(args);
+            loadFragment(streakFrag);
+        });
+
+
+
         // 4. Symptoms button -> loads SymptomDashboardFragment into fragment container
         Button btnSymptoms = view.findViewById(R.id.btnSymptoms);
         btnSymptoms.setOnClickListener(v -> {
@@ -188,13 +218,42 @@ public class ChildDashboardFragment extends Fragment {
         return view;
     }
 
+    private void launchTriageOnboarding() {
+        // 1. Create an Intent to start your OnboardingActivity.
+        Intent intent = new Intent(requireContext(), OnboardingActivity.class);
+
+        // 2. Set the flag to "help" to trigger the triage data collection flow.
+        intent.putExtra("onboardingType", "help");
+
+        // 3. Pass the current child's username/ID to the OnboardingActivity.
+        //    The 'currentChildId' variable already holds the correct ID.
+        intent.putExtra("username", currentChildId);
+        intent.putExtra("type", "children");
+
+        // 4. Start the activity.
+        startActivity(intent);
+    }
+
+    private void launchTechniqueOnboarding() {
+        // 1. Create an Intent to start your OnboardingActivity.
+        Intent intent = new Intent(requireContext(), OnboardingActivity.class);
+
+        // 2. Set the flag to "technique" to trigger the correct set of slides.
+        intent.putExtra("onboardingType", "technique");
+        intent.putExtra("username", currentChildId);
+        intent.putExtra("type", "children");
+        // Note: We don't need to pass the username here as this flow doesn't save data.
+
+        // 3. Start the activity.
+        startActivity(intent);
+    }
+
     // ───────────────────────────────
     // MENU HANDLING
     // ───────────────────────────────
     @Override
     public void onCreateOptionsMenu(@NonNull Menu menu, @NonNull MenuInflater inflater) {
-        MenuHelper.setupMenu(menu, inflater, requireContext());
-        MenuHelper.setupNotification(this,menu,inflater);
+        MenuHelper.setupMenuWithoutAlerts(menu, inflater, requireContext());
         super.onCreateOptionsMenu(menu, inflater);
     }
 
