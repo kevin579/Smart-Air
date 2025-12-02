@@ -49,7 +49,6 @@ public class LoginPresenterTest {
             return true;
         }).when(mockHandler).post(any(Runnable.class));
 
-        // 使用带 Handler 参数的构造函数
         presenter = new LoginPresenter(mockAuthRepository, mockHandler);
         presenter.attach(mockView);
     }
