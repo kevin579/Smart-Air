@@ -4,7 +4,7 @@ import static android.app.PendingIntent.getActivity;
 
 import static androidx.core.content.ContextCompat.startActivity;
 
-import com.example.SmartAirGroup2.ChildDashboard;
+//import com.example.SmartAirGroup2.ChildDashboard;
 import com.example.SmartAirGroup2.Parent_Provider_Dashboard;
 import com.example.SmartAirGroup2.auth.data.repo.AuthRepository;
 import com.example.SmartAirGroup2.auth.data.repo.ProfileCheck;
@@ -19,10 +19,15 @@ import android.content.Intent;
 public class LoginPresenter implements LoginContract.Presenter{
     private final AuthRepository repo;
     private LoginContract.View view;
-    private final Handler mainHandler = new Handler(Looper.getMainLooper());
+    private final Handler mainHandler;
 
-    public LoginPresenter(AuthRepository repo){
+    public LoginPresenter(AuthRepository repo) {
+        this(repo, new Handler(Looper.getMainLooper()));
+    }
+
+    public LoginPresenter(AuthRepository repo, Handler handler) {
         this.repo = repo;
+        this.mainHandler = handler;
     }
 
     @Override
@@ -56,13 +61,13 @@ public class LoginPresenter implements LoginContract.Presenter{
                         view.showLoginFailed();
                     }
                 });
-                } catch (Exception e) {
-                    mainHandler.post(() -> {
-                        if (view == null) return;
-                        view.showInputError(e.getMessage());
-                        view.showLoginFailed();
-                    });
-                }
-            }).start();
-        }
+            } catch (Exception e) {
+                mainHandler.post(() -> {
+                    if (view == null) return;
+                    view.showInputError(e.getMessage());
+                    view.showLoginFailed();
+                });
+            }
+        }).start();
     }
+}
