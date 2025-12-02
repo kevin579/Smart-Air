@@ -56,6 +56,7 @@ dependencies {
     testImplementation("org.mockito:mockito-core:5.10.0")
     testImplementation("androidx.test.ext:junit:1.1.5")
     implementation("com.github.PhilJay:MPAndroidChart:v3.1.0")
+
     // Use the latest version
 
 }

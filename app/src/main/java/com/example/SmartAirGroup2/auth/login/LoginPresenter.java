@@ -19,12 +19,16 @@ import android.content.Intent;
 public class LoginPresenter implements LoginContract.Presenter{
     private final AuthRepository repo;
     private LoginContract.View view;
+    private final Handler mainHandler;
 
-    public LoginPresenter(AuthRepository repo){
-        this.repo = repo;
+    public LoginPresenter(AuthRepository repo) {
+        this(repo, new Handler(Looper.getMainLooper()));
     }
 
-
+    public LoginPresenter(AuthRepository repo, Handler handler) {
+        this.repo = repo;
+        this.mainHandler = handler;
+    }
 
     @Override
     public void attach(LoginContract.View v) {
@@ -44,25 +48,26 @@ public class LoginPresenter implements LoginContract.Presenter{
             return;
         }
 
-        try {
-            boolean check = repo.CheckPassword(role, username, email, password);
-                if (view == null) {
-                    return;
-                }
-                if (check) {
-                    view.showLoginSuccess(role);
-                }
-                else {
-                    view.showLoginFailed();
-                }
-            }
-        catch (Exception e) {
-                if (view == null) {
-                    return;
-                }
-                view.showInputError(e.getMessage());
-                view.showLoginFailed();
-            }
-        }
+        new Thread(() -> {
+            try {
+                boolean check = repo.CheckPassword(role, username, email, password);
+                mainHandler.post(() -> {
+                    if (view == null) return;
 
+                    if (check) {
+                        view.showLoginSuccess(role);
+
+                    } else {
+                        view.showLoginFailed();
+                    }
+                });
+            } catch (Exception e) {
+                mainHandler.post(() -> {
+                    if (view == null) return;
+                    view.showInputError(e.getMessage());
+                    view.showLoginFailed();
+                });
+            }
+        }).start();
     }
+}
