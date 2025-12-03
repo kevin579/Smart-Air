@@ -1,5 +1,12 @@
 package com.example.SmartAirGroup2.Helpers;
 
+/**
+ * Represents a user in the SmartAir system.
+ * This class is a data model (POJO) that holds information about a user,
+ * including their username, full name, email, password, and user type.
+ * It provides constructors for creating user objects and getter/setter methods
+ * to access and modify the user's properties.
+ */
 public class User {
     private String uname;
 

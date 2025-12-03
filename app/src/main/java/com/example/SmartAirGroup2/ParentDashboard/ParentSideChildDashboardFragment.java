@@ -34,112 +34,21 @@ import com.google.firebase.database.ValueEventListener;
  * parent's perspective. It serves as a navigation hub for accessing detailed child information
  * across three main categories: Inventory, PEF (Peak Expiratory Flow), and Symptoms.
  *
- * Purpose:
- *   Enables parents to monitor their child's asthma management by providing:
- *   • Visual status indicators for medication inventory levels
- *   • PEF zone monitoring (Green/Yellow/Red zones)
- *   • Symptom tracking overview
- *   • Quick navigation to detailed views for each category
  *
- * Core Features:
- *   • Color-coded status cards that reflect real-time child health metrics
- *   • Three primary navigation cards:
- *       → Inventory Card: Medicine stock levels and usage
- *       → PEF Card: Breathing function measurements and zones
- *       → Symptom Card: Logged symptoms and patterns
- *   • Dynamic status updates from Firebase
- *   • Back navigation to parent dashboard
- *
- * UI Behavior:
- *   - Displays child's name in the toolbar title
- *   - Three large CardViews with color-coded backgrounds:
- *       • Inventory: Red (alert) if any medicine is low/critical, Green (good) otherwise
- *       • PEF: Red (zone 2), Yellow (zone 1), or Green (zone 0) based on breathing status
- *       • Symptom: Currently static, may be extended for symptom status
- *   - Each card navigates to its respective detailed fragment on click
- *
- * Firebase Structure (Relevant Paths):
- * └── categories/
- *     └── users/
- *         └── children/{childUname}/
- *             └── status/
- *                 ├── pefZone: Integer (0=green, 1=yellow, 2=red)
- *                 └── inventory/
- *                     └── {medicineName}/
- *                         └── {timestamp: Integer (0=good, 1=warning, 2=alert)}
- *
- * Status Logic:
- *   - Inventory Status:
- *       • 2 (Alert/Red): Any medicine has critical low stock - HIGHEST PRIORITY
- *       • 1 (Warning/Yellow): Any medicine approaching low stock
- *       • 0 (Good/Green): All medicines adequately stocked
- *   - PEF Status:
- *       • 2 (Red Zone): Severe breathing difficulty, immediate action needed
- *       • 1 (Yellow Zone): Caution, medication may be needed
- *       • 0 (Green Zone): Breathing is normal
- *
- * Navigation Flow:
- *   ParentDashboardFragment → ChildDashboardFragment → [Inventory/PEF/Symptom]Fragment
- *
- * Fragment Arguments (Required):
- *   • childName (String): Display name of the child
- *   • childUname (String): Unique username/identifier for the child in Firebase
- *
- * Dependencies:
- *   • Firebase Realtime Database for status data
- *   • MenuHelper for toolbar menu operations
- *   • Three destination fragments: InventoryFragment, ParentPEF, SymptomDashboardFragment
- *
- * Color Resources Used:
- *   • R.color.alert (Red): Critical status requiring immediate attention
- *   • R.color.warning (Yellow): Caution status requiring monitoring
- *   • R.color.good (Green): Normal/healthy status
- *
- * Author: Kevin Li
- * Last Updated: November 2025
  */
 public class ParentSideChildDashboardFragment extends Fragment {
 
-    // ═══════════════════════════════════════════════════════════════════════
-    // UI COMPONENTS
-    // ═══════════════════════════════════════════════════════════════════════
 
-    /**
-     * Toolbar component displayed at the top of the fragment.
-     * Shows the child's name and provides back navigation to parent dashboard.
-     */
     private Toolbar toolbar;
 
-    /**
-     * CardView for accessing the child's status .
-     * Color-coded based on medicine stock levels:
-     *   - Red (alert)
-     *   - Green (good)
-     */
-    private CardView cardInventory, cardPEF, cardSymptom, cardPrivacy, cardProviderReport, cardAdherence;
-    private ActivityResultLauncher<Intent> createPdfLauncher;
 
-    /**
-     * CardView for accessing symptom tracking and history.
-     * Allows parents to view logged symptoms and patterns.
-     */
+    private CardView cardInventory, cardPEF, cardSymptom, cardPrivacy, cardProviderReport, cardAdherence;
+
     private CardView cardTriage;
 
-    // ═══════════════════════════════════════════════════════════════════════
-    // CHILD IDENTITY
-    // ═══════════════════════════════════════════════════════════════════════
 
-    /**
-     * Display name of the child.
-     * Retrieved from fragment arguments, passed from ParentDashboardFragment.
-     * Used in toolbar title to personalize the view.
-     */
     private String name;
 
-    /**
-     * Unique username/identifier of the child in Firebase.
-     * Retrieved from fragment arguments, used to query child-specific data.
-     */
     private String uname;
 
     // ═══════════════════════════════════════════════════════════════════════

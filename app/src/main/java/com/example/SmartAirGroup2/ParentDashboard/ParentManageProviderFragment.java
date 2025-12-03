@@ -41,132 +41,57 @@ import com.google.firebase.database.DatabaseReference;
 import com.google.firebase.database.FirebaseDatabase;
 import com.google.firebase.database.ValueEventListener;
 
+
 /**
- * ParentDashboardFragment
- * -----------------------
- * This fragment serves as the primary dashboard for parent users within the Smart Air application.
- * It provides an overview of all linked provider accounts and enables parents to perform account
- * management actions.
- *
- * Core User Actions:
- *   • View all Provider currently linked to their account.
- *   • Add a new provider or link an existing provider account.
- *   • Remove/unlink a provider account when needed.
- *   • Navigate to individual provider dashboards for detailed monitoring.
- *
- * UI Behavior:
- *   - The fragment dynamically generates CardViews representing each linked provider.
- *   - Each card displays:
- *       • provider name (or username if name unavailable)
- *       • Status indicator (color-coded background)
- *       • A delete icon to allow unlinking
- *   - If no Provider are linked, only the "Add provider" card is displayed.
- *   - Cards use ripple effects for modern touch feedback.
- *
- * Firebase Structure (Relevant Paths):
- * └── categories/
- *     └── users/
- *         ├── parents/{parentUname}/Provider/{providerUname: String}
- *         └── Provider/{providerUname}/
- *             ├── name: String
- *             ├── uname: String
- *             └── status/{individual status: Integer}
- *
- * Status Logic:
- *   - The background color of each provider card reflects their status history:
- *       • Red (alert color) → Contains alert values (1 or 2 detected)
- *       • Green (good color) → No concerning status entries
- *   - Status values are retrieved from the provider's status history in Firebase.
- *
- * Fragment Lifecycle Responsibilities:
- *   ✔ Initialize toolbar and UI components
- *   ✔ Fetch Firebase data for linked Provider
- *   ✔ Listen for provider database changes
- *   ✔ Dynamically create UI elements based on data
- *   ✔ Persist login metadata using SharedPreferences
- *   ✔ Handle user interactions (navigation, deletion, linking)
- *
- * Navigation:
- *   - Tapping a provider card navigates to providerDashboardFragment with provider details.
- *   - Tapping "Add provider" opens a dialog prompting:
- *        → "Yes": Navigate to LinkproviderFragment (for existing accounts)
- *        → "No" : Navigate to AddproviderFragment (for new accounts)
- *
- * Dependencies:
- *   • Firebase Realtime Database for user and relationship data.
- *   • SharedPreferences for user type and logged-in identity persistence.
- *   • MenuHelper for toolbar menu operations.
- *   • User model class for provider data representation.
- *
- * Author: Kevin Li
- * Last Updated: November 18 2025
+ * A fragment for parent users to manage their linked provider accounts.
+ * <p>
+ * This fragment displays a list of all providers currently linked to the parent's account.
+ * It allows the parent to perform the following actions:
+ * <ul>
+ *     <li>View a list of all linked providers.</li>
+ *     <li>Navigate to a dedicated fragment to link a new provider account.</li>
+ *     <li>Unlink/remove an existing provider from their account.</li>
+ * </ul>
+ * </p>
+ * <p>
+ * <b>UI and Behavior:</b>
+ * <ul>
+ *     <li>The fragment dynamically generates a {@link CardView} for each linked provider.</li>
+ *     <li>Each card displays the provider's username and includes a delete icon for unlinking.</li>
+ *     <li>A static "Add Provider" card is always present, which navigates to the {@link LinkProviderFragment}.</li>
+ *     <li>User interactions (clicking a card, deleting a provider) are handled within this fragment.</li>
+ * </ul>
+ * </p>
+ * <p>
+ * <b>Firebase Integration:</b>
+ * <p>The fragment interacts with the Firebase Realtime Database to fetch and manage provider relationships.</p>
+ * Relevant Firebase Paths:
+ * <ul>
+ *     <li><code>/categories/users/parents/{parentUname}/providers/</code> - To read the list of linked provider usernames.</li>
+ *     <li><code>/categories/users/provider/{providerUname}/parents/</code> - To remove the parent's reference when unlinking.</li>
+ * </ul>
+ * Unlinking is a two-way operation, removing the relationship from both the parent's and the provider's data nodes.
+ * </p>
+ * <p>
+ * <b>Lifecycle:</b>
+ * In {@code onCreateView}, the fragment initializes its UI components, sets up the toolbar,
  */
 public class ParentManageProviderFragment extends Fragment {
 
-    // ═══════════════════════════════════════════════════════════════════════
-    // UI COMPONENTS
-    // ═══════════════════════════════════════════════════════════════════════
-
-    /**
-     * Toolbar component displayed at the top of the fragment.
-     * Provides navigation and menu actions for the parent user.
-     */
     private Toolbar toolbar;
 
-    /**
-     * CardView for the "Add provider" button.
-     * Always displayed at the bottom of the Provider list.
-     */
     private CardView cardAddProvider;
 
-    /**
-     * Container that holds all dynamically generated provider cards.
-     * Provider are added/removed from this layout based on Firebase data.
-     */
+
     private LinearLayout contentContainer;
 
-    // ═══════════════════════════════════════════════════════════════════════
-    // FIREBASE REFERENCES
-    // ═══════════════════════════════════════════════════════════════════════
 
-    /**
-     * Firebase Database instance pointing to the Smart Air database.
-     * Used to initialize all database references.
-     */
     private FirebaseDatabase db;
 
-    /**
-     * Database reference to the parent's Provider node.
-     * Path: categories/users/parents/{uname}/Provider
-     * Contains all provider usernames linked to this parent.
-     */
     private DatabaseReference providerRef;
 
-    // ═══════════════════════════════════════════════════════════════════════
-    // USER IDENTITY
-    // ═══════════════════════════════════════════════════════════════════════
 
-    /**
-     * Username of the currently logged-in parent.
-     * TODO: Replace hardcoded value with dynamic authentication.
-     */
     private String uname;
-
-    /**
-     * User type identifier for the current user.
-     * Always "parent" for this fragment.
-     */
-    private String type;
-
-    private boolean safetyAlert = false;
-
-    private View notificationActionView;
-    private View notificationBadge;
-
-
-    // ═══════════════════════════════════════════════════════════════════════
-    // LIFECYCLE METHODS
-    // ═══════════════════════════════════════════════════════════════════════
 
 
 
@@ -195,7 +120,6 @@ public class ParentManageProviderFragment extends Fragment {
 
         // Get the current logged-in user's unique identifier
         uname = CurrentUser.get().getUname();  // or email, or a unique ID
-        type = CurrentUser.get().getType();
 
         // Toolbar setup
         toolbar = view.findViewById(R.id.toolbar);

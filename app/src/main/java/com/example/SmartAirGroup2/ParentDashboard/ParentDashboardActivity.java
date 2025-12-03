@@ -6,6 +6,12 @@ import android.os.Bundle;
 import com.example.SmartAirGroup2.Helpers.BaseActivity;
 import com.example.SmartAirGroup2.R;
 
+/**
+ * Represents the main activity for the Parent Dashboard.
+ * This activity serves as a container for various fragments related to the parent's view,
+ * such as the main dashboard or the alert center. It handles the initial setup and
+ * fragment transactions based on the intent it receives.
+ */
 public class ParentDashboardActivity extends BaseActivity {
     @Override
     protected void onCreate(Bundle savedInstanceState) {

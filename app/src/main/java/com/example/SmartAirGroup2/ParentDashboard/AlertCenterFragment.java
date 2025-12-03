@@ -25,28 +25,65 @@ import com.google.firebase.database.FirebaseDatabase;
 import com.google.firebase.database.ValueEventListener;
 
 
-
+/**
+ * A {@link Fragment} that displays a list of alerts for a parent user.
+ * It fetches health status and inventory data for all of the parent's associated children from
+ * the Firebase Realtime Database. The alerts are categorized into "critical" (e.g., PEF red zone)
+ * and "normal" (e.g., low medicine). The final list is sorted and displayed in a RecyclerView.
+ */
 public class AlertCenterFragment extends Fragment{
+    /**
+     * The RecyclerView used to display the list of alerts.
+     */
     private RecyclerView Recycler_Alerts;
+    /**
+     * The adapter that binds the {@link #List_alert} to the {@link #Recycler_Alerts}.
+     */
     private AlertAdapter Alert_Adapter;
+    /**
+     * The final, combined list of alerts that is passed to the adapter.
+     */
     private List<Alert> List_alert = new ArrayList<>();
+    /**
+     * A temporary list to hold high-priority alerts (e.g., PEF safety alerts).
+     */
     private List<Alert> criticalAlerts = new ArrayList<>(); // for pefZone alerts
+    /**
+     * A temporary list to hold standard-priority alerts (e.g., inventory warnings).
+     */
     private List<Alert> normalAlerts   = new ArrayList<>(); // other
 
+    /**
+     * The instance of the Firebase Realtime Database.
+     */
     private FirebaseDatabase db;
+    /**
+     * A reference to the Firebase database.
+     */
     private DatabaseReference statusRef;
-    private String childName = "Andy"; // testing
-    private String childUname = "andy6688"; // testing
-    private String parentUname = "kevin579"; // testing
-    @Nullable
-    private String childFilterUname = null;
+
+    /**
+     * The username of the parent whose alerts are being displayed.
+     */
+    private String parentUname;
 
 
 
+    /**
+     * Default constructor required for fragment instantiation.
+     */
     public AlertCenterFragment(){
         // Empty constructor
     }
 
+    /**
+     * Called to do initial creation of a fragment.
+     * Initializes the fragment and retrieves the parent's username from either SharedPreferences
+     * or fragment arguments.
+     *
+     * @param savedInstanceState If the fragment is being re-created from a previous saved state,
+     * this is the state.
+     */
     @Override
     public void onCreate(@NonNull Bundle savedInstanceState){
         super.onCreate(savedInstanceState);
@@ -69,6 +106,16 @@ public class AlertCenterFragment extends Fragment{
 
 
 
+    /**
+     * Called to have the fragment instantiate its user interface view.
+     * Inflates the fragment's layout, sets up the Toolbar, initializes the RecyclerView and its
+     * adapter, and triggers the process to load alerts from Firebase.
+     *
+     * @param inflater The LayoutInflater object that can be used to inflate any views in the fragment.
+     * @param container If non-null, this is the parent view that the fragment's UI should be attached to.
+     * @param savedInstanceState If non-null, this fragment is being re-constructed from a previous saved state.
+     * @return The View for the fragment's UI.
+     */
     @Nullable
     @Override
     public View onCreateView(@NonNull LayoutInflater inflater,
@@ -109,6 +156,13 @@ public class AlertCenterFragment extends Fragment{
         return view;
     }
 
+    /**
+     * Asynchronously fetches the list of children for the parent. For each child, it initiates
+     * another fetch to get their detailed status and inventory data. It handles the complexity
+     * of multiple nested asynchronous calls to ensure all data is processed before updating the UI.
+     *
+     * @param childrenRef A DatabaseReference pointing to the list of children for the current parent.
+     */
     private void loadAlertsForAllChildren(DatabaseReference childrenRef) {
         List_alert.clear();
         criticalAlerts.clear();
@@ -175,6 +229,15 @@ public class AlertCenterFragment extends Fragment{
     }
 
 
+    /**
+     * Parses the DataSnapshot for a single child to find alert-worthy conditions.
+     * It checks for PEF red zone status and low or expired medicine, creating Alert objects and
+     * adding them to the appropriate {@link #criticalAlerts} or {@link #normalAlerts} list.
+     *
+     * @param childDisplayName The display name of the child.
+     * @param statusSnap       The DataSnapshot of the child's 'status' node.
+     * @param inventorySnap    The DataSnapshot of the child's 'inventory' node.
+     */
     private void parseStatusForChild(String childDisplayName,
                                      DataSnapshot statusSnap,
                                      DataSnapshot inventorySnap) {
@@ -242,6 +305,14 @@ public class AlertCenterFragment extends Fragment{
     }
 
 
+    /**
+     * Retrieves the 'lastUpdated' timestamp for a specific medicine from the inventory snapshot.
+     * This is used to time-sort medicine-related alerts.
+     *
+     * @param inventorySnap The DataSnapshot of the child's full 'inventory' node.
+     * @param medName       The name of the medicine to look for.
+     * @return The timestamp of the last update, or the current system time as a fallback.
+     */
     private long getMedicineTime(DataSnapshot inventorySnap, String medName) {
         if (inventorySnap == null) {
             return System.currentTimeMillis();
@@ -261,6 +332,11 @@ public class AlertCenterFragment extends Fragment{
     }
 
 
+    /**
+     * Called after all child data has been processed. It sorts the normal alerts chronologically,
+     * combines the critical and normal alerts (with critical ones first), and finally notifies the
+     * adapter to refresh the RecyclerView.
+     */
     private void finishLoading() {
             // Sort the alerts in chronological order from new to old
         java.util.Collections.sort(normalAlerts,
@@ -277,6 +353,7 @@ public class AlertCenterFragment extends Fragment{
     }
 
 }
+
 
 
 

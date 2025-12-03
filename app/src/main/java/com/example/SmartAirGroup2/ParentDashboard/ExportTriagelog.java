@@ -55,7 +55,18 @@ import java.util.Locale;
 import java.util.Map;
 
 /**
- * Fragment to export triage logs to PDF / CSV with filtering support.
+ * A fragment that displays a child's triage history and provides functionality to export
+ * selected triage logs to PDF or CSV formats.
+ * <p>
+ * This class retrieves triage data from Firebase for a specific child, identified by their
+ * username. The logs are displayed as a list of selectable cards. Users can filter the
+ * displayed logs based on criteria such as red flags, date ranges, and specific triggers
+ * by navigating to the {@link TriageFilterFragment}.
+ * <p>
+ * Selected triage logs can be exported into a PDF or CSV file, which is saved to the
+ * device's storage using the Android Storage Access Framework.
+ *
+
  */
 public class ExportTriagelog extends Fragment {
 
@@ -141,6 +152,19 @@ public class ExportTriagelog extends Fragment {
         return view;
     }
 
+    /**
+     * Initiates the Android Storage Access Framework to display a "Save As" dialog.
+     * This allows the user to choose a location and a name for the file to be saved.
+     * The method constructs an {@link Intent} with the {@code ACTION_CREATE_DOCUMENT} action,
+     * which is used to create a new file. The result of this action is handled in
+     * the {@link #onActivityResult(int, int, Intent)} method.
+     *
+     * @param mimeType      The MIME type of the file to be created (e.g., "application/pdf" or "text/csv").
+     * @param suggestedName The default file name to be suggested to the user in the dialog.
+     * @param requestCode   The integer request code to identify this request when the result is returned
+     *                      in {@code onActivityResult}. This is used to differentiate between, for example,
+     *                      a PDF save request and a CSV save request.
+     */
     private void showSaveAsDialog(String mimeType, String suggestedName, int requestCode) {
         Intent intent = new Intent(Intent.ACTION_CREATE_DOCUMENT);
         intent.addCategory(Intent.CATEGORY_OPENABLE);
@@ -149,6 +173,16 @@ public class ExportTriagelog extends Fragment {
         startActivityForResult(intent, requestCode);
     }
 
+    /**
+     * Updates the UI to show or hide a "Clear Filters" button.
+     * This method checks if any filters (red flag, date range, or triggers) are currently
+     * active. If at least one filter is set, it dynamically creates and displays a
+     * "Clear Filters" button in the designated container. Clicking this button will
+     * reset all filter variables to their default state (null or empty) and then
+     * trigger a reload of the triage list to show all entries.
+     * If no filters are active, it ensures the container for the button is empty,
+     * effectively hiding the button.
+     */
     private void updateClearFilterButton() {
         LinearLayout filterActionContainer = view.findViewById(R.id.filterActionContainer);
         filterActionContainer.removeAllViews();
@@ -178,6 +212,21 @@ public class ExportTriagelog extends Fragment {
         filterActionContainer.addView(clearBtn);
     }
 
+    /**
+     * Fetches triage data from the Firebase Realtime Database for the current child.
+     * It dynamically populates the UI with cards representing each triage log entry.
+     * The method first checks if the fragment is attached to a context and if its view has been created
+     * to prevent crashes. It then establishes a connection to the specific child's triage data node in Firebase
+     * using the child's username (`uname`).
+     * A {@link ValueEventListener} is used to retrieve the data once. On successful data retrieval
+     * ({@code onDataChange}), the existing views in the triage container are cleared. If no triage data exists,
+     * a single card indicating "No triages recorded" is displayed. Otherwise, it iterates through each
+     * triage entry.
+     * For each entry, it applies the active filters (red flags, date range, triggers) using the
+     * {@code passesFilter} method. If an entry passes the filter criteria, a new card is created and added
+     * to the UI using the {@code addTriageCard} method.
+     * If there's a database error ({@code onCancelled}), an error message is logged.
+     */
     private void loadTriages() {
         if (!isAdded() || view == null) return;
 
@@ -221,6 +270,19 @@ public class ExportTriagelog extends Fragment {
         });
     }
 
+    /**
+     * Converts a Firebase data object, which may be a String or a Map, into a
+     * comma-separated string.
+     * This is a utility method for handling Firebase data that represents red flags.
+     * The data can come in two formats: a simple string or a map where keys are red flag names
+     * and values are booleans indicating if they were triggered.
+     *
+     * @param value The object retrieved from Firebase. Expected to be a String or a Map.
+     * @return A formatted string. If the input is a Map, it returns a comma-separated list
+     *         of keys whose corresponding value is {@code true}. If the input is a String,
+     *         it returns the string itself. If the input is null or another type, it returns
+     *         an empty string or the result of {@code toString()}.
+     */
     private String mapToString(Object value) {
         if (value == null) return "";
         if (value instanceof String) return (String) value;
@@ -235,6 +297,21 @@ public class ExportTriagelog extends Fragment {
         return value.toString();
     }
 
+    /**
+     * Checks if a given triage log entry matches the current filter criteria.
+
+     * If any filter is not set (i.e., is null or empty), it is ignored. The method
+     * short-circuits and returns {@code false} as soon as a filter condition is not met.
+     * Note: the parameters {@code guidance}, {@code response}, and {@code PEF} are included
+     * for future filter expansions but are not currently used.
+     *
+     * @param redflags The string of red flags associated with the triage log.
+     * @param time     The timestamp of the triage log (e.g., "yyyy/MM/dd HH:mm:ss").
+     * @param guidance The guidance given in the triage log (currently unused for filtering).
+     * @param response The response recorded in the triage log (currently unused for filtering).
+     * @param PEF      The Peak Expiratory Flow value (currently unused for filtering).
+     * @return {@code true} if the triage log entry passes all active filters, {@code false} otherwise.
+     */
     private boolean passesFilter(String redflags, String time, String guidance, String response, String PEF) {
         if (filterRedflag != null && !filterRedflag.trim().isEmpty()) {
             if (!redflags.toLowerCase().contains(filterRedflag.toLowerCase())) return false;
@@ -268,6 +345,19 @@ public class ExportTriagelog extends Fragment {
         return true;
     }
 
+    /**
+     * Dynamically creates and adds a {@link CardView} to the UI for a single triage record.
+     * Each card displays details such as red flags, time, guidance, response, and PEF.
+     * It also includes a {@link Switch} to allow the user to select or deselect the triage
+     * record for export. If the provided 'id' is empty, it displays a message card
+     *
+     * @param id       The unique identifier for the triage record from Firebase. Used for selection.
+     * @param redflags A string representing the red flags identified in the triage.
+     * @param time     The timestamp of when the triage was recorded.
+     * @param guidance The guidance provided based on the triage results.
+     * @param response The user's response to the triage questions.
+     * @param PEF      The Peak Expiratory Flow value recorded, if any.
+     */
     @SuppressLint("ResourceType")
     private void addTriageCard(String id, String redflags, String time, String guidance, String response, String PEF) {
         if (!isAdded() || getContext() == null) return;
@@ -339,6 +429,14 @@ public class ExportTriagelog extends Fragment {
         ((LinearLayout) view.findViewById(R.id.triageContainer)).addView(cardView);
     }
 
+    /**
+     * Creates and configures a TextView to display a single line of triage information.
+     * This helper method simplifies the creation of text views used within each triage card.
+     * It sets a standard text size, color, and padding for a consistent look and feel.
+     *
+     * @param text The string content to be displayed in the TextView.
+     * @return A configured TextView instance ready to be added to a layout.
+     */
     private TextView buildInfoText(String text) {
         TextView tv = new TextView(requireContext());
         tv.setText(text);
@@ -353,7 +451,23 @@ public class ExportTriagelog extends Fragment {
         return Math.round(dp * density);
     }
 
-    // ───────────────────────────────
+    /**
+     * Exports the selected triage logs to a CSV file at the specified URI.
+     * <p>
+     * This method queries the Firebase database for the triage data of the current child.
+     * It iterates through the retrieved data, filtering for logs that have been selected by the user
+     * (i.e., their IDs are present in the {@code selectedTriages} map).
+     * <p>
+     * For each selected log, it constructs a CSV row containing the red flags, timestamp,
+     * guidance, user response, and PEF value. The resulting CSV string, including a header row,
+     * is then written to the output stream provided by the content resolver for the given URI.
+     * <p>
+     * Toasts are displayed to indicate the success or failure of the export operation.
+     * In case of failure, the error message is logged or shown in a toast.
+     *
+     * @param uri The URI of the file where the CSV data will be saved. This is obtained from
+     *            the Storage Access Framework's file picker dialog.
+     */ // ───────────────────────────────
     // EXPORT LOGIC
     // ───────────────────────────────
     private void exportCsvToUri(Uri uri) {
@@ -404,6 +518,24 @@ public class ExportTriagelog extends Fragment {
         });
     }
 
+    /**
+     * Exports the selected triage logs to a PDF file at the specified URI.
+     * <p>
+     * This method retrieves triage data for the current child from Firebase. It filters
+     * this data to include only the triages that have been selected by the user
+     * (identified by their keys in the {@code selectedTriages} map).
+     * <p>
+     * It then creates a new PDF document and draws the details of each selected triage
+     * onto a page. The details include red flags, time, guidance, response, and PEF.
+     * Finally, it writes the generated PDF to the {@link OutputStream} provided by the
+     * content resolver for the given {@link Uri}.
+     * <p>
+     * Toasts are displayed to the user to indicate the success or failure of the export
+     * operation.
+     *
+     * @param uri The URI of the file where the PDF will be saved. This is typically
+     *            obtained from the Storage Access Framework's file picker.
+     */
     private void exportPdfToUri(Uri uri) {
         DatabaseReference triageRef = FirebaseDatabase.getInstance()
                 .getReference("categories/users/children")

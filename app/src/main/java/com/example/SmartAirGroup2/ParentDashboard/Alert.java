@@ -1,6 +1,12 @@
 package com.example.SmartAirGroup2.ParentDashboard;
 
 
+/**
+ * Represents an alert to be displayed on the Parent Dashboard.
+ * This class encapsulates the details of an alert, including its title,
+ * a descriptive message, the name of the child it pertains to, and the
+ * timestamp of when the alert was generated.
+ */
 public class Alert {
     public String title; // briefly explain alert type. (e.g. "Medicine Low")
     public String message; // alert details. (e.g. "Ventolin for perry is running low")

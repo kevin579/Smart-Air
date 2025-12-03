@@ -50,59 +50,7 @@ import java.util.List;
  * This fragment serves as the primary dashboard for parent users within the Smart Air application.
  * It provides an overview of all linked child accounts and enables parents to perform account
  * management actions.
- *
- * Core User Actions:
- *   • View all children currently linked to their account.
- *   • Add a new child or link an existing child account.
- *   • Remove/unlink a child account when needed.
- *   • Navigate to individual child dashboards for detailed monitoring.
- *
- * UI Behavior:
- *   - The fragment dynamically generates CardViews representing each linked child.
- *   - Each card displays:
- *       • Child name (or username if name unavailable)
- *       • Status indicator (color-coded background)
- *       • A delete icon to allow unlinking
- *   - If no children are linked, only the "Add Child" card is displayed.
- *   - Cards use ripple effects for modern touch feedback.
- *
- * Firebase Structure (Relevant Paths):
- * └── categories/
- *     └── users/
- *         ├── parents/{parentUname}/children/{childUname: String}
- *         └── children/{childUname}/
- *             ├── name: String
- *             ├── uname: String
- *             └── status/{individual status: Integer}
- *
- * Status Logic:
- *   - The background color of each child card reflects their status history:
- *       • Red (alert color) → Contains alert values (1 or 2 detected)
- *       • Green (good color) → No concerning status entries
- *   - Status values are retrieved from the child's status history in Firebase.
- *
- * Fragment Lifecycle Responsibilities:
- *   ✔ Initialize toolbar and UI components
- *   ✔ Fetch Firebase data for linked children
- *   ✔ Listen for child database changes
- *   ✔ Dynamically create UI elements based on data
- *   ✔ Persist login metadata using SharedPreferences
- *   ✔ Handle user interactions (navigation, deletion, linking)
- *
- * Navigation:
- *   - Tapping a child card navigates to ChildDashboardFragment with child details.
- *   - Tapping "Add Child" opens a dialog prompting:
- *        → "Yes": Navigate to LinkChildFragment (for existing accounts)
- *        → "No" : Navigate to AddChildFragment (for new accounts)
- *
- * Dependencies:
- *   • Firebase Realtime Database for user and relationship data.
- *   • SharedPreferences for user type and logged-in identity persistence.
- *   • MenuHelper for toolbar menu operations.
- *   • User model class for child data representation.
- *
- * Author: Kevin Li
- * Last Updated: November 18 2025
+
  */
 public class ParentManageChildrenFragment extends Fragment {
 
@@ -110,55 +58,19 @@ public class ParentManageChildrenFragment extends Fragment {
     // UI COMPONENTS
     // ═══════════════════════════════════════════════════════════════════════
 
-    /**
-     * Toolbar component displayed at the top of the fragment.
-     * Provides navigation and menu actions for the parent user.
-     */
     private Toolbar toolbar;
 
-    /**
-     * CardView for the "Add Child" button.
-     * Always displayed at the bottom of the children list.
-     */
     private CardView cardAddChild;
 
-    /**
-     * Container that holds all dynamically generated child cards.
-     * Children are added/removed from this layout based on Firebase data.
-     */
     private LinearLayout contentContainer;
 
-    // ═══════════════════════════════════════════════════════════════════════
-    // FIREBASE REFERENCES
-    // ═══════════════════════════════════════════════════════════════════════
 
-    /**
-     * Firebase Database instance pointing to the Smart Air database.
-     * Used to initialize all database references.
-     */
     private FirebaseDatabase db;
 
-    /**
-     * Database reference to the parent's children node.
-     * Path: categories/users/parents/{uname}/children
-     * Contains all child usernames linked to this parent.
-     */
     private DatabaseReference childrenRef;
 
-    // ═══════════════════════════════════════════════════════════════════════
-    // USER IDENTITY
-    // ═══════════════════════════════════════════════════════════════════════
-
-    /**
-     * Username of the currently logged-in parent.
-     * TODO: Replace hardcoded value with dynamic authentication.
-     */
     private String uname;
 
-    /**
-     * User type identifier for the current user.
-     * Always "parent" for this fragment.
-     */
     private String type;
 
 

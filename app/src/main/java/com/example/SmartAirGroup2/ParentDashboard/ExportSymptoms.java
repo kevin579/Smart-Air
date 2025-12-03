@@ -54,6 +54,26 @@ import java.util.Locale;
 import java.util.Map;
 
 
+/**
+ * A fragment that displays a child's symptom history, allows for filtering, and provides
+ * options to export selected symptoms to PDF or CSV formats.
+ *
+ * <p>This fragment retrieves symptom data for a specific child from the Firebase Realtime Database.
+ * The data is displayed in a series of cards. Users can filter this list by clicking a filter
+ * button, which opens the {@link SymptomFilterFragment}. Active filters are displayed, and a
+ * "Clear Filters" button is provided to reset the view.</p>
+ *
+ * <p>Each symptom card has a switch, allowing the user to select one or more symptoms for export.
+ * The "Export to PDF" and "Export to CSV" buttons trigger the Android Storage Access Framework
+ * to let the user choose a location and name for the exported file. The actual export process
+ * then writes the selected symptom data to the chosen file URI.</p>
+ *
+ * <p>The fragment receives the child's name and username as arguments upon creation, which are
+ * used to fetch the correct data and to set the toolbar title.</p>
+ *
+ * @see SymptomFilterFragment
+ * @see MenuHelper
+ */
 public class ExportSymptoms extends Fragment {
 
     // ───────────────────────────────

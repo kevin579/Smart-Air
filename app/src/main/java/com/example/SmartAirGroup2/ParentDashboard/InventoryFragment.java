@@ -66,16 +66,7 @@ import java.util.Locale;
  *   - Expiry date
  *   - Automatic warning/alert coloring based on rules
  *
- * Firebase Database Structure (relevant path):
- * └── categories/
- *     └── users/
- *         └── children/{childUsername}/
- *               ├── inventory/{medicineName}/
- *               │     ├── currentAmount: Number
- *               │     ├── prescriptionAmount: Number
- *               │     ├── purchaseDate: String "yyyy/MM/dd"
- *               │     └── expireDate: String "yyyy/MM/dd"
- *               └── status/inventory/{medicineName}/[0|1|2]
+
  *
  * Status Codes:
  *   0 = Normal (Good)

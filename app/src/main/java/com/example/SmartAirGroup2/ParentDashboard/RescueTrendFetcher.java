@@ -20,10 +20,6 @@ import java.util.Locale;
 import java.util.Map;
 import java.util.TreeMap;
 
-/**
- * Interface to return aggregated chart data for UI display.
- */
-
 
 /**
  * Fetches and aggregates rescue log data for trend charting (7 or 30 days).
