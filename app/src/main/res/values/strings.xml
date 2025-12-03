@@ -104,8 +104,8 @@
 
     <string name="subtitle1">Welcome to Smart Air, your centralized hub for communication regarding asthma</string>
     <string name="subtitle2">Controller inhalers are meant for daily use in order to control and prevent symptoms, a Rescue inhaler is meant for emergency use during an asthma attack for immediate relief</string>
-    <string name="subtitle3">Pictured above is the privacy defaults upon creation of a Smart Air account, they can be altered by heading to \" \"</string>
-    <string name="subtitle4">You can invite a provider to view your child\'s data by pressing the \" \" button and sharing the generated link with your provider</string>
+    <string name="subtitle3">Upon creation of your account, all privacy settings are automatically set to private, and can be toggled</string>
+    <string name="subtitle4">You can invite a provider to view your child\'s data by pressing the "Link Provider" button and sharing the generated code with your provider</string>
 
 
     <string name="triage_title1">One-Tap Triage</string>

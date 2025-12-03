@@ -26,6 +26,8 @@ public class MainActivity extends AppCompatActivity {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_main);
 
+        AccountCleanupHelper.runCleanup();
+
         if (savedInstanceState == null) {
             getSupportFragmentManager()
                     .beginTransaction()

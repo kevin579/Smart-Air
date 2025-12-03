@@ -33,7 +33,7 @@ public class AlertCenterFragment extends Fragment{
     private FirebaseDatabase db;
     private DatabaseReference statusRef;
     private String childName = "Andy"; // testing
-    private String childUname = "andy6688"; // testing
+    private String childUname = "andy6687"; // testing
     private String parentUname = "kevin579"; // testing
     @Nullable
     private String childFilterUname = null;

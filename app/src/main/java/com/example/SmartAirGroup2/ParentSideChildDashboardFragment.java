@@ -10,6 +10,15 @@ import android.view.MenuItem;
 import android.view.View;
 import android.view.ViewGroup;
 
+import android.app.ProgressDialog;
+import com.google.firebase.database.DataSnapshot;
+import com.google.firebase.database.DatabaseError;
+import com.google.firebase.database.ValueEventListener;
+import android.content.SharedPreferences;
+
+import android.content.SharedPreferences;
+import android.content.Context;
+
 import androidx.activity.result.ActivityResultLauncher;
 import androidx.activity.result.contract.ActivityResultContracts;
 import androidx.annotation.NonNull;
@@ -20,6 +29,13 @@ import androidx.appcompat.widget.Toolbar;
 import androidx.cardview.widget.CardView;
 import androidx.fragment.app.Fragment;
 import androidx.fragment.app.FragmentTransaction;
+
+import android.content.ClipData;
+import android.content.ClipboardManager;
+import android.content.Context;
+import androidx.appcompat.app.AlertDialog;
+import java.util.Random;
+import java.util.UUID;
 
 import com.google.firebase.database.DataSnapshot;
 import com.google.firebase.database.DatabaseError;
@@ -118,10 +134,11 @@ public class ParentSideChildDashboardFragment extends Fragment {
     /**
      * CardView for accessing the child's status .
      * Color-coded based on medicine stock levels:
-     *   - Red (alert)
-     *   - Green (good)
+     * - Red (alert)
+     * - Green (good)
      */
-    private CardView cardInventory, cardPEF, cardSymptom, cardPrivacy, cardProviderReport, cardAdherence;
+    private CardView cardInventory, cardPEF, cardSymptom, cardPrivacy, cardProviderReport, cardAdherence, cardLinkProvider, cardRevokeInvites;
+    private String parentUname;
     private ActivityResultLauncher<Intent> createPdfLauncher;
 
     /**
@@ -154,10 +171,10 @@ public class ParentSideChildDashboardFragment extends Fragment {
     /**
      * Called when the fragment is first created.
      * Retrieves child identity from fragment arguments passed by parent fragment.
-     *
+     * <p>
      * Expected Arguments:
-     *   - childName: Display name of the child
-     *   - childUname: Firebase username/key for the child
+     * - childName: Display name of the child
+     * - childUname: Firebase username/key for the child
      *
      * @param savedInstanceState Previously saved state, if any
      */
@@ -170,22 +187,25 @@ public class ParentSideChildDashboardFragment extends Fragment {
             name = getArguments().getString("childName");
             uname = getArguments().getString("childUname");
         }
+
+        SharedPreferences prefs = requireActivity().getSharedPreferences("AppPrefs", Context.MODE_PRIVATE);
+        parentUname = prefs.getString("last_logged_in_user", null);
     }
 
     /**
      * Creates and initializes the view hierarchy for this fragment.
-     *
+     * <p>
      * Responsibilities:
-     *   - Inflates the child dashboard layout
-     *   - Sets up toolbar with child's name and back navigation
-     *   - Initializes status card references
-     *   - Loads current status from Firebase to color-code cards
-     *   - Configures click handlers for navigation to detail fragments
+     * - Inflates the child dashboard layout
+     * - Sets up toolbar with child's name and back navigation
+     * - Initializes status card references
+     * - Loads current status from Firebase to color-code cards
+     * - Configures click handlers for navigation to detail fragments
      *
      * @param inflater           LayoutInflater to inflate the view
      * @param container          Parent view that this fragment's UI will be attached to
      * @param savedInstanceState Previously saved state, if any
-     * @return                   The root view for this fragment
+     * @return The root view for this fragment
      */
     @Nullable
     @Override
@@ -216,6 +236,17 @@ public class ParentSideChildDashboardFragment extends Fragment {
         cardPrivacy = view.findViewById(R.id.cardPrivacy);
         cardProviderReport = view.findViewById(R.id.cardProviderReport);
         cardAdherence = view.findViewById(R.id.card_controller_adherence);
+        cardLinkProvider = view.findViewById(R.id.cardLinkProvider);
+        cardRevokeInvites = view.findViewById(R.id.cardRevokeInvites);
+
+        cardRevokeInvites.setOnClickListener(v -> {
+            new AlertDialog.Builder(getContext())
+                    .setTitle("Revoke Pending Invites")
+                    .setMessage("Are you sure you want to delete all pending provider invite codes you have created?")
+                    .setPositiveButton("Yes, Revoke", (dialog, which) -> revokePendingInvites())
+                    .setNegativeButton("Cancel", null)
+                    .show();
+        });
 
         // ─────────────────────────────────────────────────────────────────
         // Load and Apply Status Colors
@@ -307,9 +338,113 @@ public class ParentSideChildDashboardFragment extends Fragment {
             }
         });
 
+        cardLinkProvider.setOnClickListener(v -> generateProviderInviteCode());
 
         return view;
     }
+
+    private void generateProviderInviteCode() {
+
+        SharedPreferences prefs = requireActivity().getSharedPreferences("AppPrefs", Context.MODE_PRIVATE);
+        String parentUname = prefs.getString("last_logged_in_user", null); // 'null' if not found
+
+        if (parentUname == null || parentUname.isEmpty()) {
+            Toast.makeText(getContext(), "Error: Could not identify the logged-in parent.", Toast.LENGTH_SHORT).show();
+            return;
+        }
+
+        String chars = "ABCDEFGHIJKLMNOPQRSTUVWXYZ";
+        String nums = "0123456789";
+        Random random = new Random();
+        String inviteCode = "" + chars.charAt(random.nextInt(chars.length())) +
+                chars.charAt(random.nextInt(chars.length())) +
+                chars.charAt(random.nextInt(chars.length())) + "-" +
+                nums.charAt(random.nextInt(nums.length())) +
+                nums.charAt(random.nextInt(nums.length())) +
+                nums.charAt(random.nextInt(nums.length()));
+
+        long creationTimestamp = System.currentTimeMillis();
+        long expiryTimestamp = creationTimestamp + (7L * 24 * 60 * 60 * 1000);
+
+        DatabaseReference codeRef = FirebaseDatabase.getInstance().getReference("provider_invites").child(inviteCode);
+        codeRef.child("parentUname").setValue(parentUname);
+        codeRef.child("creationTimestamp").setValue(creationTimestamp);
+        codeRef.child("expiryTimestamp").setValue(expiryTimestamp);
+
+        AlertDialog.Builder builder = new AlertDialog.Builder(requireContext());
+        builder.setTitle("Provider Invite Code");
+        builder.setMessage("Share this code with your healthcare provider. It will expire in 7 days.\n\n" + inviteCode);
+        builder.setPositiveButton("Copy Code", (dialog, which) -> {
+            ClipboardManager clipboard = (ClipboardManager) requireActivity().getSystemService(Context.CLIPBOARD_SERVICE);
+            ClipData clip = ClipData.newPlainText("Provider Invite Code", inviteCode);
+            clipboard.setPrimaryClip(clip);
+            Toast.makeText(getContext(), "Code copied to clipboard!", Toast.LENGTH_SHORT).show();
+        });
+        builder.setNegativeButton("Close", null);
+        builder.show();
+    }
+
+    private void revokePendingInvites() {
+        // Use 'parentUname' from the class variable
+        if (parentUname == null || parentUname.isEmpty()) {
+            Toast.makeText(getContext(), "Error: Could not identify parent user.", Toast.LENGTH_SHORT).show();
+            return;
+        }
+
+        ProgressDialog progressDialog = new ProgressDialog(getContext());
+        progressDialog.setMessage("Revoking invites...");
+        progressDialog.setCancelable(false);
+        progressDialog.show();
+
+        DatabaseReference invitesRef = FirebaseDatabase.getInstance().getReference("provider_invites");
+
+        invitesRef.addListenerForSingleValueEvent(new ValueEventListener() {
+            @Override
+            public void onDataChange(@NonNull DataSnapshot snapshot) {
+                if (getContext() == null || !isAdded()) {
+                    progressDialog.dismiss();
+                    return;
+                }
+
+                if (!snapshot.exists()) {
+                    Toast.makeText(getContext(), "No pending invites found.", Toast.LENGTH_SHORT).show();
+                    progressDialog.dismiss();
+                    return;
+                }
+
+                int revokedCount = 0;
+                // Loop through all the invite codes
+                for (DataSnapshot codeSnap : snapshot.getChildren()) {
+                    String ownerOfCode = codeSnap.child("parentUname").getValue(String.class);
+
+                    // Check if the code belongs to the current parent
+                    if (parentUname.equals(ownerOfCode)) {
+                        // If it matches, delete the code
+                        codeSnap.getRef().removeValue();
+                        revokedCount++;
+                    }
+                }
+
+                progressDialog.dismiss();
+                if (revokedCount > 0) {
+                    Toast.makeText(getContext(), "Successfully revoked " + revokedCount + " pending invite(s).", Toast.LENGTH_LONG).show();
+                } else {
+                    Toast.makeText(getContext(), "No pending invites from your account were found.", Toast.LENGTH_SHORT).show();
+                }
+            }
+
+            @Override
+            public void onCancelled(@NonNull DatabaseError error) {
+                if (getContext() == null || !isAdded()) {
+                    progressDialog.dismiss();
+                    return;
+                }
+                progressDialog.dismiss();
+                Toast.makeText(getContext(), "Failed to access database: " + error.getMessage(), Toast.LENGTH_SHORT).show();
+            }
+        });
+    }
+
     // ═══════════════════════════════════════════════════════════════════════
     // FIREBASE STATUS LOADING
     // ═══════════════════════════════════════════════════════════════════════

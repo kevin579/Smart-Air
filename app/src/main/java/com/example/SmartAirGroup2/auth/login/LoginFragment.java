@@ -1,5 +1,8 @@
 package com.example.SmartAirGroup2.auth.login;
 
+import android.content.Context;
+import android.content.SharedPreferences;
+
 import android.content.Intent;
 import android.os.Bundle;
 import android.view.LayoutInflater;
@@ -10,6 +13,9 @@ import android.widget.ArrayAdapter;
 import android.widget.EditText;
 import android.widget.Spinner;
 import android.widget.Toast;
+
+import androidx.fragment.app.FragmentTransaction;
+import com.example.SmartAirGroup2.EnterInviteCodeFragment;
 
 import androidx.annotation.NonNull;
 import androidx.annotation.Nullable;
@@ -50,6 +56,7 @@ public class LoginFragment extends Fragment implements LoginContract.View {
         View btnLogin    = v.findViewById(R.id.login_button);
         View btnCreate   = v.findViewById(R.id.new_account_button);
         View btnRecover  = v.findViewById(R.id.password_recover);
+        View btnProviderInvite = v.findViewById(R.id.provider_invite_button);
         roleSpinner = v.findViewById(R.id.role_spinner);
 
         AuthRepository repo = new FirebaseRtdbAuthRepository();
@@ -75,6 +82,18 @@ public class LoginFragment extends Fragment implements LoginContract.View {
         btnRecover.setOnClickListener(view -> {
             Intent intent = new Intent(getActivity(), PasswordRecovery.class);
             startActivity(intent);
+        });
+
+        btnProviderInvite.setOnClickListener(view -> {
+            Fragment inviteFragment = new EnterInviteCodeFragment();
+
+            FragmentTransaction transaction = getParentFragmentManager().beginTransaction();
+
+            transaction.replace(R.id.main, inviteFragment);
+
+            transaction.addToBackStack(null);
+
+            transaction.commit();
         });
 
         return v;
@@ -107,6 +126,13 @@ public class LoginFragment extends Fragment implements LoginContract.View {
 
         User user = new User(username, username, email, password, role);
         CurrentUser.set(user);
+
+        SharedPreferences prefs = requireActivity().getSharedPreferences("AppPrefs", Context.MODE_PRIVATE);
+
+        prefs.edit()
+                .putString("last_logged_in_user", username)
+                .putString("last_logged_in_role", role)
+                .apply();
 
         if (usernameInput != null) usernameInput.setText("");
         if (emailInput != null)    emailInput.setText("");

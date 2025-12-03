@@ -89,7 +89,7 @@ public class ParentAdherenceActivity extends AppCompatActivity {
 
         childUsername = getIntent().getStringExtra("childUsername");
         if (childUsername == null) {
-            childUsername = "andy6688";
+            childUsername = "andy6687";
         }
 
         Toolbar toolbar = findViewById(R.id.toolbar_adherence);
