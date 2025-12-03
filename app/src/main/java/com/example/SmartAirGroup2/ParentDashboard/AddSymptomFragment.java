@@ -41,47 +41,6 @@ import java.util.Map;
  * This fragment allows a user (parent or child, depending on account type)
  * to record a new symptom entry associated with a child profile in the
  * Firebase Realtime Database.
- *
- * Functionality:
- * --------------
- * • User enters a symptom description.
- * • User selects one or more triggers from predefined checkboxes.
- * • User selects a timestamp using a combined DatePicker and TimePicker.
- * • Input validation ensures all required information is provided.
- * • Upon successful submission, the symptom is stored under:
- *      categories/users/children/{username}/data/symptoms
- *
- * Timestamp Format:
- * -----------------
- * yyyy/MM/dd HH:mm
- * (Example: 2025/11/17 13:42)
- *
- * Validation Rules:
- * -----------------
- * - Symptom text cannot be empty.
- * - Timestamp must be selected.
- * - At least one trigger must be selected.
- *
- * UI Behavior:
- * ------------
- * - The toolbar supports back navigation.
- * - After successful submission, the fragment navigates back automatically.
- *
- * Firebase Storage Example:
- * -------------------------
- * {
- *   "symptom": "Coughing",
- *   "time": "2025/11/17 14:05",
- *   "triggers": "Exercise, Cold Air",
- *   "type": "parent"
- * }
- *
- * Arguments Required:
- * -------------------
- * - "childUname" (String): The username of the child profile the symptom belongs to.
- *
- * Author: Your Name
- * Last Modified: Nov 17, 2025
  */
 
 public class AddSymptomFragment extends Fragment {

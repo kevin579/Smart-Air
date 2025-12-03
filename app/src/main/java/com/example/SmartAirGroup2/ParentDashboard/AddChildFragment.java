@@ -36,16 +36,6 @@ import com.google.firebase.database.FirebaseDatabase;
  * ---------------------
  * This fragment allows a parent user to create a new child account in Firebase Realtime Database,
  * and automatically links that child account to the parent’s account.
- *
- * Workflow:
- *  1. Parent enters the child’s username, name, email, and password (twice).
- *  2. The app validates inputs (non-empty, password match, min length).
- *  3. It checks if the username already exists across all user categories.
- *  4. If available, the child is added to the "children" node.
- *  5. The child’s username is then linked under the parent’s "children" list.
- *
- * Author: Kevin Li
- * Last Updated: November 18, 2025
  */
 
 public class AddChildFragment extends Fragment {

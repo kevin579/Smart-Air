@@ -21,24 +21,23 @@ import com.example.SmartAirGroup2.R;
 import com.google.firebase.database.DatabaseReference;
 import com.google.firebase.database.FirebaseDatabase;
 
-/**
- * LinkChildFragment
- * ---------------------
- * This fragment allows a parent user to link an existing child account
- * (already registered in Firebase) to their own parent profile.
- *
- * Workflow:
- *  1. The parent enters the child’s username and password.
- *  2. The app validates the input fields.
- *  3. The system checks Firebase to confirm that the child account exists
- *     and that the password matches.
- *  4. If validation passes and the child isn’t already linked,
- *     the app adds the child’s username to the parent’s “children” list.
- *
- * Author: Kevin Li
- * Last Updated: Nov 14, 2025
- */
 
+
+/**
+ * A fragment that allows a parent user to link an existing provider account to their profile.
+ * <p>
+ * This screen provides a user interface for a parent to enter the username of a provider.
+ * Upon submission, the fragment updates the Firebase Realtime Database to establish a
+ * two-way link:
+ * <ul>
+ *     <li>The provider's username is added to the parent's list of providers.</li>
+ *     <li>The parent's username is added to the provider's list of parents.</li>
+ * </ul>
+ * The parent's username is passed to this fragment via arguments.
+ *
+ * @author Your Name/Team Name
+ * @version 1.0
+ */
 public class LinkProviderFragment extends Fragment {
 
     // ───────────────────────────────
@@ -116,7 +115,7 @@ public class LinkProviderFragment extends Fragment {
     }
 
     // ───────────────────────────────
-    // Main Logic: Link Existing Child
+    // Main Logic: Link Provider
     // ───────────────────────────────
     private void link() {
         providerUname = editTextUname.getText().toString().trim();
@@ -131,6 +130,17 @@ public class LinkProviderFragment extends Fragment {
         updateProviderDB();
     }
 
+    /**
+     * Updates the provider's record in the Firebase Realtime Database to add a reference
+     * to the current parent.
+     * <p>
+     * This method constructs a {@link DatabaseReference} pointing to the provider's `parents`
+     * list (based on the `providerUname` entered by the user). It then adds the current
+     * parent's username (`parentUname`) as a new child in that list. This establishes the
+     * second half of the two-way link between the parent and the provider.
+     * <p>
+     * A {@link Toast} message is displayed to the user if the database update fails.
+     */
     private void updateProviderDB() {
         DatabaseReference providerRef = FirebaseDatabase.getInstance()
                 .getReference("categories/users/provider/" + providerUname + "/parents");
@@ -145,6 +155,14 @@ public class LinkProviderFragment extends Fragment {
     }
 
 
+    /**
+     * Updates the Firebase Realtime Database to link the specified provider to the current parent.
+     * <p>
+     * This method retrieves a reference to the current parent's "providers" list in the database
+     * and adds the provider's username as a new child. The key and value of the new child are both
+     * set to the provider's username. It handles both success and failure cases by displaying
+     * appropriate toast messages to the user.
+     */
     private void updateParentDB() {
         DatabaseReference parentRef = FirebaseDatabase.getInstance()
                 .getReference("categories/users/parents/" + parentUname + "/providers");

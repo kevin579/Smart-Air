@@ -25,24 +25,52 @@ import com.google.firebase.database.FirebaseDatabase;
 import java.util.HashMap;
 import java.util.Map;
 
-// Inherit from Fragment
+/**
+ * A {@link Fragment} that allows a parent to manage data sharing permissions for a specific child.
+ * This screen displays a list of toggles (switches) that correspond to different categories of
+ * health data (e.g., rescue logs, symptoms, PEF data). The parent can grant or revoke a healthcare
+ * provider's access to this data. The permissions are stored and synchronized with the
+ * Firebase Realtime Database under the child's profile.
+ */
 public class SharingPermissionsFragment extends Fragment {
 
-    // Static final key for passing arguments
-//    public static final String ARG_CHILD_ID = "childId";
-
-    private String childId,childName;
+    /**
+     * The username of the child whose permissions are being edited.
+     */
+    private String childId;
+    /**
+     * The display name of the child, used for the toolbar title.
+     */
+    private String childName;
+    /**
+     * The Firebase Realtime Database instance.
+     */
     private FirebaseDatabase db;
+
     private DatabaseReference permRef;
+
     private Switch rescueLogSwitch, controllerAdherenceSwitch, shareSymptomsSwitch,
             shareTriggersSwitch, sharePefSwitch, shareTriageSwitch,
             shareChartsSwitch, shareInventorySwitch;
 
+    /**
+     * The toolbar for this fragment.
+     */
     private Toolbar toolbar;
 
+    /**
+     * A map to associate the permission keys (as used in Firebase) with their corresponding Switch views.
+     * This simplifies the process of reading from and writing to the database.
+     */
     private final Map<String, Switch> permissionSwitches = new HashMap<>();
 
 
+    /**
+     * Called when the fragment is first created.
+     * Retrieves the child's username and display name from the fragment's arguments.
+     * @param savedInstanceState If the fragment is being re-created from a previous saved state,
+     * this is the state.
+     */
     @Override
     public void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
@@ -53,7 +81,16 @@ public class SharingPermissionsFragment extends Fragment {
             childName = getArguments().getString("childName");
         }
     }
-    // The layout inflation logic goes here
+
+    /**
+     * Called to have the fragment instantiate its user interface view.
+     * Inflates the layout, sets up the toolbar, and finds all the Switch views.
+     *
+     * @param inflater The LayoutInflater object that can be used to inflate views in the fragment.
+     * @param container If non-null, this is the parent view that the fragment's UI should be attached to.
+     * @param savedInstanceState If non-null, this fragment is being re-constructed from a previous saved state.
+     * @return The View for the fragment's UI.
+     */
     @Nullable
     @Override
     public View onCreateView(@NonNull LayoutInflater inflater,
@@ -86,15 +123,20 @@ public class SharingPermissionsFragment extends Fragment {
         return view;
     }
 
-    // Logic requiring the View and Context goes here, after the view hierarchy is stable
+    /**
+     * Called immediately after {@link #onCreateView(LayoutInflater, ViewGroup, Bundle)} has returned,
+     * but before any saved state has been restored in to the view.
+     * This is where Firebase is initialized, the switch map is populated, and the initial data load is triggered.
+     *
+     * @param view The View returned by {@link #onCreateView(LayoutInflater, ViewGroup, Bundle)}.
+     * @param savedInstanceState If non-null, this fragment is being re-constructed
+     * from a previous saved state as given here.
+     */
     @Override
     public void onViewCreated(@NonNull View view, @Nullable Bundle savedInstanceState) {
         super.onViewCreated(view, savedInstanceState);
 
-
-
-
-        // 2. Initialize Firebase (using requireContext() if necessary, or just the URL)
+        // 2. Initialize Firebase
         db = FirebaseDatabase.getInstance("https://smart-air-group2-default-rtdb.firebaseio.com/");
 
         // 3. Populate Switch Map
@@ -116,16 +158,17 @@ public class SharingPermissionsFragment extends Fragment {
         loadPermissionsAndSetupListeners();
     }
 
-    // Extracted method to keep onViewCreated cleaner
+    /**
+     * Fetches the current permission settings from Firebase and updates the UI.
+     * This method performs a one-time read to get the current state of all permissions.
+     * It then iterates through the local switch map, setting each switch to match the state in Firebase.
+     * After the UI is synchronized, it calls {@link #attachChangeListeners()} to enable saving on toggle.
+     */
     private void loadPermissionsAndSetupListeners() {
         // Initial Read to set Switch states
         permRef.get().addOnCompleteListener(task -> {
             if (task.isSuccessful()) {
                 DataSnapshot snapshot = task.getResult();
-
-                // Suppress listener during load to prevent writing initial state back to DB
-                // This assumes you defined 'suppressToggleListener' as a class field (I removed it here
-                // to simplify, but it's good practice if you had complex listeners.)
 
                 for (String key : permissionSwitches.keySet()) {
                     boolean value = false;
@@ -139,15 +182,22 @@ public class SharingPermissionsFragment extends Fragment {
                     permissionSwitches.get(key).setChecked(value);
                 }
 
-                // Now that the UI is initialized, attach the listeners
+                // Now that the UI is initialized, attach the listeners that will save changes.
                 attachChangeListeners();
 
             } else {
-                Toast.makeText(requireContext(), "Failed to load permissions: " + task.getException().getMessage(), Toast.LENGTH_LONG).show();
+                if(getContext() != null) {
+                    Toast.makeText(requireContext(), "Failed to load permissions: " + task.getException().getMessage(), Toast.LENGTH_LONG).show();
+                }
             }
         });
     }
 
+    /**
+     * Inflates the menu for this fragment.
+     * @param menu The menu to inflate.
+     * @param inflater The MenuInflater to use.
+     */
     @Override
     public void onCreateOptionsMenu(@NonNull Menu menu, @NonNull MenuInflater inflater) {
         MenuHelper.setupMenu(menu, inflater, requireContext());
@@ -155,12 +205,22 @@ public class SharingPermissionsFragment extends Fragment {
         super.onCreateOptionsMenu(menu, inflater);
     }
 
+    /**
+     * Handles menu item selections.
+     * @param item The selected MenuItem.
+     * @return true if the event was handled, false otherwise.
+     */
     @Override
     public boolean onOptionsItemSelected(@NonNull MenuItem item) {
         return MenuHelper.handleMenuSelection(item, this) || super.onOptionsItemSelected(item);
     }
 
-    // Extracted method to set up persistence listeners
+    /**
+     * Attaches an {@link android.widget.CompoundButton.OnCheckedChangeListener} to each switch.
+     * When a switch's state is changed by the user, the listener triggers and writes the new
+     * boolean value to the corresponding key in Firebase. This ensures that permissions are
+     * saved in real-time. Includes failure handling to notify the user.
+     */
     private void attachChangeListeners() {
         for (Map.Entry<String, Switch> entry : permissionSwitches.entrySet()) {
             String key = entry.getKey();
@@ -170,9 +230,11 @@ public class SharingPermissionsFragment extends Fragment {
             sw.setOnCheckedChangeListener((buttonView, isChecked) -> {
                 permRef.child(key).setValue(isChecked)
                         .addOnFailureListener(e -> {
-                            Toast.makeText(requireContext(), "Failed to save " + key, Toast.LENGTH_SHORT).show();
-                            // Optional: revert the switch state if save fails
-                            sw.setChecked(!isChecked);
+                            if(getContext() != null) {
+                                Toast.makeText(requireContext(), "Failed to save " + key, Toast.LENGTH_SHORT).show();
+                                // Optional: revert the switch state if save fails
+                                sw.setChecked(!isChecked);
+                            }
                         });
             });
         }

@@ -35,37 +35,6 @@ import java.util.Map;
  * This fragment allows users to create or update medicine inventory records
  * for a selected child user in Firebase Realtime Database.
  *
- * Behavior:
- * - If no medicine name is passed via arguments → the fragment functions in **Add Mode**
- *   and displays a blank form for new input.
- * - If a medicine name is provided via arguments → the fragment functions in **Update Mode**
- *   and pre-fills the fields with existing information (loaded externally before navigation).
- *
- * Core Features:
- *   • Add a new medicine to a child's inventory.
- *   • Update an existing medicine entry (same database path used).
- *   • Input validation: positive doses, chronological dates, required fields.
- *   • Automatically formats and stores dates in `yyyy/MM/dd`.
- *   • Uses Firebase Realtime Database under:
- *
- * Firebase Path:
- * categories/users/children/{childUsername}/inventory/{medicineName}
- *
- * Stored Fields:
- *   - purchaseDate: String (formatted yyyy/MM/dd)
- *   - expireDate: String (formatted yyyy/MM/dd)
- *   - prescriptionAmount: int (required, >0)
- *   - currentAmount: int (≤ prescriptionAmount)
- *
- * UI Contains:
- *   - Text input fields for medicine name (add mode only)
- *   - Purchase date picker
- *   - Expiration date picker
- *   - Prescription and current quantity fields
- *   - Add/Save button
- *
- * Author: Kevin Li
- * Last Updated: November 18, 2025
  */
 public class AddInventoryFragment extends Fragment {
 

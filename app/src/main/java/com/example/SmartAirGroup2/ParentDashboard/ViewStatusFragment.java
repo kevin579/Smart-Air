@@ -48,114 +48,20 @@ import java.util.Map;
 import java.util.TreeMap;
 
 
-/**
- * ChildDashboardFragment (Parent-Side View)
- * ------------------------------------------
- * This fragment provides a comprehensive overview of a single child's health status from the
- * parent's perspective. It serves as a navigation hub for accessing detailed child information
- * across three main categories: Inventory, PEF (Peak Expiratory Flow), and Symptoms.
- *
- * Purpose:
- *   Enables parents to monitor their child's asthma management by providing:
- *   • Visual status indicators for medication inventory levels
- *   • PEF zone monitoring (Green/Yellow/Red zones)
- *   • Symptom tracking overview
- *   • Quick navigation to detailed views for each category
- *
- * Core Features:
- *   • Color-coded status cards that reflect real-time child health metrics
- *   • Three primary navigation cards:
- *       → Inventory Card: Medicine stock levels and usage
- *       → PEF Card: Breathing function measurements and zones
- *       → Symptom Card: Logged symptoms and patterns
- *   • Dynamic status updates from Firebase
- *   • Back navigation to parent dashboard
- *
- * UI Behavior:
- *   - Displays child's name in the toolbar title
- *   - Three large CardViews with color-coded backgrounds:
- *       • Inventory: Red (alert) if any medicine is low/critical, Green (good) otherwise
- *       • PEF: Red (zone 2), Yellow (zone 1), or Green (zone 0) based on breathing status
- *       • Symptom: Currently static, may be extended for symptom status
- *   - Each card navigates to its respective detailed fragment on click
- *
- * Firebase Structure (Relevant Paths):
- * └── categories/
- *     └── users/
- *         └── children/{childUname}/
- *             └── status/
- *                 ├── pefZone: Integer (0=green, 1=yellow, 2=red)
- *                 └── inventory/
- *                     └── {medicineName}/
- *                         └── {timestamp: Integer (0=good, 1=warning, 2=alert)}
- *
- * Status Logic:
- *   - Inventory Status:
- *       • 2 (Alert/Red): Any medicine has critical low stock - HIGHEST PRIORITY
- *       • 1 (Warning/Yellow): Any medicine approaching low stock
- *       • 0 (Good/Green): All medicines adequately stocked
- *   - PEF Status:
- *       • 2 (Red Zone): Severe breathing difficulty, immediate action needed
- *       • 1 (Yellow Zone): Caution, medication may be needed
- *       • 0 (Green Zone): Breathing is normal
- *
- * Navigation Flow:
- *   ParentDashboardFragment → ChildDashboardFragment → [Inventory/PEF/Symptom]Fragment
- *
- * Fragment Arguments (Required):
- *   • childName (String): Display name of the child
- *   • childUname (String): Unique username/identifier for the child in Firebase
- *
- * Dependencies:
- *   • Firebase Realtime Database for status data
- *   • MenuHelper for toolbar menu operations
- *   • Three destination fragments: InventoryFragment, ParentPEF, SymptomDashboardFragment
- *
- * Color Resources Used:
- *   • R.color.alert (Red): Critical status requiring immediate attention
- *   • R.color.warning (Yellow): Caution status requiring monitoring
- *   • R.color.good (Green): Normal/healthy status
- *
- * Author: Kevin Li
- * Last Updated: November 2025
- */
+
 public class ViewStatusFragment extends Fragment {
 
-    // ═══════════════════════════════════════════════════════════════════════
-    // UI COMPONENTS
-    // ═══════════════════════════════════════════════════════════════════════
 
-    /**
-     * Toolbar component displayed at the top of the fragment.
-     * Shows the child's name and provides back navigation to parent dashboard.
-     */
     private Toolbar toolbar;
 
-    /**
-     * CardView for accessing the child's status .
-     * Color-coded based on medicine stock levels:
-     *   - Red (alert)
-     *   - Green (good)
-     */
-    private CardView cardPEF, cardLastRescue, cardWeeklyCount, cardTrend;
+
+    private CardView cardPEF;
     private TextView PEFZone,RescueTime,RescueCount;
 
 
-    // ═══════════════════════════════════════════════════════════════════════
-    // CHILD IDENTITY
-    // ═══════════════════════════════════════════════════════════════════════
 
-    /**
-     * Display name of the child.
-     * Retrieved from fragment arguments, passed from ParentDashboardFragment.
-     * Used in toolbar title to personalize the view.
-     */
     private String name;
 
-    /**
-     * Unique username/identifier of the child in Firebase.
-     * Retrieved from fragment arguments, used to query child-specific data.
-     */
     private String uname;
 
     private double pb, averagePEF;
@@ -164,9 +70,8 @@ public class ViewStatusFragment extends Fragment {
     private Context chartContext;
 
     private BarChart chart;
-    private TextView statusTextView; // tv_chart_status
+    private TextView statusTextView;
     private MaterialButtonToggleGroup toggleGroup;
-    private Button btn7Days;
 
     // ═══════════════════════════════════════════════════════════════════════
     // LIFECYCLE METHODS
@@ -231,8 +136,7 @@ public class ViewStatusFragment extends Fragment {
         // UI Component Initialization
         // ─────────────────────────────────────────────────────────────────
         cardPEF = view.findViewById(R.id.cardPEF);
-        cardLastRescue = view.findViewById(R.id.cardLastRescue);
-        cardWeeklyCount = view.findViewById(R.id.cardWeeklyCount);
+
 
         PEFZone = view.findViewById(R.id.PEFZone);
         RescueTime = view.findViewById(R.id.RescueTime);
@@ -241,7 +145,6 @@ public class ViewStatusFragment extends Fragment {
         chart = view.findViewById(R.id.bar_chart);
         statusTextView = view.findViewById(R.id.tv_chart_status);
         toggleGroup = view.findViewById(R.id.toggle_duration_group);
-        btn7Days = view.findViewById(R.id.btn_7_days);
 
         trendFetcher = new RescueTrendFetcher();
         chartContext = requireContext();
@@ -268,6 +171,15 @@ public class ViewStatusFragment extends Fragment {
         return view;
     }
 
+    /**
+     * Fetches the child's Personal Best (PB) PEF and their recent daily PEF measurements
+     * from the Firebase Realtime Database. It calculates the average of the daily PEF
+     * readings and then calls {@link #setPEF()} to update the UI based on these values.
+     * <p>
+     * The method retrieves data from {@code /categories/users/children/<uname>/data/}.
+     * It handles cases where PB or daily PEF values might be missing. If data retrieval
+     * fails, it displays a toast message.
+     */
     private void getPEF() {
         DatabaseReference pefRef = FirebaseDatabase.getInstance()
                 .getReference("categories/users/children")
@@ -324,6 +236,16 @@ public class ViewStatusFragment extends Fragment {
     }
 
 
+    /**
+     * Retrieves the timestamp of the most recent rescue log entry from Firebase.
+     * <p>
+     * This method queries the 'rescue_log' node for the current child, ordering the entries
+     * by their 'dateTime' field and limiting the result to the last (most recent) one.
+     * The timestamp is then displayed in the {@code RescueTime} TextView.
+     * <p>
+     * If no rescue logs are found, it updates the UI to indicate this. If an error occurs
+     * during the database operation, it displays a toast message and sets an error state.
+     */
     private void getLastRescueTime() {
         if (uname == null || uname.trim().isEmpty()) {
             RescueTime.setText("Error: Child username missing");
@@ -377,6 +299,23 @@ public class ViewStatusFragment extends Fragment {
         });
     }
 
+    /**
+     * Fetches and displays the total number of rescue inhaler uses for the child
+     * within the last 7 days.
+     * <p>
+     * This method performs the following steps:
+     * <ol>
+     *     <li>Checks if the child's username ({@code uname}) is valid.</li>
+     *     <li>Calculates the start and end date strings for the past 7-day period. The date format
+     *         ("yyyy-MM-dd HH:mm") must match the format stored in Firebase.</li>
+     *     <li>Constructs a Firebase Realtime Database query on the child's 'rescue_log' node,
+     *         ordering by 'dateTime' and filtering the results to include only entries within
+     *         the calculated 7-day range.</li>
+     *     <li>Executes the query asynchronously. On success, it counts the number of resulting
+     *         log entries and updates the {@code RescueCount} TextView.</li>
+     *     <li>Handles cases where no logs are found in the period or if a database error occurs.</li>
+     * </ol>
+     */
     private void getWeeklyCount() {
         if (uname == null || uname.trim().isEmpty()) {
             if (RescueCount != null) RescueCount.setText("Error");

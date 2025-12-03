@@ -29,9 +29,14 @@ import com.google.firebase.database.DatabaseReference;
 import com.google.firebase.database.FirebaseDatabase;
 import com.google.firebase.database.ValueEventListener;
 
+/**
+ * A fragment that serves as the main dashboard for a parent user.
+ * It provides navigation to manage children and healthcare providers.
+
+ */
 public class ParentDashboardFragment extends Fragment {
 
-    private String uname,type;
+    private String uname;
 
     private Toolbar toolbar;
 
@@ -62,7 +67,6 @@ public class ParentDashboardFragment extends Fragment {
         if (getArguments() != null) {
             uname = getArguments().getString("username");
         }
-        type="parent";
     }
 
     @Nullable
