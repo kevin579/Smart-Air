@@ -30,6 +30,10 @@ import com.example.SmartAirGroup2.Main.PasswordRecovery;
 import com.google.firebase.database.DatabaseReference;
 import com.google.firebase.database.FirebaseDatabase;
 
+/**
+ * A simple {@link Fragment} subclass that displays the login screen.
+ * It implements the {@link LoginContract.View} interface to handle UI updates from the presenter.
+ */
 public class LoginFragment extends Fragment implements LoginContract.View {
     private LoginPresenter presenter;
     private EditText  emailInput, passwordInput,usernameInput ;
@@ -37,6 +41,13 @@ public class LoginFragment extends Fragment implements LoginContract.View {
     private String field, username, selectedRole, email, password;
 
 
+    /**
+     * Called to have the fragment instantiate its user interface view.
+     * @param inflater The LayoutInflater object that can be used to inflate any views in the fragment.
+     * @param container If non-null, this is the parent view that the fragment's UI should be attached to.
+     * @param savedInstanceState If non-null, this fragment is being re-constructed from a previous saved state as given here.
+     * @return Return the View for the fragment's UI, or null.
+     */
     @Nullable
     @Override
     public View onCreateView(@NonNull LayoutInflater inflater,
@@ -81,6 +92,9 @@ public class LoginFragment extends Fragment implements LoginContract.View {
     }
 
 
+    /**
+     * Called when the view previously created by {@link #onCreateView} has been detached from the fragment.
+     */
     @Override
     public void onDestroyView() {
         super.onDestroyView();
@@ -88,6 +102,9 @@ public class LoginFragment extends Fragment implements LoginContract.View {
     }
 
 
+    /**
+     * Shows an error message on the input fields when login fails.
+     */
     @Override
     public void showLoginFailed() {
         if (usernameInput != null) usernameInput.setError("User not found or invalid password");
@@ -95,6 +112,11 @@ public class LoginFragment extends Fragment implements LoginContract.View {
         if (passwordInput != null) passwordInput.setError("User not found or invalid password");
     }
 
+    /**
+     * Handles the successful login event. It clears the input fields, sets the current user,
+     * and navigates to the appropriate dashboard or onboarding screen based on the user's role and onboarding status.
+     * @param role The role of the logged-in user.
+     */
     @Override
     public void showLoginSuccess(String role) {
         if (emailInput != null)    emailInput.setError(null);
@@ -170,13 +192,19 @@ public class LoginFragment extends Fragment implements LoginContract.View {
 
     }
 
+    /**
+     * Shows a toast message for input errors.
+     * @param message The error message to display.
+     */
     @Override
     public void showInputError(String message) {
         Toast.makeText(getContext(), message, Toast.LENGTH_SHORT).show();
     }
     //for the drop down menu
 
-    // Separate method for spinner setup
+    /**
+     * Sets up the role spinner with the available roles from resources.
+     */
     private void setupRoleSpinner() {
         // Create an ArrayAdapter using the string array and a default spinner layout
         ArrayAdapter<CharSequence> adapter = ArrayAdapter.createFromResource(

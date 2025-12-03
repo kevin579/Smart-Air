@@ -80,6 +80,9 @@ public class ChildDashboardFragment extends Fragment {
      */
     private String currentChildId;
 
+    /**
+     * The toolbar for the child dashboard screen.
+     */
     private Toolbar toolbar;
     // ─────────────────────────────────────────────────────────────────
     // FACTORY METHOD (Replaces Intent usage for Fragments)
@@ -224,6 +227,11 @@ public class ChildDashboardFragment extends Fragment {
         return view;
     }
 
+    /**
+     * Launches the onboarding flow for one-tap triage.
+     * This sets up an Intent to start the OnboardingActivity with parameters
+     * indicating that the "help" (triage) flow should be displayed for the current child.
+     */
     private void launchTriageOnboarding() {
         // 1. Create an Intent to start your OnboardingActivity.
         Intent intent = new Intent(requireContext(), OnboardingActivity.class);
@@ -240,6 +248,11 @@ public class ChildDashboardFragment extends Fragment {
         startActivity(intent);
     }
 
+    /**
+     * Launches the onboarding flow for the technique helper.
+     * This sets up an Intent to start the OnboardingActivity with parameters
+     * indicating that the "technique" helper slides should be displayed.
+     */
     private void launchTechniqueOnboarding() {
         // 1. Create an Intent to start your OnboardingActivity.
         Intent intent = new Intent(requireContext(), OnboardingActivity.class);

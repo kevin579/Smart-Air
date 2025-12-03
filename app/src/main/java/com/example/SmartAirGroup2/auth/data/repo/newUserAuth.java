@@ -3,6 +3,9 @@ package com.example.SmartAirGroup2.auth.data.repo;
 import com.google.firebase.database.DatabaseReference;
 import com.google.firebase.database.FirebaseDatabase;
 
+/**
+ * Repository for handling new user authentication and creation with Firebase Realtime Database.
+ */
 public class newUserAuth extends FirebaseRtdbAuthRepository {
 
     private static final DatabaseReference usersRoot =
@@ -10,6 +13,14 @@ public class newUserAuth extends FirebaseRtdbAuthRepository {
                     .getReference("categories")
                     .child("users");
 
+    /**
+     * Checks if a password meets the security requirements.
+     * The password must be at least 8 characters long, contain at least one uppercase letter,
+     * one lowercase letter, one digit, and one special character (@#$%^&+=!*).
+     *
+     * @param password The password to check.
+     * @return true if the password is valid, false otherwise.
+     */
     public static boolean CheckPassword(String password) {
         if (password == null || password.trim().isEmpty()) {
             return false;
@@ -70,6 +81,14 @@ public class newUserAuth extends FirebaseRtdbAuthRepository {
         return true;
     }
 
+    /**
+     * Creates a new user in the Firebase Realtime Database.
+     *
+     * @param userType The type of user (e.g., "child", "parent", "provider").
+     * @param username The username for the new user.
+     * @param password The password for the new user.
+     * @param email The email address for the new user.
+     */
     public static void createUser(String userType, String username, String password, String email) {
         // Decide which branch (children / parents / provider)
         DatabaseReference userBranch;
@@ -95,7 +114,9 @@ public class newUserAuth extends FirebaseRtdbAuthRepository {
                 });
     }
 
-    // Inner static class for user data model
+    /**
+     * Inner static class for user data model.
+     */
     public static class UserData {
         public String uname;
         public String name;
@@ -103,10 +124,18 @@ public class newUserAuth extends FirebaseRtdbAuthRepository {
         public String password;
         public String type;
 
-        // Empty constructor (Firebase requires it)
+        /**
+         * Empty constructor required by Firebase.
+         */
         public UserData() {}
 
-        // Full constructor
+        /**
+         * Full constructor for creating a UserData object.
+         * @param uname The username.
+         * @param email The email address.
+         * @param password The password.
+         * @param type The user type.
+         */
         public UserData(String uname, String email, String password, String type) {
             this.uname = uname;
             this.name = extractName(uname);
@@ -115,7 +144,11 @@ public class newUserAuth extends FirebaseRtdbAuthRepository {
             this.type = type;
         }
 
-        // Helper: extract name portion before digits
+        /**
+         * Helper method to extract the name portion from a username (e.g., "parry6677" → "parry").
+         * @param uname The username.
+         * @return The extracted name.
+         */
         private static String extractName(String uname) {
             return uname.replaceAll("\\d+$", ""); // e.g., "parry6677" → "parry"
         }

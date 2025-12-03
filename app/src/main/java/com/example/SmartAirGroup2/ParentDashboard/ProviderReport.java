@@ -41,6 +41,30 @@ import java.util.Calendar;
 import java.util.Locale;
 import java.util.Map;
 
+/**
+ * Represents a fragment that allows a parent to generate a comprehensive provider report
+ * for their child's asthma management. The report can be generated for the last 3 or 6 months
+ * and is exported as a PDF file.
+ *
+ * <p>This fragment retrieves a child's name and username from its arguments to fetch
+ * the relevant data from Firebase. It uses a {@link ProviderReportHelper} to perform
+ * calculations and data fetching for various metrics, including:</p>
+ * <ul>
+ *     <li>Rescue Inhaler Frequency</li>
+ *     <li>Controller Medication Adherence (visualized with a pie chart)</li>
+ *     <li>Symptom Burden (number of days with symptoms)</li>
+ *     <li>Average Peak Expiratory Flow (PEF)</li>
+ *     <li>Daily PEF trends plotted on a graph, color-coded based on the child's Personal Best (PB)</li>
+ *     <li>A log of triage incidents (if permission is granted)</li>
+ * </ul>
+ *
+ * <p>The user can choose to export a 3-month or 6-month report, which triggers the
+ * Android Storage Access Framework to let the user choose a save location and name
+ * for the PDF file. The PDF is then dynamically generated and written to the selected URI.</p>
+ *
+ * <p>The fragment also includes a standard toolbar with a title and back navigation,
+ * and handles menu item selections through {@link MenuHelper}.</p>
+ */
 public class ProviderReport extends Fragment {
 
     // ───────────────────────────────
@@ -110,6 +134,17 @@ public class ProviderReport extends Fragment {
     // DOCUMENT EXPORT
     // ───────────────────────────────
 
+    /**
+     * Initiates the Android Storage Access Framework to prompt the user for a file location.
+     * This method creates an Intent with the ACTION_CREATE_DOCUMENT action, which allows the user
+     * to choose a location and a name for a new file. The created file can then be written to
+     * in the onActivityResult callback.
+     *
+     * @param mimeType      The MIME type of the file to be created (e.g., "application/pdf").
+     * @param suggestedName The default file name suggested to the user (e.g., "report.pdf").
+     * @param requestCode   The integer request code that will be returned in onActivityResult,
+     *                      used to identify this specific file creation request.
+     */
     private void showSaveAsDialog(String mimeType, String suggestedName, int requestCode) {
         Intent intent = new Intent(Intent.ACTION_CREATE_DOCUMENT);
         intent.addCategory(Intent.CATEGORY_OPENABLE);
@@ -118,6 +153,18 @@ public class ProviderReport extends Fragment {
         startActivityForResult(intent, requestCode);
     }
 
+    /**
+     * Orchestrates the creation of a PDF provider report and writes it to the specified Uri.
+     * This method asynchronously fetches all the necessary data points, such as rescue frequency,
+     * controller adherence, symptom burden, average PEF, and triage incidents, for a specific
+     * time period defined by the 'startDate' field. It then renders this information, including
+     * a PEF graph and an adherence pie chart, onto a PDF document. Once all data is fetched and
+     * drawn onto the canvas, the document is finalized and written to the output stream associated
+     * with the provided Uri.
+     *
+     * @param uri The content Uri of the file where the generated PDF will be saved. This is
+     *            obtained from the Storage Access Framework after the user selects a file location.
+     */
     private void exportPdfToUri(Uri uri) {
         PdfDocument pdfDocument = new PdfDocument();
         PdfDocument.PageInfo pageInfo = new PdfDocument.PageInfo.Builder(595, 842, 1).create();
@@ -198,7 +245,25 @@ public class ProviderReport extends Fragment {
         });
     }
 
-    // New helper to fetch PB and then plot PEF
+    /**
+     * Fetches the child's Personal Best (PB) PEF value and then initiates the plotting of the PEF graph.
+     * This method acts as a wrapper for {@link #drawPEFGraphWithPB}. It first asynchronously retrieves
+     * the child's PB value from the Firebase Realtime Database. Once the PB is fetched (or a default
+     * is used if none exists), it calls {@link ProviderReportHelper#dailyAveragePEF(String, ProviderReportHelper.DailyAvgCallback)}
+     * to get the daily PEF data. Finally, it passes all the required information, including the PB,
+     * to {@code drawPEFGraphWithPB} to render the actual graph on the PDF canvas.
+     *
+     * @param canvas    The canvas of the PDF page to draw on.
+     * @param paint     The Paint object for styling the graph elements.
+     * @param startDate The starting date for the data range in "yyyy/MM/dd" format.
+     * @param x         The x-coordinate for the top-left corner of the graph area.
+     * @param y         The y-coordinate for the top-left corner of the graph area.
+     * @param width     The width of the graph.
+     * @param height    The height of the graph.
+     * @param callback  A {@link Runnable} to be executed after the graph has been completely drawn.
+     *                  This is used to ensure subsequent PDF content is drawn only after this
+     *                  asynchronous operation finishes.
+     */ // New helper to fetch PB and then plot PEF
     private void plotPEFWithPB(Canvas canvas, Paint paint, String startDate, int x, int y, int width, int height, Runnable callback) {
         DatabaseReference pbRef = FirebaseDatabase.getInstance().getReference()
                 .child("categories").child("users").child("children").child(uname).child("data").child("pb");
