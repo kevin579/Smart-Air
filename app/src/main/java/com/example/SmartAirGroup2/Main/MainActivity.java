@@ -11,10 +11,23 @@ import com.example.SmartAirGroup2.R;
 import com.google.firebase.database.FirebaseDatabase;
 
 
+/**
+ * The main activity of the application.
+ */
 public class MainActivity extends AppCompatActivity {
 
+    /**
+     * The Firebase database instance.
+     */
     FirebaseDatabase db;
 
+    /**
+     * Called when the activity is first created.
+     *
+     * @param savedInstanceState If the activity is being re-initialized after
+     *     previously being shut down then this Bundle contains the data it most
+     *     recently supplied in {@link #onSaveInstanceState}.  <b><i>Note: Otherwise it is null.</i></b>
+     */
     @Override
     protected void onCreate(Bundle savedInstanceState) {
 
@@ -33,6 +46,11 @@ public class MainActivity extends AppCompatActivity {
 
     }
 
+    /**
+     * Loads a fragment into the main container.
+     *
+     * @param fragment The fragment to load.
+     */
     private void loadFragment(Fragment fragment) {
         FragmentTransaction transaction = getSupportFragmentManager().beginTransaction();
         transaction.replace(R.id.fragment_container, fragment);
@@ -40,6 +58,9 @@ public class MainActivity extends AppCompatActivity {
         transaction.commit();
     }
 
+    /**
+     * Handle the back button press.
+     */
     @Override
     public void onBackPressed() {
         if (getSupportFragmentManager().getBackStackEntryCount() > 1) {

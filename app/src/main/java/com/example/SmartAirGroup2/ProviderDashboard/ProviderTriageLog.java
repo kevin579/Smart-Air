@@ -44,26 +44,44 @@ import java.util.Locale;
 import java.util.Map;
 
 /**
- * TriageHistoryFragment
- * -----------------------
- * Modified to display Triage entries instead of Symptoms.
- * Changes:
- *  • Firebase paths updated from "symptoms" → "triages"
- *  • Filter logic adapted to triage fields
- *  • Card creation method renamed and updated for triage
- *  • Deprecated symptom-specific code commented out
+ * ProviderTriageLog
+ * -------------------
+ * A fragment designed for healthcare providers to view a child's triage history.
+ *
+ * This fragment fetches and displays a list of triage entries from Firebase. It offers
+ * robust filtering capabilities, allowing the provider to narrow down the history based on
+ * text content (e.g., red flags), a date range, or specific trigger keywords. This view
+ * is read-only.
+ *
+ * Core Features:
+ *  - Displays a list of triage incidents for a specific child.
+ *  - Fetches data from the Firebase Realtime Database (`/categories/users/children/{childId}/data/triages`).
+ *  - Integrates with {@link TriageFilterFragment} to receive filter criteria.
+ *  - Dynamically builds and displays {@link CardView}s for each triage entry.
+ *  - Supports clearing applied filters to return to the full list.
+ *
+ * Usage:
+ *  This fragment should be instantiated with the child's name and unique username passed as arguments.
+ *
+ * Originally adapted from a symptom history-style fragment, this class has been modified to
+ * handle the structure and fields of triage data.
  */
 public class ProviderTriageLog extends Fragment {
 
     private Toolbar toolbar;
-    private LinearLayout triageContainer; // renamed from symptomContainer
+    private LinearLayout triageContainer; // Renamed from symptomContainer
 
     private String name, uname;
-    private String filterTriageField, filterStartDate, filterEndDate; // renamed from filterSymptom
+    private String filterTriageField, filterStartDate, filterEndDate; // Renamed from filterSymptom
     private List<String> filterTriggers;
 
     private View view;
 
+    /**
+     * Called when the fragment is first created.
+     *
+     * @param savedInstanceState If the fragment is being re-created from a previous saved state, this is the state.
+     */
     @Override
     public void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
@@ -73,6 +91,14 @@ public class ProviderTriageLog extends Fragment {
         }
     }
 
+    /**
+     * Called to have the fragment instantiate its user interface view.
+     *
+     * @param inflater           The LayoutInflater object that can be used to inflate any views in the fragment.
+     * @param container          If non-null, this is the parent view that the fragment's UI should be attached to.
+     * @param savedInstanceState If non-null, this fragment is being re-constructed from a previous saved state.
+     * @return The View for the fragment's UI.
+     */
     @Nullable
     @Override
     public View onCreateView(@NonNull LayoutInflater inflater, @Nullable ViewGroup container, @Nullable Bundle savedInstanceState) {
@@ -92,7 +118,7 @@ public class ProviderTriageLog extends Fragment {
         ((AppCompatActivity) getActivity()).getSupportActionBar().setDisplayHomeAsUpEnabled(true);
         toolbar.setNavigationOnClickListener(v -> getParentFragmentManager().popBackStack());
 
-        triageContainer = view.findViewById(R.id.triageContainer); // updated container
+        triageContainer = view.findViewById(R.id.triageContainer); // Updated container
 
         getParentFragmentManager().setFragmentResultListener("triageFilter", this, (requestKey, bundle) -> {
             filterTriageField = bundle.getString("filter_triage_field", null);
@@ -109,6 +135,10 @@ public class ProviderTriageLog extends Fragment {
         return view;
     }
 
+    /**
+     * Manages the visibility and action of the "Clear Filters" button.
+     * The button is only shown if there are active filters.
+     */
     private void updateClearFilterButton() {
         LinearLayout filterActionContainer = view.findViewById(R.id.filterActionContainer);
         filterActionContainer.removeAllViews();
@@ -139,7 +169,7 @@ public class ProviderTriageLog extends Fragment {
     }
 
     /**
-     * Loads Triage entries from Firebase instead of Symptoms
+     * Loads Triage entries from Firebase, applies any active filters, and populates the UI.
      */
     private void loadTriages() {
         if (!isAdded() || view == null) return;
@@ -147,7 +177,7 @@ public class ProviderTriageLog extends Fragment {
         DatabaseReference triageRef = FirebaseDatabase.getInstance()
                 .getReference("categories/users/children")
                 .child(uname)
-                .child("data/triages"); // 🔹 updated path
+                .child("data/triages"); // 🔹 Updated path
 
         triageRef.addListenerForSingleValueEvent(new ValueEventListener() {
             @Override
@@ -177,14 +207,16 @@ public class ProviderTriageLog extends Fragment {
 
             @Override
             public void onCancelled(@NonNull DatabaseError error) {
-                // 🔹 updated log tag
+                // 🔹 Updated log tag
                 Toast.makeText(getContext(), "Error loading triages: " + error.getMessage(), Toast.LENGTH_SHORT).show();
             }
         });
     }
 
     /**
-     * helper method for map to string
+     * Helper method to convert a map object (from Firebase) into a comma-separated string.
+     * @param value The object to convert.
+     * @return A string representation of the map's keys where the value is true.
      */
     private String mapToString(Object value) {
         if (value == null) return "";
@@ -210,8 +242,13 @@ public class ProviderTriageLog extends Fragment {
 
 
     /**
-     * Filter logic adapted for triages.
-     * Previously filtered by symptom name, now uses triage fields
+     * Checks if a given triage entry passes the currently set filters.
+     * @param redflags The red flags associated with the triage.
+     * @param time The timestamp of the triage.
+     * @param guidance The guidance given for the triage.
+     * @param response The response to the triage.
+     * @param PEF The PEF value associated with the triage.
+     * @return True if the entry passes all active filters, false otherwise.
      */
     private boolean passesFilter(String redflags, String time, String guidance, String response, String PEF) {
 
@@ -268,7 +305,13 @@ public class ProviderTriageLog extends Fragment {
     }
 
     /**
-     * Builds a Triage card (previously addSymptomCard)
+     * Creates a styled CardView for a single triage entry and adds it to the layout.
+     * @param triageId The unique ID of the triage entry.
+     * @param redflags The red flags associated with the triage.
+     * @param time The timestamp of the triage.
+     * @param guidance The guidance given for the triage.
+     * @param response The response to the triage.
+     * @param PEF The PEF value associated with the triage.
      */
     @SuppressLint("ResourceType")
     private void addTriageCard(String triageId, String redflags, String time, String guidance, String response, String PEF) {
@@ -302,15 +345,15 @@ public class ProviderTriageLog extends Fragment {
 
         TextView titleView = new TextView(ctx);
         titleView.setLayoutParams(new LinearLayout.LayoutParams(0, LinearLayout.LayoutParams.WRAP_CONTENT, 1f));
-        titleView.setText(redflags); // title now redflags instead of symptom
+        titleView.setText(redflags); // Title now redflags instead of symptom
         titleView.setTextSize(20);
         titleView.setTypeface(null, Typeface.BOLD);
 
-        if (triageId.isEmpty()) { // placeholder
+        if (triageId.isEmpty()) { // Placeholder
             topRow.addView(titleView);
             outerLayout.addView(topRow);
             cardView.addView(outerLayout);
-            triageContainer.addView(cardView); // use updated container
+            triageContainer.addView(cardView); // Use updated container
             return;
         }
 

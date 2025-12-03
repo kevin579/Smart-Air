@@ -67,13 +67,31 @@ import java.util.Locale;
 
 public class ProviderAdherenceActivity extends AppCompatActivity {
 
+    /**
+     * The username of the child whose data is being displayed. Passed via Intent.
+     */
     private String childUname;
 
+    /**
+     * TextView to display the calculated adherence percentage.
+     */
     private TextView tvAdherenceValue;
+    /**
+     * TextView to display the qualitative adherence level (e.g., "Good", "Poor").
+     */
     private TextView tvAdherenceLevel;
 
+    /**
+     * EditText displaying the controller medication name. Read-only for providers.
+     */
     private EditText etMedication;
+    /**
+     * EditText displaying the prescribed number of doses per day. Read-only for providers.
+     */
     private EditText etTimesPerDay;
+    /**
+     * Checkboxes for each day of the week, indicating the prescribed schedule. Read-only for providers.
+     */
     private CheckBox cbMon, cbTue, cbWed, cbThu, cbFri, cbSat, cbSun;
 
     @Override
@@ -136,6 +154,10 @@ public class ProviderAdherenceActivity extends AppCompatActivity {
         return super.onOptionsItemSelected(item);
     }
 
+    /**
+     * Returns a Firebase Database reference to the current child's data node.
+     * @return DatabaseReference pointing to 'categories/users/children/{childUname}'.
+     */
     private DatabaseReference getChildRef() {
         return FirebaseDatabase.getInstance()
                 .getReference("categories")
@@ -144,6 +166,10 @@ public class ProviderAdherenceActivity extends AppCompatActivity {
                 .child(childUname);
     }
 
+    /**
+     * Fetches the child's controller medication schedule from Firebase
+     * and populates the (disabled) UI form fields with the data.
+     */
     private void loadScheduleIntoForm() {
         DatabaseReference scheduleRef = getChildRef().child("controller_schedule");
 
@@ -176,6 +202,11 @@ public class ProviderAdherenceActivity extends AppCompatActivity {
         });
     }
 
+    /**
+     * Fetches the controller schedule and logs, then uses AdherenceCalculator
+     * to compute adherence over the last 7 days. Updates the UI with the
+     * resulting percentage and qualitative level.
+     */
     private void calculateAndShowAdherence() {
         DatabaseReference logRef = getChildRef()
                 .child("logs")

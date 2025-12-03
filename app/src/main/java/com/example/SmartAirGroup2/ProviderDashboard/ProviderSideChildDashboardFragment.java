@@ -27,72 +27,52 @@ import java.util.ArrayList;
 
 
 /**
- * ChildDashboardFragment (Parent-Side View)
- * ------------------------------------------
- * This fragment provides a comprehensive overview of a single child's health status from the
- * parent's perspective. It serves as a navigation hub for accessing detailed child information
- * across three main categories: Inventory, PEF (Peak Expiratory Flow), and Symptoms.
+ * ProviderSideChildDashboardFragment (Provider-Side View)
+ * ------------------------------------------------------
+ * This fragment provides a comprehensive, permission-based overview of a single child's health
+ * status from the healthcare provider's perspective. It acts as a navigation hub, granting
+ * access to detailed child information based on the permissions granted by the parent.
  *
  * Purpose:
- *   Enables parents to monitor their child's asthma management by providing:
- *   • Visual status indicators for medication inventory levels
- *   • PEF zone monitoring (Green/Yellow/Red zones)
- *   • Symptom tracking overview
- *   • Quick navigation to detailed views for each category
+ *   Enables healthcare providers to monitor a child's asthma management by providing access to:
+ *   • Medication inventory levels (if permitted)
+ *   • PEF (Peak Expiratory Flow) zone monitoring (if permitted)
+ *   • Symptom and trigger history (if permitted)
+ *   • Rescue and controller medication logs (if permitted)
+ *   • Medication adherence data (if permitted)
+ *   • Triage and summary reports
  *
  * Core Features:
- *   • Color-coded status cards that reflect real-time child health metrics
- *   • Three primary navigation cards:
- *       → Inventory Card: Medicine stock levels and usage
- *       → PEF Card: Breathing function measurements and zones
- *       → Symptom Card: Logged symptoms and patterns
- *   • Dynamic status updates from Firebase
- *   • Back navigation to parent dashboard
+ *   • Displays a dashboard of cards, each corresponding to a specific health data category.
+ *   • Dynamically shows or hides cards based on an ArrayList of permissions.
+ *   • Provides navigation to more detailed fragments or activities for each category.
+ *   • Back navigation to the main provider dashboard.
  *
  * UI Behavior:
- *   - Displays child's name in the toolbar title
- *   - Three large CardViews with color-coded backgrounds:
- *       • Inventory: Red (alert) if any medicine is low/critical, Green (good) otherwise
- *       • PEF: Red (zone 2), Yellow (zone 1), or Green (zone 0) based on breathing status
- *       • Symptom: Currently static, may be extended for symptom status
- *   - Each card navigates to its respective detailed fragment on click
+ *   - Displays the child's name in the toolbar.
+ *   - Presents multiple CardViews for different data categories (Inventory, PEF, Symptoms, Logs, etc.).
+ *   - Cards are made visible or hidden (View.GONE) based on the `permissions` list.
+ *   - Each visible card navigates to its respective detailed view on click.
  *
  * Firebase Structure (Relevant Paths):
  * └── categories/
  *     └── users/
  *         └── children/{childUname}/
- *             └── status/
- *                 ├── pefZone: Integer (0=green, 1=yellow, 2=red)
- *                 └── inventory/
- *                     └── {medicineName}/
- *                         └── {timestamp: Integer (0=good, 1=warning, 2=alert)}
- *
- * Status Logic:
- *   - Inventory Status:
- *       • 2 (Alert/Red): Any medicine has critical low stock - HIGHEST PRIORITY
- *       • 1 (Warning/Yellow): Any medicine approaching low stock
- *       • 0 (Good/Green): All medicines adequately stocked
- *   - PEF Status:
- *       • 2 (Red Zone): Severe breathing difficulty, immediate action needed
- *       • 1 (Yellow Zone): Caution, medication may be needed
- *       • 0 (Green Zone): Breathing is normal
+ *             ├── data/ (For logs, etc.)
+ *             └── status/ (For real-time status like PEF zone)
  *
  * Navigation Flow:
- *   ParentDashboardFragment → ChildDashboardFragment → [Inventory/PEF/Symptom]Fragment
+ *   ProviderDashboardFragment → ProviderSideChildDashboardFragment → [Detailed Fragments/Activities]
  *
  * Fragment Arguments (Required):
- *   • childName (String): Display name of the child
- *   • childUname (String): Unique username/identifier for the child in Firebase
+ *   • childName (String): Display name of the child.
+ *   • childUname (String): Unique username/identifier for the child in Firebase.
+ *   • permissions (ArrayList<String>): A list of strings defining which data sections the provider can access.
  *
  * Dependencies:
- *   • Firebase Realtime Database for status data
- *   • MenuHelper for toolbar menu operations
- *   • Three destination fragments: InventoryFragment, ParentPEF, SymptomDashboardFragment
- *
- * Color Resources Used:
- *   • R.color.alert (Red): Critical status requiring immediate attention
- *   • R.color.warning (Yellow): Caution status requiring monitoring
- *   • R.color.good (Green): Normal/healthy status
+ *   • Firebase Realtime Database for data retrieval.
+ *   • MenuHelper for toolbar menu setup.
+ *   • Various destination fragments (e.g., InventoryFragment, PEFZone) and activities.
  *
  * Author: Kevin Li
  * Last Updated: November 2025
@@ -105,29 +85,31 @@ public class ProviderSideChildDashboardFragment extends Fragment {
 
     /**
      * Toolbar component displayed at the top of the fragment.
-     * Shows the child's name and provides back navigation to parent dashboard.
+     * Shows the child's name and provides back navigation to the provider dashboard.
      */
     private Toolbar toolbar;
 
     /**
-     * CardView for accessing the child's status .
-     * Color-coded based on medicine stock levels:
-     *   - Red (alert)
-     *   - Green (good)
+     * CardViews for accessing different sections of the child's health data.
+     * Visibility is controlled by permissions granted by the parent.
      */
     private CardView cardInventory, cardPEF, cardSymptom, cardLog, cardSummary, cardAdherence, cardTriage;
 
 
     // ═══════════════════════════════════════════════════════════════════════
-    // CHILD IDENTITY
+    // CHILD IDENTITY & PERMISSIONS
     // ═══════════════════════════════════════════════════════════════════════
 
     /**
-     * Display name of the child.
-     * Retrieved from fragment arguments, passed from ParentDashboardFragment.
-     * Used in toolbar title to personalize the view.
+     * Display name and unique username of the child.
+     * Retrieved from fragment arguments, passed from ProviderDashboardFragment.
+     * The name is used in the toolbar title to personalize the view.
      */
     private String name, uname;
+    /**
+     * List of permissions granted by the parent to the provider.
+     * Determines which data cards are visible on the dashboard.
+     */
     private ArrayList<String> permissions;
 
     // ═══════════════════════════════════════════════════════════════════════
@@ -136,11 +118,12 @@ public class ProviderSideChildDashboardFragment extends Fragment {
 
     /**
      * Called when the fragment is first created.
-     * Retrieves child identity from fragment arguments passed by parent fragment.
+     * Retrieves child identity and permissions from fragment arguments passed by the parent fragment (ProviderDashboardFragment).
      *
      * Expected Arguments:
      *   - childName: Display name of the child
      *   - childUname: Firebase username/key for the child
+     *   - permissions: ArrayList of strings defining access rights
      *
      * @param savedInstanceState Previously saved state, if any
      */
@@ -162,9 +145,8 @@ public class ProviderSideChildDashboardFragment extends Fragment {
      * Responsibilities:
      *   - Inflates the child dashboard layout
      *   - Sets up toolbar with child's name and back navigation
-     *   - Initializes status card references
-     *   - Loads current status from Firebase to color-code cards
-     *   - Configures click handlers for navigation to detail fragments
+     *   - Initializes card references and configures their visibility based on permissions
+     *   - Configures click handlers for navigation to detail fragments/activities
      *
      * @param inflater           LayoutInflater to inflate the view
      * @param container          Parent view that this fragment's UI will be attached to
@@ -186,7 +168,7 @@ public class ProviderSideChildDashboardFragment extends Fragment {
         // Set personalized title with child's name
         toolbar.setTitle(name + "'s Dashboard");
 
-        // Enable back navigation to parent dashboard
+        // Enable back navigation to provider dashboard
         ((AppCompatActivity) getActivity()).getSupportActionBar().setDisplayHomeAsUpEnabled(true);
         toolbar.setNavigationOnClickListener(v -> getParentFragmentManager().popBackStack());
 

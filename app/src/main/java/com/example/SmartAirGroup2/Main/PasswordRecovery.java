@@ -17,15 +17,45 @@ import androidx.appcompat.app.AppCompatActivity;
 import com.example.SmartAirGroup2.R;
 import com.google.firebase.database.FirebaseDatabase;
 
+/**
+ * The Password recovery activity.
+ * This activity allows a user to recover their password by providing their username, email, and role.
+ */
 public class PasswordRecovery extends AppCompatActivity {
+    /**
+     * The Username input field.
+     */
     private EditText username;
+    /**
+     * The Email input field.
+     */
     private EditText email;
+    /**
+     * The Recover button.
+     */
     private Button recoverButton;
+    /**
+     * The Firebase database instance.
+     */
     private FirebaseDatabase db;
+    /**
+     * The Role spinner for selecting the user's role.
+     */
     private Spinner roleSpinner;
+    /**
+     * The Selected role from the spinner.
+     */
     private String selectedRole;
+    /**
+     * The Go back button.
+     */
     private ImageButton goBack;
 
+    /**
+     * Shows a dialog with the user's recovered password.
+     *
+     * @param password The password to display.
+     */
     private void showPasswordDialog(String password) {
         AlertDialog.Builder builder = new AlertDialog.Builder(PasswordRecovery.this);
         builder.setTitle("Password Recovery");
@@ -49,6 +79,13 @@ public class PasswordRecovery extends AppCompatActivity {
         builder.show();
     }
 
+    /**
+     * Called when the activity is first created.
+     *
+     * @param savedInstanceState If the activity is being re-initialized after
+     *                           previously being shut down then this Bundle contains the data it most
+     *                           recently supplied in {@link #onSaveInstanceState}.  <b><i>Note: Otherwise it is null.</i></b>
+     */
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);

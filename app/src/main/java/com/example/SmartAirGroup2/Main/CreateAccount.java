@@ -20,20 +20,60 @@ import com.google.firebase.database.FirebaseDatabase;
 import com.example.SmartAirGroup2.auth.data.repo.AuthRepository;
 import com.example.SmartAirGroup2.auth.data.repo.FirebaseRtdbAuthRepository;
 
+/**
+ * Activity for creating a new user account.
+ */
 public class CreateAccount extends AppCompatActivity {
 
+    /**
+     * The username input field.
+     */
     private EditText username;
+    /**
+     * The email input field.
+     */
     private EditText email;
+    /**
+     * The password input field.
+     */
     private EditText password;
+    /**
+     * The confirm password input field.
+     */
     private EditText confirmPassword;
+    /**
+     * The create account button.
+     */
     private Button createButton;
+    /**
+     * The Firebase database instance.
+     */
     private FirebaseDatabase db;
+    /**
+     * The role spinner for selecting user role.
+     */
     private Spinner roleSpinner;
+    /**
+     * The selected role from the spinner.
+     */
     private String selectedRole;
+    /**
+     * The button to go back to the previous screen.
+     */
     private ImageButton goBack;
 
+    /**
+     * The authentication repository.
+     */
     private AuthRepository authRepo;
 
+    /**
+     * Called when the activity is first created.
+     *
+     * @param savedInstanceState If the activity is being re-initialized after
+     *                           previously being shut down then this Bundle contains the data it most
+     *                           recently supplied in {@link #onSaveInstanceState}.  <b><i>Note: Otherwise it is null.</i></b>
+     */
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);

@@ -38,20 +38,53 @@ import com.google.firebase.database.DatabaseError;
 import com.google.firebase.database.ValueEventListener;
 import androidx.annotation.NonNull;
 
+/**
+ * The Onboarding activity for the application.
+ * This activity is responsible for displaying the onboarding screens to the user.
+ * It can be used for the initial onboarding, for the triage tutorial, or for the child onboarding.
+ */
 public class OnboardingActivity extends AppCompatActivity {
 
+    /**
+     * The Next card.
+     */
     CardView nextCard;
+    /**
+     * The Dots layout.
+     */
     LinearLayout dotsLayout;
+    /**
+     * The View pager.
+     */
     ViewPager viewPager;
+    /**
+     * The Dots.
+     */
     TextView[] dots;
+    /**
+     * The Current position.
+     */
     int currentPosition;
+    /**
+     * The Save state.
+     */
     SaveState saveState;
 
+    /**
+     * The Skip button.
+     */
     Button skipButton;
 
     private TriageIncident incidentData;
     private String onboardingType = "initial";
 
+    /**
+     * Called when the activity is first created.
+     *
+     * @param savedInstanceState If the activity is being re-initialized after
+     *     previously being shut down then this Bundle contains the data it most
+     *     recently supplied in {@link #onSaveInstanceState}.  <b><i>Note: Otherwise it is null.</i></b>
+     */
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
@@ -115,6 +148,10 @@ public class OnboardingActivity extends AppCompatActivity {
         viewPager.addOnPageChangeListener(onPageChangeListener);
     }
 
+    /**
+     * Handle the back button press.
+     * If we are in the triage flow, use the special exit handler. Otherwise, default behavior.
+     */
     @Override
     public void onBackPressed() {
         // If we are in the triage flow, use the special exit handler. Otherwise, default behavior.
@@ -125,6 +162,11 @@ public class OnboardingActivity extends AppCompatActivity {
         }
     }
 
+    /**
+     * Handle triage exit.
+     * This method is called when the user wants to exit the triage flow.
+     * It will display a dialog to confirm the action.
+     */
     private void handleTriageExit() {
         new AlertDialog.Builder(this)
                 .setTitle("Discard Triage Report?")
@@ -137,6 +179,11 @@ public class OnboardingActivity extends AppCompatActivity {
                 .show();
     }
 
+    /**
+     * Collect data from page.
+     * This method is called to collect the data from the current page.
+     * @param position The position of the page.
+     */
     private void collectDataFromPage(int position) {
         if (incidentData == null) return; // Don't do anything if not in triage mode
 
@@ -160,6 +207,10 @@ public class OnboardingActivity extends AppCompatActivity {
         }
     }
 
+    /**
+     * Save and finish triage.
+     * This method is called to save the triage data and finish the activity.
+     */
     private void saveAndFinishTriage() {
         // Collect data from the final slide one last time before saving.
         collectDataFromPage(currentPosition);
@@ -221,6 +272,12 @@ public class OnboardingActivity extends AppCompatActivity {
         });
     }
 
+    /**
+     * Start main activity.
+     * This method is called to start the main activity.
+     * @param field The field of the user.
+     * @param username The username of the user.
+     */
     private void startMainActivity(String field, String username) {
         Intent intent;
 
@@ -240,6 +297,11 @@ public class OnboardingActivity extends AppCompatActivity {
         finish();
     }
 
+    /**
+     * Dots function.
+     * This method is called to create the dots for the view pager.
+     * @param pos The position of the current dot.
+     */
     private void dotsFunction(int pos){
         dots = new TextView[4];
         dotsLayout.removeAllViews();
@@ -259,6 +321,9 @@ public class OnboardingActivity extends AppCompatActivity {
         }
     }
 
+    /**
+     * The On page change listener.
+     */
     ViewPager.OnPageChangeListener onPageChangeListener = new ViewPager.OnPageChangeListener() {
         @Override
         public void onPageScrolled(int position, float positionOffset, int positionOffsetPixels) {

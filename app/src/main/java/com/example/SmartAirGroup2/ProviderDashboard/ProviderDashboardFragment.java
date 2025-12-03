@@ -45,64 +45,52 @@ import java.util.Map;
 import java.util.Set;
 
 /**
- * ParentDashboardFragment
- * -----------------------
- * This fragment serves as the primary dashboard for parent users within the Smart Air application.
- * It provides an overview of all linked child accounts and enables parents to perform account
- * management actions.
+ * ProviderDashboardFragment
+ * -------------------------
+ * This fragment serves as the primary dashboard for provider users (e.g., doctors, caretakers)
+ * within the Smart Air application. It provides an overview of all children whose parents have
+ * granted this provider access to their data.
  *
  * Core User Actions:
- *   • View all children currently linked to their account.
- *   • Add a new child or link an existing child account.
- *   • Remove/unlink a child account when needed.
- *   • Navigate to individual child dashboards for detailed monitoring.
+ *   • View all children from different parents who have shared data with the provider.
+ *   - Navigate to individual child dashboards for detailed monitoring of shared data.
  *
  * UI Behavior:
- *   - The fragment dynamically generates CardViews representing each linked child.
+ *   - The fragment dynamically generates CardViews representing each accessible child.
  *   - Each card displays:
- *       • Child name (or username if name unavailable)
- *       • Status indicator (color-coded background)
- *       • A delete icon to allow unlinking
- *   - If no children are linked, only the "Add Child" card is displayed.
+ *       • Child's name.
  *   - Cards use ripple effects for modern touch feedback.
  *
  * Firebase Structure (Relevant Paths):
  * └── categories/
  *     └── users/
- *         ├── parents/{parentUname}/children/{childUname: String}
+ *         ├── provider/{providerUname}/parents/{parentUname: true}
+ *         ├── parents/{parentUname}/children/{childUname: "child-username"}
  *         └── children/{childUname}/
  *             ├── name: String
  *             ├── uname: String
- *             └── status/{individual status: Integer}
+ *             └── shareToProviderPermissions/{permission: boolean}
  *
- * Status Logic:
- *   - The background color of each child card reflects their status history:
- *       • Red (alert color) → Contains alert values (1 or 2 detected)
- *       • Green (good color) → No concerning status entries
- *   - Status values are retrieved from the child's status history in Firebase.
+ * Data Fetching Logic:
+ *   1.  Find all parents linked to the current provider.
+ *   2.  For each parent, find all their linked children.
+ *   3.  For each child, fetch their profile and check if they have granted any data sharing
+ *       permissions to the provider.
+ *   4.  If permissions are granted, display a card for the child.
  *
  * Fragment Lifecycle Responsibilities:
- *   ✔ Initialize toolbar and UI components
- *   ✔ Fetch Firebase data for linked children
- *   ✔ Listen for child database changes
- *   ✔ Dynamically create UI elements based on data
- *   ✔ Persist login metadata using SharedPreferences
- *   ✔ Handle user interactions (navigation, deletion, linking)
+ *   ✔ Initialize toolbar and UI components.
+ *   ✔ Fetch Firebase data for accessible children in a multi-step query.
+ *   ✔ Dynamically create UI elements based on fetched data.
+ *   ✔ Handle user interactions (navigation).
  *
  * Navigation:
- *   - Tapping a child card navigates to ChildDashboardFragment with child details.
- *   - Tapping "Add Child" opens a dialog prompting:
- *        → "Yes": Navigate to LinkChildFragment (for existing accounts)
- *        → "No" : Navigate to AddChildFragment (for new accounts)
+ *   - Tapping a child card navigates to ProviderSideChildDashboardFragment with child details and permissions.
  *
  * Dependencies:
  *   • Firebase Realtime Database for user and relationship data.
- *   • SharedPreferences for user type and logged-in identity persistence.
+ *   • CurrentUser for retrieving the logged-in provider's identity.
  *   • MenuHelper for toolbar menu operations.
- *   • User model class for child data representation.
- *
- * Author: Kevin Li
- * Last Updated: November 18 2025
  */
 public class ProviderDashboardFragment extends Fragment {
 
@@ -112,7 +100,7 @@ public class ProviderDashboardFragment extends Fragment {
 
     /**
      * Toolbar component displayed at the top of the fragment.
-     * Provides navigation and menu actions for the parent user.
+     * Provides navigation and menu actions for the provider user.
      */
     private Toolbar toolbar;
 
@@ -132,23 +120,13 @@ public class ProviderDashboardFragment extends Fragment {
      */
     private FirebaseDatabase db;
 
-    /**
-     * Database reference to the parent's children node.
-     * Path: categories/users/parents/{uname}/children
-     * Contains all child usernames linked to this parent.
-     */
 
     // ═══════════════════════════════════════════════════════════════════════
     // USER IDENTITY
     // ═══════════════════════════════════════════════════════════════════════
 
     /**
-     * Username of the currently logged-in parent.
-     */
-
-    /**
-     * User type identifier for the current user.
-     * Always "parent" for this fragment.
+     * Username, email, and type of the currently logged-in user.
      */
     private String uname, email, type;
     private View notificationActionView;
@@ -159,6 +137,12 @@ public class ProviderDashboardFragment extends Fragment {
     // LIFECYCLE METHODS
     // ═══════════════════════════════════════════════════════════════════════
 
+    /**
+     * Creates a new instance of ProviderDashboardFragment with the given username.
+     *
+     * @param username The username of the provider.
+     * @return A new instance of ProviderDashboardFragment.
+     */
     public static ProviderDashboardFragment newInstance(String username) {
         ProviderDashboardFragment fragment = new ProviderDashboardFragment();
         Bundle args = new Bundle();
@@ -168,11 +152,16 @@ public class ProviderDashboardFragment extends Fragment {
 
     }
 
+    /**
+     * Called to do initial creation of a fragment.
+     *
+     * @param savedInstanceState If the fragment is being re-created from a previous saved state, this is the state.
+     */
     @Override
     public void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
 
-        // Retrieve parent username passed as argument
+        // Retrieve provider username passed as argument
         if (getArguments() != null) {
             uname = getArguments().getString("username");
         }
@@ -183,17 +172,16 @@ public class ProviderDashboardFragment extends Fragment {
      * Creates and initializes the view hierarchy for this fragment.
      *
      * Responsibilities:
-     *   - Inflates the parent dashboard layout
-     *   - Sets up the toolbar with menu support
-     *   - Initializes Firebase database references
-     *   - Loads children data from Firebase
-     *   - Persists user identity to SharedPreferences
-     *   - Configures "Add Child" button click handler
+     *   - Inflates the provider dashboard layout.
+     *   - Sets up the toolbar with menu support.
+     *   - Initializes Firebase database references.
+     *   - Loads children data from Firebase.
+     *   - Persists user identity to SharedPreferences.
      *
-     * @param inflater           LayoutInflater to inflate the view
-     * @param container          Parent view that this fragment's UI will be attached to
-     * @param savedInstanceState Previously saved state, if any
-     * @return                   The root view for this fragment
+     * @param inflater           LayoutInflater to inflate the view.
+     * @param container          Parent view that this fragment's UI will be attached to.
+     * @param savedInstanceState Previously saved state, if any.
+     * @return                   The root view for this fragment.
      */
     @Nullable
     @Override
@@ -281,6 +269,7 @@ public class ProviderDashboardFragment extends Fragment {
 
     /**
      * Step 2: Iterates through all linked parents to find the children usernames.
+     * @param parentsSnapshot The DataSnapshot containing the linked parents.
      */
     private void fetchChildrenLinks(@NonNull DataSnapshot parentsSnapshot) {
         Set<String> childUsernames = new HashSet<>();
@@ -329,6 +318,8 @@ public class ProviderDashboardFragment extends Fragment {
 
     /**
      * Step 3: Fetches the full profile data for all unique children found.
+     * @param childUsernames A set of child usernames to fetch data for.
+     * @param childToParentMap A map from child username to parent username.
      */
     private void fetchChildren(Set<String> childUsernames, Map<String, String> childToParentMap) {
         if (childUsernames.isEmpty()) {
@@ -400,16 +391,14 @@ public class ProviderDashboardFragment extends Fragment {
      * Dynamically creates and adds a CardView for a linked child.
      *
      * Card Features:
-     *   - Displays child's name (or username as fallback)
-     *   - Color-coded background based on status:
-     *       • Red if status list contains 1 or 2 (alert)
-     *       • Green otherwise (good)
-     *   - Delete icon for unlinking the child
-     *   - Ripple effect for touch feedback
-     *   - Navigates to ChildDashboardFragment on click
+     *   - Displays child's name (or username as fallback).
+     *   - Color-coded background based on status.
+     *   - Ripple effect for touch feedback.
+     *   - Navigates to ProviderSideChildDashboardFragment on click.
      *
-     * @param childName   Display name of the child
-     * @param childKey    Username/key of the child in Firebase
+     * @param childName   Display name of the child.
+     * @param childKey    Username/key of the child in Firebase.
+     * @param permissions List of permissions granted by the parent.
      */
     @SuppressLint("ResourceType")
     private void addChildCard(String childName, String childKey, List<String> permissions) {
@@ -504,8 +493,8 @@ public class ProviderDashboardFragment extends Fragment {
      * Converts density-independent pixels (dp) to actual pixels (px).
      * Ensures consistent UI spacing across different screen densities.
      *
-     * @param dp Value in density-independent pixels
-     * @return   Equivalent value in pixels for the current device
+     * @param dp Value in density-independent pixels.
+     * @return   Equivalent value in pixels for the current device.
      */
     private int dpToPx(int dp) {
         float density = getResources().getDisplayMetrics().density;
@@ -517,12 +506,24 @@ public class ProviderDashboardFragment extends Fragment {
     // ═══════════════════════════════════════════════════════════════════════
 
 
+    /**
+     * Initialize the contents of the Fragment's standard options menu.
+     *
+     * @param menu The options menu in which you place your items.
+     * @param inflater The MenuInflater to inflate the menu.
+     */
     @Override
     public void onCreateOptionsMenu(@NonNull Menu menu, @NonNull MenuInflater inflater) {
         MenuHelper.setupMenuWithoutAlerts(menu, inflater, requireContext());
         super.onCreateOptionsMenu(menu, inflater);
     }
 
+    /**
+     * This hook is called whenever an item in your options menu is selected.
+     *
+     * @param item The menu item that was selected.
+     * @return boolean Return false to allow normal menu processing to proceed, true to consume it here.
+     */
     @Override
     public boolean onOptionsItemSelected(@NonNull MenuItem item) {
         return MenuHelper.handleMenuSelection(item, this) || super.onOptionsItemSelected(item);
@@ -536,7 +537,7 @@ public class ProviderDashboardFragment extends Fragment {
      * Navigates to another fragment within the same activity.
      * Adds the transaction to the back stack for back button support.
      *
-     * @param fragment The fragment to navigate to
+     * @param fragment The fragment to navigate to.
      */
     private void loadFragment(Fragment fragment) {
         FragmentTransaction transaction = getParentFragmentManager().beginTransaction();

@@ -39,72 +39,48 @@ import java.util.TreeMap;
 
 
 /**
- * ChildDashboardFragment (Parent-Side View)
- * ------------------------------------------
- * This fragment provides a comprehensive overview of a single child's health status from the
- * parent's perspective. It serves as a navigation hub for accessing detailed child information
- * across three main categories: Inventory, PEF (Peak Expiratory Flow), and Symptoms.
+ * ProviderSideChildRescueSummary (Provider-Side View)
+ * --------------------------------------------------
+ * This fragment provides a visual summary of a child's rescue medication usage history,
+ * designed for healthcare providers. It displays a bar chart illustrating the frequency
+ * of rescue inhaler use over a selected period (7 or 30 days).
  *
  * Purpose:
- *   Enables parents to monitor their child's asthma management by providing:
- *   • Visual status indicators for medication inventory levels
- *   • PEF zone monitoring (Green/Yellow/Red zones)
- *   • Symptom tracking overview
- *   • Quick navigation to detailed views for each category
+ *   To help providers quickly assess trends in a child's rescue medication needs, which can
+ *   indicate changes in asthma control.
  *
  * Core Features:
- *   • Color-coded status cards that reflect real-time child health metrics
- *   • Three primary navigation cards:
- *       → Inventory Card: Medicine stock levels and usage
- *       → PEF Card: Breathing function measurements and zones
- *       → Symptom Card: Logged symptoms and patterns
- *   • Dynamic status updates from Firebase
- *   • Back navigation to parent dashboard
+ *   • Displays a bar chart of daily rescue inhaler usage counts.
+ *   • Allows toggling the view between the last 7 and 30 days.
+ *   • Fetches data asynchronously using `RescueTrendFetcher`.
+ *   • Shows loading and empty states to the user.
+ *   • Provides back navigation to the child's main provider dashboard.
  *
  * UI Behavior:
- *   - Displays child's name in the toolbar title
- *   - Three large CardViews with color-coded backgrounds:
- *       • Inventory: Red (alert) if any medicine is low/critical, Green (good) otherwise
- *       • PEF: Red (zone 2), Yellow (zone 1), or Green (zone 0) based on breathing status
- *       • Symptom: Currently static, may be extended for symptom status
- *   - Each card navigates to its respective detailed fragment on click
+ *   - Displays the child's name in the toolbar title (e.g., "John's Rescue History").
+ *   - A `BarChart` visualizes the number of rescues per day.
+ *   - A `MaterialButtonToggleGroup` allows the user to select the time frame.
+ *   - A `TextView` shows status messages like "Loading data..." or "No rescue logs found."
  *
  * Firebase Structure (Relevant Paths):
  * └── categories/
  *     └── users/
  *         └── children/{childUname}/
- *             └── status/
- *                 ├── pefZone: Integer (0=green, 1=yellow, 2=red)
- *                 └── inventory/
- *                     └── {medicineName}/
- *                         └── {timestamp: Integer (0=good, 1=warning, 2=alert)}
- *
- * Status Logic:
- *   - Inventory Status:
- *       • 2 (Alert/Red): Any medicine has critical low stock - HIGHEST PRIORITY
- *       • 1 (Warning/Yellow): Any medicine approaching low stock
- *       • 0 (Good/Green): All medicines adequately stocked
- *   - PEF Status:
- *       • 2 (Red Zone): Severe breathing difficulty, immediate action needed
- *       • 1 (Yellow Zone): Caution, medication may be needed
- *       • 0 (Green Zone): Breathing is normal
+ *             └── logs/
+ *                 └── rescue_log/
+ *                     └── {logId}/
+ *                         └── timestamp: (long)
  *
  * Navigation Flow:
- *   ParentDashboardFragment → ChildDashboardFragment → [Inventory/PEF/Symptom]Fragment
+ *   ProviderSideChildDashboardFragment → ProviderSideChildRescueSummary
  *
  * Fragment Arguments (Required):
- *   • childName (String): Display name of the child
- *   • childUname (String): Unique username/identifier for the child in Firebase
+ *   • childName (String): Display name of the child, used in the toolbar.
+ *   • childUname (String): Unique username/identifier for the child in Firebase, used for data fetching.
  *
  * Dependencies:
- *   • Firebase Realtime Database for status data
- *   • MenuHelper for toolbar menu operations
- *   • Three destination fragments: InventoryFragment, ParentPEF, SymptomDashboardFragment
- *
- * Color Resources Used:
- *   • R.color.alert (Red): Critical status requiring immediate attention
- *   • R.color.warning (Yellow): Caution status requiring monitoring
- *   • R.color.good (Green): Normal/healthy status
+ *   • MPAndroidChart library for charting.
+ *   • RescueTrendFetcher for fetching and processing data from Firebase.
  *
  * Author: Kevin Li
  * Last Updated: November 2025
@@ -117,15 +93,12 @@ public class ProviderSideChildRescueSummary extends Fragment {
 
     /**
      * Toolbar component displayed at the top of the fragment.
-     * Shows the child's name and provides back navigation to parent dashboard.
+     * Shows a title like "[Child Name]'s Rescue History" and provides back navigation.
      */
     private Toolbar toolbar;
 
     /**
-     * CardView for accessing the child's status .
-     * Color-coded based on medicine stock levels:
-     *   - Red (alert)
-     *   - Green (good)
+     * A CardView for containing chart elements.
      */
     private CardView  cardTrend;
 
@@ -137,14 +110,13 @@ public class ProviderSideChildRescueSummary extends Fragment {
 
     /**
      * Display name of the child.
-     * Retrieved from fragment arguments, passed from ParentDashboardFragment.
-     * Used in toolbar title to personalize the view.
+     * Retrieved from fragment arguments, used in the toolbar title.
      */
     private String name;
 
     /**
      * Unique username/identifier of the child in Firebase.
-     * Retrieved from fragment arguments, used to query child-specific data.
+     * Retrieved from fragment arguments, used to fetch the child's rescue log data.
      */
     private String uname;
 
@@ -164,13 +136,9 @@ public class ProviderSideChildRescueSummary extends Fragment {
 
     /**
      * Called when the fragment is first created.
-     * Retrieves child identity from fragment arguments passed by parent fragment.
+     * Retrieves the child's name and unique username from fragment arguments.
      *
-     * Expected Arguments:
-     *   - childName: Display name of the child
-     *   - childUname: Firebase username/key for the child
-     *
-     * @param savedInstanceState Previously saved state, if any
+     * @param savedInstanceState Previously saved state, if any.
      */
     @Override
     public void onCreate(Bundle savedInstanceState) {
@@ -187,16 +155,16 @@ public class ProviderSideChildRescueSummary extends Fragment {
      * Creates and initializes the view hierarchy for this fragment.
      *
      * Responsibilities:
-     *   - Inflates the child dashboard layout
-     *   - Sets up toolbar with child's name and back navigation
-     *   - Initializes status card references
-     *   - Loads current status from Firebase to color-code cards
-     *   - Configures click handlers for navigation to detail fragments
+     *   - Inflates the layout for the rescue summary chart.
+     *   - Sets up the toolbar with a dynamic title and back navigation.
+     *   - Initializes the BarChart, status TextView, and duration toggle buttons.
+     *   - Sets up listeners for the toggle buttons to refresh the chart data.
+     *   - Initiates the initial data load for the 7-day view.
      *
-     * @param inflater           LayoutInflater to inflate the view
-     * @param container          Parent view that this fragment's UI will be attached to
-     * @param savedInstanceState Previously saved state, if any
-     * @return                   The root view for this fragment
+     * @param inflater           LayoutInflater to inflate the view.
+     * @param container          Parent view that this fragment's UI will be attached to.
+     * @param savedInstanceState Previously saved state, if any.
+     * @return                   The root view for this fragment.
      */
     @Nullable
     @Override
@@ -251,7 +219,11 @@ public class ProviderSideChildRescueSummary extends Fragment {
     }
 
 
-
+    /**
+     * Configures the visual appearance of the BarChart.
+     * This includes disabling the description and legend, setting axis properties,
+     * and defining formatters for the values.
+     */
     private void setupChartAppearance() {
         if (chart == null) return;
 
@@ -285,6 +257,12 @@ public class ProviderSideChildRescueSummary extends Fragment {
 
     }
 
+    /**
+     * Triggered when the user selects a duration (e.g., 7 or 30 days).
+     * It initiates fetching the rescue data for the specified period and updates the chart.
+     *
+     * @param days The number of days of data to display.
+     */
     public void onDurationToggleClicked(int days) {
         if (chart == null) return;
 
@@ -295,6 +273,8 @@ public class ProviderSideChildRescueSummary extends Fragment {
         }
         chart.setVisibility(View.INVISIBLE);
 
+        // This callback has an `onFailure` method.
+        // Assuming ChartDataCallback is flexible enough or has been modified to support this.
         trendFetcher.loadRescueTrendData(uname, days, chartContext, new ChartDataCallback() {
             @Override
             public void onDataReady(Map<String, Integer> dailyCounts) {
