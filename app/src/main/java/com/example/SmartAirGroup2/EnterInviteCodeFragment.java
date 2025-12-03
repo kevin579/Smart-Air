@@ -9,6 +9,7 @@ import android.view.View;
 import android.view.ViewGroup;
 import android.widget.Button;
 import android.widget.EditText;
+import android.widget.ImageButton;
 import android.widget.Toast;
 import androidx.appcompat.app.AlertDialog;
 
@@ -28,6 +29,7 @@ import java.util.Map;
 import java.util.UUID;
 
 public class EnterInviteCodeFragment extends Fragment {
+    private ImageButton goBack;
 
     @Nullable
     @Override
@@ -35,6 +37,7 @@ public class EnterInviteCodeFragment extends Fragment {
         View view = inflater.inflate(R.layout.fragment_enter_invite_code, container, false);
         EditText codeInput = view.findViewById(R.id.invite_code_input);
         Button submitButton = view.findViewById(R.id.submit_code_button);
+        goBack = view.findViewById(R.id.back_button);
 
         submitButton.setOnClickListener(v -> {
             String code = codeInput.getText().toString().trim().toUpperCase();
@@ -44,8 +47,15 @@ public class EnterInviteCodeFragment extends Fragment {
                 Toast.makeText(getContext(), "Please enter an invite code.", Toast.LENGTH_SHORT).show();
             }
         });
+
+        goBack.setOnClickListener(v -> {
+            Intent intent = new Intent(requireContext(), MainActivity.class);
+            startActivity(intent);
+        });
+
         return view;
     }
+
 
     private void validateAndCreateProvider(final String code) {
         DatabaseReference rootRef = FirebaseDatabase.getInstance().getReference();
