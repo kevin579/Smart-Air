@@ -224,7 +224,7 @@ public class ExportSymptoms extends Fragment {
             @Override
             public void onDataChange(@NonNull DataSnapshot snapshot) {
 
-                // 🔥 Clear existing cards before adding new ones
+                // Clear existing cards before adding new ones
                 symptomContainer.removeAllViews();
 
                 // If database is empty show placeholder
